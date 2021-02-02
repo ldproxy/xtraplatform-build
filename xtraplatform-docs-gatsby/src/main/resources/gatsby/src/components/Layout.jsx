@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useStaticQuery, graphql, Link, navigate } from "gatsby";
+import { useStaticQuery, graphql, navigate } from "gatsby";
 import glamorous, { ThemeProvider } from "glamorous";
 import { Container, Row, Col } from "glamorous-grid";
 
