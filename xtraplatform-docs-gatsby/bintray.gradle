@@ -1,0 +1,33 @@
+if (project.hasProperty('bintrayUser')) {
+
+  apply plugin: 'com.jfrog.bintray'
+
+  project.afterEvaluate {
+      project.bintray.with {
+          user = project.bintrayUser
+          key = project.bintrayApiKey
+          publications = project.extensions.publishing.publications.collect { it.name }
+          publish = true
+          override = true
+//          dryRun = true
+          pkg {
+              repo = 'maven'
+              name = project.name
+              userOrg = 'iide'
+              licenses = ['MPL-2.0']
+//              websiteUrl = 'https://github.com/interactive-instruments/xtraplatform-build/tree/master/xtraplatform-docs-gatsby'
+//              issueTrackerUrl = 'https://github.com/interactive-instruments/xtraplatform-build/issues'
+//              vcsUrl = 'https://github.com/interactive-instruments/xtraplatform-build.git'
+//              githubRepo = 'interactive-instruments/xtraplatform-build'
+              websiteUrl = 'https://github.com/interactive-instruments/xtraplatform'
+              issueTrackerUrl = 'https://github.com/interactive-instruments/xtraplatform/issues'
+              vcsUrl = 'https://github.com/interactive-instruments/xtraplatform.git'
+              githubRepo = 'interactive-instruments/xtraplatform'
+              githubReleaseNotesFile = 'README.md'
+              version {
+                  name = project.version
+              }
+          }
+      }
+  }
+}
