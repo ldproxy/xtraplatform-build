@@ -47,7 +47,7 @@ class DocsPlugin implements Plugin<Project> {
                 }
             }*/
             
-            from(project.zipTree(project.buildscript.configurations.classpath.find { it.name.startsWith('xtraplatform-docs-') } )) {
+            from(project.zipTree(project.buildscript.configurations.classpath.find { it.name.startsWith('xtraplatform-docs-gatsby') } )) {
                 eachFile {
                     path -= ~/^.+?\//
                 }

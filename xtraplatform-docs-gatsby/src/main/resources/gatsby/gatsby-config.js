@@ -88,6 +88,7 @@ const plugins = [
           resolve: `gatsby-remark-autolink-headers`,
           options: {
             enableCustomId: true,
+            removeAccents: true,
           },
         },
         {

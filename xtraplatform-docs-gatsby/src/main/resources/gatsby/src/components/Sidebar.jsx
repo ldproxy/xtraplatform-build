@@ -1,4 +1,4 @@
-import React, { memo, Fragment, useEffect } from "react";
+import React, { memo, Fragment } from "react";
 import glamorous from "glamorous";
 
 import { Link, useStaticQuery, graphql } from "gatsby";
@@ -6,7 +6,7 @@ import Img from "gatsby-image";
 import Scrollspy from "react-scrollspy";
 
 import theme from "../theme";
-import { title, style, pathPrefix, srcDir } from "../../xtraplatform.json";
+import { title, style } from "../../xtraplatform.json";
 
 const Navbar = glamorous.nav({
   position: "relative",

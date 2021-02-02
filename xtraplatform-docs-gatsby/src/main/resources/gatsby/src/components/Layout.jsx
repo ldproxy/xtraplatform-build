@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useStaticQuery, graphql, Link, navigate } from "gatsby";
 import glamorous, { ThemeProvider } from "glamorous";
 import { Container, Row, Col } from "glamorous-grid";
-import slugs from "github-slugger";
 
 import theme from "../theme";
 import grid from "../theme/grid";
@@ -18,7 +17,7 @@ const Container3 = glamorous(Container)({
   height: "100%",
   overflow: "hidden",
 });
-
+/*
 const Footer = glamorous.footer(
   {
     display: "flex",
@@ -48,7 +47,7 @@ const FooterLink = glamorous(Link)(
     },
   })
 );
-
+*/
 const ColSidebar = glamorous(Col)(
   {
     height: "100%",
@@ -138,7 +137,7 @@ const Layout = ({ children, location: loc }) => {
         navigate(`/${currentLanguage}${path}`, { replace: true });
       }
     }
-  }, [useLanguages, currentLanguage, path]);
+  }, [useLanguages, currentLanguage, languages, path]);
 
   useEffect(() => {
     if (location.hash) {
