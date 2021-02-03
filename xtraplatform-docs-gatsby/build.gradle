@@ -7,7 +7,7 @@ plugins {
 
 group = 'de.interactive_instruments'
 
-version = '1.0.1'
+version = '1.0.2'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 

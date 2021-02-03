@@ -19,6 +19,7 @@ class DocsPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         project.plugins.apply("com.moowork.node")
+        project.node.download = true
 
         NamedDomainObjectContainer<Doc> docs = project.container(Doc)
         project.extensions.add('docs', docs)
