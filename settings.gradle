@@ -1,0 +1,4 @@
+rootProject.name = 'xtraplatform-build'
+
+include 'xtraplatform-docs-gatsby'
+//include 'xtraplatform-modules'

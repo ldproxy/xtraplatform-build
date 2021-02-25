@@ -1,0 +1,46 @@
+plugins {
+    id "com.github.ben-manes.versions" version "0.36.0"
+    id 'se.patrikerdes.use-latest-versions' version '0.2.15'
+}
+
+ext {
+    versionSuffix = project.findProperty('snapshot') == 'true' ? '-SNAPSHOT' : ''
+}
+
+dependencyUpdates {
+    gradleReleaseChannel = "current"
+}
+
+subprojects { subproject ->
+    apply plugin: 'java-gradle-plugin'
+    apply plugin: 'groovy'
+    apply plugin: 'maven-publish'
+
+    group = 'de.interactive_instruments'
+
+    version = '3.5.0' + versionSuffix
+
+    sourceCompatibility = JavaVersion.VERSION_1_8
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    subproject.tasks.check.finalizedBy rootProject.tasks.dependencyUpdates
+
+    publishing {
+        repositories {
+            maven {
+                def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
+                def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+
+                url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                credentials {
+                    username project.findProperty('deployUser') ?: ''
+                    password project.findProperty('deployPassword') ?: ''
+                }
+            }
+        }
+    }
+}
