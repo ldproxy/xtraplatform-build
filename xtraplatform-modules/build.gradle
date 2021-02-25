@@ -31,11 +31,11 @@ gradlePlugin {
             implementationClass = 'de.interactive_instruments.xtraplatform.ApplicationPlugin'
         }
         bundlePlugin {
-            id = 'de.interactive_instruments.xtraplatform-bundle'
+            id = 'de.interactive_instruments.xtraplatform-module'
             implementationClass = 'de.interactive_instruments.xtraplatform.BundlePlugin'
         }
         runtimePlugin {
-            id = 'de.interactive_instruments.xtraplatform-runtime'
+            id = 'de.interactive_instruments.xtraplatform-runtime-plugin'
             implementationClass = 'de.interactive_instruments.xtraplatform.RuntimePlugin'
         }
         docPlugin {

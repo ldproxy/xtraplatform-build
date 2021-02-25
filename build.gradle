@@ -22,7 +22,7 @@ subprojects { subproject ->
 
     version = '3.5.0' + versionSuffix
 
-    sourceCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
 
     repositories {
         mavenCentral()

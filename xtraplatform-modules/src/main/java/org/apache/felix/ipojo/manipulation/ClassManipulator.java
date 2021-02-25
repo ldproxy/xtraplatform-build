@@ -19,6 +19,7 @@
 
 package org.apache.felix.ipojo.manipulation;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 import org.apache.felix.ipojo.manipulation.ClassChecker.AnnotationDescriptor;
@@ -298,7 +299,12 @@ public class ClassManipulator extends ClassVisitor implements Opcodes {
             }
 
         }
-        return cv.visitField(access, name, desc, signature, value);
+        //TODO: Java 11 workaround - make all fields in @Component classes non-final to prevent IllegalAccessException on constructor injection
+        int newAccess = access;
+        if (!Modifier.isStatic(access) && Modifier.isFinal(access)) {
+            newAccess = access & (~Opcodes.ACC_FINAL);
+        }
+        return cv.visitField(newAccess, name, desc, signature, value);
     }
 
     /**

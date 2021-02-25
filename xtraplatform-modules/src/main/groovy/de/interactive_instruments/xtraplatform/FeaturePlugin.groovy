@@ -129,7 +129,7 @@ class FeaturePlugin implements Plugin<Project> {
             }
 
             // stay java 8 compatible
-            subproject.setSourceCompatibility(JavaVersion.VERSION_1_8)
+            subproject.setSourceCompatibility(JavaVersion.VERSION_11)
 
             subproject.repositories {
                 jcenter()
