@@ -32,7 +32,7 @@ pipeline:
     secrets: [ deploy_user, deploy_password]
     when:
       event: push
-      branch: master
+      branch: main
 
   publish-release:
     image: openjdk:11-slim
