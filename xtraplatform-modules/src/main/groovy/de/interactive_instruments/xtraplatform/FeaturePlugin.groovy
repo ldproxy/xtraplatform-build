@@ -49,6 +49,12 @@ class FeaturePlugin implements Plugin<Project> {
             maven {
                 url "https://dl.bintray.com/iide/maven"
             }
+            maven {
+                url "https://dl.interactive-instruments.de/repository/maven-releases/"
+            }
+            maven {
+                url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+            }
         }
 
 
@@ -136,6 +142,12 @@ class FeaturePlugin implements Plugin<Project> {
                 maven {
                     url "https://dl.bintray.com/iide/maven"
                 }
+                maven {
+                    url "https://dl.interactive-instruments.de/repository/maven-releases/"
+                }
+                maven {
+                    url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+                }
             }
 
             subproject.configurations.all {
@@ -203,6 +215,8 @@ class FeaturePlugin implements Plugin<Project> {
                     }
                 }
             }
+
+//            subproject.tasks.register("dependencyUpdates", CustomDependencyUpdatesTask)
         }
     }
 
