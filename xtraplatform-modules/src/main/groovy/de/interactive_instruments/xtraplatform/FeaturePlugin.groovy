@@ -199,6 +199,18 @@ class FeaturePlugin implements Plugin<Project> {
             }
 
             subproject.extensions.publishing.with {
+                repositories {
+                    maven {
+                        def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
+                        def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+
+                        url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                        credentials {
+                            username project.findProperty('deployUser') ?: ''
+                            password project.findProperty('deployPassword') ?: ''
+                        }
+                    }
+                }
                 publications {
                     'default'(MavenPublication) {
                         from subproject.components.java
@@ -216,7 +228,19 @@ class FeaturePlugin implements Plugin<Project> {
 
     void addPublication(Project project) {
         project.extensions.publishing.with {
-            publications {
+           repositories {
+               maven {
+                   def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
+                   def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+
+                   url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                   credentials {
+                       username project.findProperty('deployUser') ?: ''
+                       password project.findProperty('deployPassword') ?: ''
+                   }
+               }
+           }
+           publications {
                 'default'(MavenPublication) {
 
                     pom.withXml {
