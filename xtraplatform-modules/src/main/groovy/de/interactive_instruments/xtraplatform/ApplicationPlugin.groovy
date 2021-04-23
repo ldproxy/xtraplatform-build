@@ -51,13 +51,6 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
-        project.repositories {
-            jcenter()
-            maven {
-                url "https://dl.bintray.com/iide/maven"
-            }
-        }
-
         project.configurations.featureDevOnly.incoming.beforeResolve {
             project.configurations.featureDevOnly.dependencies.collect().each {
                 if (!it.name.endsWith("-bundles")) {

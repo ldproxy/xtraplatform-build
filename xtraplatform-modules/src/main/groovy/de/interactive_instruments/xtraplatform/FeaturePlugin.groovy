@@ -45,10 +45,7 @@ class FeaturePlugin implements Plugin<Project> {
         project.configurations.featureBundles.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
 
         project.repositories {
-            jcenter()
-            maven {
-                url "https://dl.bintray.com/iide/maven"
-            }
+            mavenCentral()
             maven {
                 url "https://dl.interactive-instruments.de/repository/maven-releases/"
             }
@@ -138,10 +135,7 @@ class FeaturePlugin implements Plugin<Project> {
             subproject.setSourceCompatibility(JavaVersion.VERSION_11)
 
             subproject.repositories {
-                jcenter()
-                maven {
-                    url "https://dl.bintray.com/iide/maven"
-                }
+                mavenCentral()
                 maven {
                     url "https://dl.interactive-instruments.de/repository/maven-releases/"
                 }
