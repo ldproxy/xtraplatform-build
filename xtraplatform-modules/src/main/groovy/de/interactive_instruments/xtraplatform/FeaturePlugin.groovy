@@ -204,7 +204,7 @@ class FeaturePlugin implements Plugin<Project> {
                         def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
                         def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
 
-                        url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                        url project.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                         credentials {
                             username project.findProperty('deployUser') ?: ''
                             password project.findProperty('deployPassword') ?: ''
@@ -233,7 +233,7 @@ class FeaturePlugin implements Plugin<Project> {
                    def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
                    def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
 
-                   url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                   url project.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                    credentials {
                        username project.findProperty('deployUser') ?: ''
                        password project.findProperty('deployPassword') ?: ''
