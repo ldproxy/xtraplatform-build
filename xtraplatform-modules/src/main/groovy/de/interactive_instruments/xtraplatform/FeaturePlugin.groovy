@@ -192,11 +192,6 @@ class FeaturePlugin implements Plugin<Project> {
                         }
                     })
                 }
-            }
-
-            subproject.task('sourceJar', type: Jar) {
-                from sourceSets.main.allSource
-            }
 
             subproject.extensions.publishing.with {
                 repositories {
@@ -221,12 +216,18 @@ class FeaturePlugin implements Plugin<Project> {
                     }
                 }
             }
+            }
+
+            subproject.task('sourceJar', type: Jar) {
+                from sourceSets.main.allSource
+            }
 
 //            subproject.tasks.register("dependencyUpdates", CustomDependencyUpdatesTask)
         }
     }
 
     void addPublication(Project project) {
+        project.afterEvaluate {
         project.extensions.publishing.with {
            repositories {
                maven {
@@ -285,6 +286,7 @@ class FeaturePlugin implements Plugin<Project> {
 
                 }
             }
+        }
         }
     }
 }
