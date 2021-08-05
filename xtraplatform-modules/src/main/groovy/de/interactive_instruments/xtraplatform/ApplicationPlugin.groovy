@@ -24,8 +24,8 @@ class ApplicationPlugin implements Plugin<Project> {
 
         def appExtension = project.extensions.create('app', ApplicationExtension, project)
 
-        //suppress java 9+ illegal access warnings for felix and jackson afterburner as well as geotools/hsqldb
-        project.application.applicationDefaultJvmArgs  += ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED']
+        //suppress java 9+ illegal access warnings for felix, jackson afterburner, geotools/hsqldb, mustache
+        project.application.applicationDefaultJvmArgs  += ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED', '--add-opens', 'java.base/java.util=ALL-UNNAMED']
 
         project.configurations.create("featureDevOnly")
         project.configurations.featureDevOnly.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
