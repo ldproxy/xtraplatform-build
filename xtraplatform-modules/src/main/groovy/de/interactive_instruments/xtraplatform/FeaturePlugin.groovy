@@ -160,7 +160,7 @@ class FeaturePlugin implements Plugin<Project> {
             project.configurations.feature.incoming.beforeResolve {
                 project.configurations.feature.dependencies.collect().each {
                     def isIncludedBuild = includedBuilds.contains(it.name)
-                    if (!isIncludedBuild) {
+                    if (!isIncludedBuild && subproject.name != "ldproxy-cfg") {
                         def bom = [group: it.group, name: "${it.name}", version: it.version]
 
                         subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
