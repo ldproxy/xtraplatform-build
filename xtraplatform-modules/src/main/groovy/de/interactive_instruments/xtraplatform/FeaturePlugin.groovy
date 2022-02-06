@@ -127,7 +127,7 @@ class FeaturePlugin implements Plugin<Project> {
             subproject.plugins.apply('maven-publish')
             if (subproject.name == XTRAPLATFORM_RUNTIME) {
                 subproject.plugins.apply(RuntimePlugin.class)
-            } else {
+            } else if (subproject.name != "ldproxy-cfg") { //TODO
                 subproject.plugins.apply(BundlePlugin.class)
             }
 
