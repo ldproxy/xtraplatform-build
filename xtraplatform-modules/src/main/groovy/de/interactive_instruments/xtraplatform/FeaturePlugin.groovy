@@ -19,6 +19,7 @@ class FeaturePlugin implements Plugin<Project> {
 
     public static String XTRAPLATFORM_CORE = "xtraplatform-core"
     public static String XTRAPLATFORM_RUNTIME = "xtraplatform-runtime"
+    public static String XTRAPLATFORM_BASE = "xtraplatform-base"
 
     @Override
     void apply(Project project) {
@@ -55,10 +56,10 @@ class FeaturePlugin implements Plugin<Project> {
         }
 
 
-        def includedBuilds = project.gradle.includedBuilds.collect {it.name}
+        def includedBuilds = project.gradle.includedBuilds.collect { it.name }
         def parent = project.gradle.parent
         while (parent != null) {
-            includedBuilds += parent.includedBuilds.collect {it.name}
+            includedBuilds += parent.includedBuilds.collect { it.name }
             parent = parent.gradle.parent
         }
 
@@ -82,6 +83,7 @@ class FeaturePlugin implements Plugin<Project> {
                     delegateBuildRunToGradle = true
                     testRunner = ActionDelegationConfig.TestRunner.PLATFORM
                 }
+                //withModuleXml(project.sourceSets.main) { println it }
             }
         }
     }
@@ -125,13 +127,9 @@ class FeaturePlugin implements Plugin<Project> {
 
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('maven-publish')
-            if (subproject.name == XTRAPLATFORM_RUNTIME) {
-                subproject.plugins.apply(RuntimePlugin.class)
-            } else {
-                subproject.plugins.apply(BundlePlugin.class)
-            }
+            subproject.plugins.apply(ModulePlugin.class)
 
-            // stay java 8 compatible
+            // stay java 11 compatible
             subproject.setSourceCompatibility(JavaVersion.VERSION_11)
 
             subproject.repositories {
@@ -144,14 +142,9 @@ class FeaturePlugin implements Plugin<Project> {
                 }
             }
 
-            subproject.configurations.all {
-                exclude group: 'org.osgi', module: 'org.osgi.core'
-                exclude group: 'org.osgi', module: 'org.osgi.compendium'
-            }
-
             subproject.afterEvaluate {
-                if (subproject.version != null && subproject.version  != 'unspecified') {
-                    LOGGER.warn("Warning: Bundle version '{}' is set for '{}'. Bundle versions are ignored, the feature version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
+                if (subproject.version != null && subproject.version != 'unspecified') {
+                    LOGGER.warn("Warning: Module version '{}' is set for '{}'. Module versions are ignored, the feature version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
                 }
                 subproject.version = project.version
             }
@@ -171,29 +164,64 @@ class FeaturePlugin implements Plugin<Project> {
             project.afterEvaluate {
                 // add all bundles from all features with all transitive dependencies to compileOnly
                 project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.each({
-                        it.children.each { bundle ->
-                            subproject.dependencies.add('compileOnly', bundle.name)
-                            subproject.dependencies.add('testImplementation', bundle.name)
-                        }
+                    it.children.each { bundle ->
+
+                        subproject.dependencies.add('provided', bundle.name)
+                        subproject.dependencies.add('testImplementation', bundle.name)
+                    }
                 })
 
                 // special handling for xtraplatform-core bundles
                 if (project.name == XTRAPLATFORM_CORE && subproject.name != XTRAPLATFORM_RUNTIME) {
-                    def runtime = project.subprojects.find {it.name == XTRAPLATFORM_RUNTIME}
+                    def runtime = project.configurations.bundle.dependencies.find {it.name == XTRAPLATFORM_RUNTIME}
 
-                    subproject.dependencies.add('compileOnly', runtime)
+                    subproject.dependencies.add('provided', runtime)
                     subproject.dependencies.add('testImplementation', runtime)
 
-                    // add all bundles from xtraplatform-core with all transitive dependencies to compileOnly
-                    project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies.each({ bundle ->
-                        if (bundle.moduleName.startsWith('org.apache.felix.ipojo')) {
-                            subproject.dependencies.add('compileOnly', bundle.name)
-                            subproject.dependencies.add('testImplementation', bundle.name)
-                        }
-                    })
+                    if (subproject.name != XTRAPLATFORM_BASE) {
+                        def base = project.subprojects.find { it.name == XTRAPLATFORM_BASE }
+
+                        subproject.dependencies.add('provided', base)
+                        subproject.dependencies.add('testImplementation', base)
+                    }
                 }
 
-            subproject.extensions.publishing.with {
+                subproject.extensions.publishing.with {
+                    repositories {
+                        maven {
+                            def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
+                            def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+
+                            url project.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                            credentials {
+                                username project.findProperty('deployUser') ?: ''
+                                password project.findProperty('deployPassword') ?: ''
+                            }
+                        }
+                    }
+                    publications {
+                        'default'(MavenPublication) {
+                            from subproject.components.java
+
+                            artifact sourceJar {
+                                classifier "sources"
+                            }
+                        }
+                    }
+                }
+            }
+
+            subproject.task('sourceJar', type: Jar) {
+                from sourceSets.main.allSource
+            }
+
+//            subproject.tasks.register("dependencyUpdates", CustomDependencyUpdatesTask)
+        }
+    }
+
+    void addPublication(Project project) {
+        project.afterEvaluate {
+            project.extensions.publishing.with {
                 repositories {
                     maven {
                         def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
@@ -208,85 +236,50 @@ class FeaturePlugin implements Plugin<Project> {
                 }
                 publications {
                     'default'(MavenPublication) {
-                        from subproject.components.java
 
-                        artifact sourceJar {
-                            classifier "sources"
+                        pom.withXml {
+
+                            def dependencyManagementNode = asNode().appendNode('dependencyManagement').appendNode('dependencies')
+
+                            project.configurations.bundle.dependencies.each {
+                                def dependencyNode = dependencyManagementNode.appendNode('dependency')
+                                dependencyNode.appendNode('groupId', it.group)
+                                dependencyNode.appendNode('artifactId', it.name)
+                                dependencyNode.appendNode('version', it.version)
+                                //dependencyNode.appendNode('scope', 'compile')
+                            }
+
                         }
                     }
-                }
-            }
-            }
+                    bundles(MavenPublication) {
 
-            subproject.task('sourceJar', type: Jar) {
-                from sourceSets.main.allSource
-            }
+                        artifactId "${project.name}-bundles"
 
-//            subproject.tasks.register("dependencyUpdates", CustomDependencyUpdatesTask)
-        }
-    }
+                        pom.withXml {
 
-    void addPublication(Project project) {
-        project.afterEvaluate {
-        project.extensions.publishing.with {
-           repositories {
-               maven {
-                   def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
-                   def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+                            def dependenciesNode = asNode().appendNode('dependencies')
 
-                   url project.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-                   credentials {
-                       username project.findProperty('deployUser') ?: ''
-                       password project.findProperty('deployPassword') ?: ''
-                   }
-               }
-           }
-           publications {
-                'default'(MavenPublication) {
+                            /*project.configurations.feature.dependencies.each {
+                                def dependencyNode = dependenciesNode.appendNode('dependency')
+                                dependencyNode.appendNode('groupId', it.group)
+                                dependencyNode.appendNode('artifactId', it.name)
+                                dependencyNode.appendNode('version', it.version)
+                                dependencyNode.appendNode('scope', 'runtime')
+                            }*/
 
-                    pom.withXml {
+                            project.configurations.bundle.dependencies.each {
+                                def dependencyNode = dependenciesNode.appendNode('dependency')
+                                dependencyNode.appendNode('groupId', it.group)
+                                dependencyNode.appendNode('artifactId', it.name)
+                                dependencyNode.appendNode('version', it.version)
+                                dependencyNode.appendNode('scope', 'runtime')
+                            }
 
-                        def dependencyManagementNode = asNode().appendNode('dependencyManagement').appendNode('dependencies')
-
-                        project.configurations.bundle.dependencies.each {
-                            def dependencyNode = dependencyManagementNode.appendNode('dependency')
-                            dependencyNode.appendNode('groupId', it.group)
-                            dependencyNode.appendNode('artifactId', it.name)
-                            dependencyNode.appendNode('version', it.version)
-                            //dependencyNode.appendNode('scope', 'compile')
                         }
 
                     }
                 }
-                bundles(MavenPublication) {
-
-                    artifactId "${project.name}-bundles"
-
-                    pom.withXml {
-
-                        def dependenciesNode = asNode().appendNode('dependencies')
-
-                        /*project.configurations.feature.dependencies.each {
-                            def dependencyNode = dependenciesNode.appendNode('dependency')
-                            dependencyNode.appendNode('groupId', it.group)
-                            dependencyNode.appendNode('artifactId', it.name)
-                            dependencyNode.appendNode('version', it.version)
-                            dependencyNode.appendNode('scope', 'runtime')
-                        }*/
-
-                        project.configurations.bundle.dependencies.each {
-                            def dependencyNode = dependenciesNode.appendNode('dependency')
-                            dependencyNode.appendNode('groupId', it.group)
-                            dependencyNode.appendNode('artifactId', it.name)
-                            dependencyNode.appendNode('version', it.version)
-                            dependencyNode.appendNode('scope', 'runtime')
-                        }
-
-                    }
-
-                }
             }
-        }
         }
     }
 }

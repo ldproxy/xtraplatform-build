@@ -1,16 +1,11 @@
 package de.interactive_instruments.xtraplatform
 
-import org.gradle.api.JavaVersion
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.ExternalModuleDependency
-import org.gradle.api.artifacts.ModuleDependency
+import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
-import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.Delete
-import org.gradle.internal.impldep.org.bouncycastle.math.raw.Mod
 
-import java.util.logging.FileHandler
 import java.util.regex.Pattern
 
 /**
@@ -43,12 +38,24 @@ class ApplicationPlugin implements Plugin<Project> {
                     }
 
                     project.dependencies.add('app', "de.interactive_instruments:${FeaturePlugin.XTRAPLATFORM_RUNTIME}")
+                    project.dependencies.add('app', "de.interactive_instruments:${FeaturePlugin.XTRAPLATFORM_BASE}")
                     baseFound = true
                 }
             }
             if (!baseFound) {
                 throw new IllegalStateException("You have to add '${FeaturePlugin.XTRAPLATFORM_CORE}' to configuration 'feature'")
             }
+
+            def features = getModules(project)
+            features.eachWithIndex { feature, index ->
+
+                feature.collectMany({ bundle ->
+                    bundle.moduleArtifacts
+                }).each({ ResolvedArtifact artifact ->
+                    project.dependencies.add('app', "${artifact.moduleVersion.id.group}:${artifact.moduleVersion.id.name}:${artifact.moduleVersion.id.version}")
+                })
+            }
+
         }
 
         project.configurations.featureDevOnly.incoming.beforeResolve {
@@ -67,6 +74,9 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
+        project.dependencies.add('implementation', "com.google.dagger:dagger:2.+", { transitive = false })
+        project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.+")
+
         addCreateRuntimeClassTask(project, appExtension)
 
         addDistribution(project)
@@ -83,33 +93,13 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
-        project.task('cleanFelixCache', type: Delete) {
-            delete new File(dataDir, 'felix-cache')
-        }
-
-        project.task('addDevBundles', type: Copy) {
-            dependsOn project.tasks.installDist
-            into project.tasks.installDist.destinationDir
-            project.afterEvaluate {
-                from(getDevBundleFiles(project)) {
-                    into "bundles"
-                }
-            }
-        }
-
         project.tasks.run.with {
             dependsOn project.tasks.installDist
-            dependsOn project.tasks.addDevBundles
             dependsOn project.tasks.initData
-            dependsOn project.tasks.cleanFelixCache
             workingDir = project.tasks.installDist.destinationDir
             args dataDir.absolutePath
             standardInput = System.in
             environment 'XTRAPLATFORM_ENV', 'DEVELOPMENT'
-            //suppress java 9+ illegal access warnings for felix and jackson afterburner as well as geotools/hsqldb
-            if (JavaVersion.current().isJava9Compatible()) {
-                jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED'
-            }
         }
     }
 
@@ -118,12 +108,6 @@ class ApplicationPlugin implements Plugin<Project> {
             project.distributions.with {
                 main {
                     contents {
-                        from(getBundleFiles(project)) {
-                            into "bundles"
-                        }
-                        from(getDevBundleFiles(project)) {
-                            into "bundles"
-                        }
                         into('') {
                             //create an empty 'data/log' directory in distribution root
                             def appDirBase = new File(project.buildDir, 'tmp/app-dummy-dir')
@@ -137,39 +121,13 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
-        //project.tasks.startScripts.unixStartScriptGenerator.template = project.resources.text.fromFile('gradle/sh-start-script')
-
         // for docker
         project.tasks.distTar.archiveVersion.set('')
         project.tasks.distZip.archiveVersion.set('')
     }
 
-    List<File> getBundleFiles(Project project) {
-        def bundlesFromFeature = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
-            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != FeaturePlugin.XTRAPLATFORM_RUNTIME }).collect({
-                it.file
-            })
-        })
-        def bundlesFromFeatures = project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
-            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != FeaturePlugin.XTRAPLATFORM_RUNTIME }).collect({
-                it.file
-            })
-        })
-        def bundlesFromApplication = project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
-            it.moduleArtifacts
-        }).collect({ it.file })
-
-        return bundlesFromFeature + bundlesFromFeatures + bundlesFromApplication
-    }
-
-    List<File> getDevBundleFiles(Project project) {
-        return project.configurations.featureDevOnly.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
-            it.children.collectMany({ it.moduleArtifacts }).collect({
-                it.file
-            })
-        })
-    }
-
+    //TODO: use ClassGenerator
+    //TODO: generate dagger component
     void addCreateRuntimeClassTask(Project project, appExtension) {
         project.mainClassName = "de.ii.xtraplatform.application.Launcher"
 
@@ -190,35 +148,51 @@ class ApplicationPlugin implements Plugin<Project> {
 
             doLast {
 
-                def bundles = createBundleTree(project)
-                def devBundles = createDevBundleTree(project)
+                def modules = createModules(project, [FeaturePlugin.XTRAPLATFORM_RUNTIME])
                 def baseConfigs = createBaseConfigList(appExtension.additionalBaseConfigs)
 
                 def mainClass = """
                     package de.ii.xtraplatform.application;
 
-                    import de.ii.xtraplatform.runtime.FelixRuntime;
+                    import dagger.Component;
+                    import de.ii.xtraplatform.base.domain.AppLauncher;
+                    import de.ii.xtraplatform.base.domain.App;
                     import com.google.common.collect.ImmutableList;
+                    import com.google.common.collect.ImmutableMap;
                     import com.google.common.io.ByteSource;
                     import com.google.common.io.Resources;
                     import java.lang.Runtime;
-                    import java.util.List;
+                    import java.util.AbstractMap.SimpleEntry;
+                    import java.util.Map;
+                    import javax.inject.Singleton;
         
                     public class Launcher {
-                    
-                        private static final List<List<String>> BUNDLES = ${bundles};
-                        private static final List<List<String>> DEV_BUNDLES = ${devBundles};
-                        private static final List<ByteSource> BASE_CONFIGS = ${baseConfigs}.stream().map(cfgPath -> Resources.asByteSource(Resources.getResource(Launcher.class, cfgPath))).collect(ImmutableList.toImmutableList());
 
-                        public static void main(String[] args) throws Exception {
-                            final FelixRuntime runtime = new FelixRuntime("${appExtension.name2}", "${appExtension.version2}");
+                        @Singleton
+                        @Component(modules={${modules}})
+                        interface AppComponent extends App {
+                            @Component.Builder
+                            interface Builder extends App.Builder {
+                            }
+                        }
+
+                        public static void main(String[] args) throws Exception {                            
+                            AppLauncher launcher = new AppLauncher("${appExtension.name2}", "${appExtension.version2}");
+                            Map<String, ByteSource> baseConfigs = ${baseConfigs}.stream()
+                                .map(cfgPath -> new SimpleEntry<>(cfgPath, Resources.asByteSource(Resources.getResource(Launcher.class, cfgPath))))
+                                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+                                
+                            launcher.init(args, baseConfigs);
                             
-                            runtime.init(args, BUNDLES, DEV_BUNDLES, BASE_CONFIGS);
-                            runtime.start();
+                            App app = DaggerLauncher_AppComponent.builder()
+                                .appContext(launcher)
+                                .build();                            
+                            
+                            launcher.start(app);
                             
                             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                                 Thread.currentThread().setName("shutdown");
-                                runtime.stop(5000);
+                                launcher.stop(app);
                             }));
                         }
                     }
@@ -241,23 +215,32 @@ class ApplicationPlugin implements Plugin<Project> {
 
     }
 
-    String createBundleTree(Project project) {
+    List<Set<ResolvedDependency>> getModules(Project project) {
         def includedBuilds = getIncludedBuilds(project)
         def deps = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName)}) + project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> feature.moduleName.endsWith("-bundles")})
         def features = sortByDependencyGraph(deps)
         def bundles = features.collect({ it.children.findAll({ bundle -> !(bundle in features) }) })
 
         bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
-        //TODO
-        return createBundleFileTree(project, bundles, [FeaturePlugin.XTRAPLATFORM_RUNTIME], 'de.ii.xtraplatform.store.domain.entities.handler:entity', [], ['xtraplatform-dropwizard', 'xtraplatform-auth', 'osgi-over-slf4j', 'org.apache.felix.ipojo'])
+
+        return bundles
     }
 
-    String createDevBundleTree(Project project) {
-        def includedBuilds = getIncludedBuilds(project)
-        def devFeatures = sortByDependencyGraph(project.configurations.featureDevOnly.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName) || feature.moduleName.endsWith("-bundles")}))
-        def devBundles = devFeatures.collect({ it.children.findAll({ bundle -> !(bundle in devFeatures) }) })
+    String createModules(Project project, List<String> excludeNames = []) {
+        def bundles = getModules(project)
 
-        return createBundleFileTree(project, devBundles)
+        def modules = []
+        bundles.eachWithIndex { feature, index ->
+
+            def mods = feature.collectMany({ bundle ->
+                bundle.moduleArtifacts
+            }).findAll({ !(it.name in excludeNames) }).collect({ ResolvedArtifact it ->
+                ModulePlugin.getModuleName(it.moduleVersion.id.group, it.moduleVersion.id.name) + ".domain.AutoBindings.class"
+            })
+            modules.addAll(mods)
+        }
+
+        return modules.join(", ")
     }
 
     Set<ResolvedDependency> sortByDependencyGraph(Set<ResolvedDependency> features) {
@@ -281,67 +264,6 @@ class ApplicationPlugin implements Plugin<Project> {
         }
 
         baseConfigList += ')'
-    }
-
-    String createBundleFileTree(Project project, List<Set<ResolvedDependency>> features, List<String> excludeNames = [], String lateStartManifestPattern = "", List<String> lateStartNames = [], List<String> earlyStartNames = []) {
-
-        String bundleTree = 'ImmutableList.of('
-        String featureBundles = ''
-        List<File> delayedBundles = []
-        List<File> lastBundles = []
-        List<File> firstBundles = []
-
-        features.eachWithIndex { feature, index ->
-
-            def bundles = feature.collectMany({ bundle ->
-                bundle.moduleArtifacts
-            }).findAll({ !(it.name in excludeNames) }).collect({
-                it.file
-            })
-
-            firstBundles += bundles.findAll({ bundle -> earlyStartNames.any({ bundle.name.startsWith(it) }) })
-            lastBundles += bundles.findAll({ bundle -> !(bundle in firstBundles) && lateStartNames.any({ bundle.name.startsWith(it) }) })
-            delayedBundles += bundles.findAll({ bundle -> !(bundle in firstBundles) && !(bundle in lastBundles) && manifestContains(project, bundle, lateStartManifestPattern) })
-
-            featureBundles += createBundleList(bundles.findAll({ bundle -> !(bundle in delayedBundles) && !(bundle in lastBundles) && !(bundle in firstBundles) }))
-
-            if (index < features.size() - 1) {
-                featureBundles += ','
-            }
-        }
-
-        if (!firstBundles.isEmpty()) {
-            bundleTree += createBundleList(firstBundles) + ','
-        }
-        bundleTree += featureBundles
-        if (!delayedBundles.isEmpty()) {
-            bundleTree += ','
-
-            bundleTree += createBundleList(delayedBundles)
-        }
-        if (!lastBundles.isEmpty()) {
-            bundleTree += ','
-
-            bundleTree += createBundleList(lastBundles)
-        }
-
-        bundleTree += ')'
-    }
-
-    String createBundleList(List<File> bundles) {
-        def bundleList = '\nImmutableList.of('
-
-        bundles.eachWithIndex { bundle, index2 ->
-            //println "- " + bundle.name
-
-            bundleList += '"' + bundle.name + '"'
-
-            if (index2 < bundles.size() - 1) {
-                bundleList += ','
-            }
-        }
-
-        bundleList += ')'
     }
 
     boolean manifestContains(Project project, File jar, String value) {

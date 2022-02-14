@@ -5,11 +5,12 @@ import org.gradle.api.Project
 class ClassGenerator {
 
 
-    static void generateClassTask(Project project, String taskName, String packageName, String className, Closure taskConfiguration, Closure sourceCodeSupplier) {
+    static void generateClassTask(Project project, String taskName, String packageName, String className, Closure taskConfiguration, Closure sourceCodeSupplier, String generated = "generated/src/main/java/") {
 
-        File generatedSourceDir = new File(project.buildDir, 'generated/src/main/java/')
-        project.mkdir(generatedSourceDir)
+        File generatedSourceDir = new File(project.buildDir, generated)
+        generatedSourceDir.mkdirs()
 
+        if (generated.startsWith('generated'))
         project.sourceSets.main.java { project.sourceSets.main.java.srcDir generatedSourceDir }
 
         def newTask = project.task(taskName)
