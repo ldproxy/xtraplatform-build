@@ -48,6 +48,151 @@ class ModulePlugin implements Plugin<Project> {
         setupUnitTests(project)
     }
 
+    static void setupConfigurations(Project project) {
+        project.configurations.create('provided')
+        project.configurations.create('embedded')
+        project.configurations.create('embeddedExport')
+        project.configurations.create('embeddedFlat')
+        project.configurations.create('embeddedFlatExport')
+
+        project.configurations.provided.setTransitive(true)
+        project.configurations.embedded.setTransitive(true)
+        project.configurations.embeddedExport.setTransitive(true)
+        project.configurations.embeddedFlat.setTransitive(false)
+        project.configurations.embeddedFlatExport.setTransitive(false)
+
+        project.configurations.compileOnly.extendsFrom(project.configurations.provided)
+    }
+
+    static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
+        def embeddedClassesDir = isIntelliJ
+                ? new File(project.buildDir, 'idea/classes/java/main')
+                : new File(project.buildDir, 'classes/java/main')
+        def embeddedClassesDirOther = isIntelliJ
+                ? new File(project.buildDir, 'classes/java/main')
+                : new File(project.buildDir, 'idea/classes/java/main')
+        def embeddedResourcesDir = isIntelliJ
+                ? new File(project.buildDir, 'idea/src/main/resources')
+                : new File(project.buildDir, 'generated/src/main/resources')
+        def embeddedResourcesDirOther = isIntelliJ
+                ? new File(project.buildDir, 'generated/src/main/resources')
+                : new File(project.buildDir, 'idea/src/main/resources')
+
+        project.tasks.register('embedClean', Delete) {
+            inputs.property('isIntelliJ', isIntelliJ)
+            delete embeddedClassesDirOther
+            delete embeddedResourcesDirOther
+        }
+
+        project.tasks.register('embedClasses', Copy) {
+            inputs.property('isIntelliJ', isIntelliJ)
+            dependsOn project.tasks.named('embedClean')
+            from {
+                project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
+            }
+            from {
+                project.configurations.embeddedExport.collect { it.isDirectory() ? it : project.zipTree(it) }
+            }
+            from {
+                project.configurations.embeddedFlat.collect { it.isDirectory() ? it : project.zipTree(it) }
+            }
+            from {
+                project.configurations.embeddedFlatExport.collect { it.isDirectory() ? it : project.zipTree(it) }
+            }
+            include '**/*.class'
+            exclude('**/module-info.class')
+            into embeddedClassesDir
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
+        project.tasks.register('embedResources', Copy) {
+            inputs.property('isIntelliJ', isIntelliJ)
+            from {
+                project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
+            }
+            from {
+                project.configurations.embeddedExport.collect { it.isDirectory() ? it : project.zipTree(it) }
+            }
+            from {
+                project.configurations.embeddedFlat.collect { it.isDirectory() ? it : project.zipTree(it) }
+            }
+            from {
+                project.configurations.embeddedFlatExport.collect { it.isDirectory() ? it : project.zipTree(it) }
+            }
+            exclude '**/*.class'
+            exclude('META-INF/MANIFEST.MF', 'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', "META-INF/services/*")
+            into embeddedResourcesDir
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            finalizedBy project.tasks.named('embedServices')
+        }
+
+        project.tasks.register('embedServices') {
+            inputs.property('isIntelliJ', isIntelliJ)
+            doLast {
+                Map<String, Set<String>> services = new LinkedHashMap<>();
+                def dir = new File(embeddedResourcesDir, 'META-INF/services')
+                Files.createDirectories(dir.toPath())
+                (project.configurations.embedded + project.configurations.embeddedExport + project.configurations.embeddedFlat + project.configurations.embeddedFlatExport)
+                        .filter { it.isFile() }
+                        .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
+                        .collectMany { it.getFiles() }
+                        .forEach { File it3 ->
+                            services.putIfAbsent(it3.name, new LinkedHashSet<String>())
+                            it3.eachLine { if (!it.isEmpty() && !it.startsWith("#")) services.get(it3.name).add(it) }
+                        }
+                services.entrySet().forEach {
+                    def file = new File(dir, it.key)
+                    file.createNewFile()
+                    it.value.forEach { line -> file.append(line + "\n") }
+                }
+            }
+        }
+
+        if (isIntelliJ) {
+            ModuleInfoExtension moduleInfoEmbedded = new ModuleInfoExtension();
+            moduleInfoEmbedded.name = "${moduleInfo.name}.embedded"
+            def generatedDir = 'idea/src/embedded/java/'
+            ClassGenerator.generateClassTask(project, 'moduleInfoIntellij', '', 'module-info', {}, generateModuleInfo(project, moduleInfoEmbedded, false), generatedDir)
+
+            project.tasks.register('embedIntellij', Jar) {
+                onlyIf { embeddedClassesDir.exists() && embeddedClassesDir.directory && !(embeddedClassesDir.list() as List).empty }
+                dependsOn project.tasks.named('moduleInfoIntellij')
+                dependsOn project.tasks.named('embedResources')
+                archiveAppendix.set("embedded")
+                from embeddedClassesDir
+                from embeddedResourcesDir
+                from new File(project.buildDir, generatedDir)
+
+                destinationDirectory = new File(project.buildDir, 'tmp')
+                doLast {
+                    moduleInfo.requires += "transitive ${moduleInfoEmbedded.name}"
+                }
+            }
+            project.tasks.named('embedClasses') {
+                finalizedBy project.tasks.named('embedIntellij')
+            }
+            project.dependencies.add('api', project.tasks.named('embedIntellij').map { it.outputs.files })
+            project.artifacts {
+                archives project.tasks.named('embedIntellij').map { it.outputs.files.singleFile }
+            }
+        } else {
+            project.sourceSets.main.resources { srcDir embeddedResourcesDir }
+        }
+
+        project.tasks.named('compileJava') {
+            dependsOn project.tasks.named('embedClasses')
+        }
+
+        project.tasks.named('processResources') {
+            dependsOn project.tasks.named('embedResources')
+            //TODO: needed? outputs.dir(embeddedResourcesDir)
+        }
+
+        project.tasks.named('jar') {
+            inputs.property('isIntelliJ', isIntelliJ)
+        }
+    }
+
     static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
         project.afterEvaluate {
 
@@ -77,23 +222,13 @@ class ModulePlugin implements Plugin<Project> {
             }
 
             ClassGenerator.generateClassTask(project, 'moduleInfo', '', 'module-info', { inputs.property('isIntelliJ', isIntelliJ) }, generateModuleInfo(project, moduleInfo, isIntelliJ), isIntelliJ ? 'idea/src/main/java/' : 'generated/src/main/java/')
+
+            if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
+                def packageName = "${moduleInfo.name}.domain"
+                def packageInfo = { "@AutoModule(single = true, encapsulate = true)\npackage ${packageName};\n\nimport com.github.azahnen.dagger.annotations.AutoModule;" }
+                ClassGenerator.generateClassTask(project, 'packageInfo', packageName, 'package-info', { inputs.property('isIntelliJ', isIntelliJ) }, packageInfo, 'generated/sources/annotationProcessor/java/main/')
+            }
         }
-    }
-
-    static void setupConfigurations(Project project) {
-        project.configurations.create('provided')
-        project.configurations.create('embedded')
-        project.configurations.create('embeddedExport')
-        project.configurations.create('embeddedFlat')
-        project.configurations.create('embeddedFlatExport')
-
-        project.configurations.provided.setTransitive(true)
-        project.configurations.embedded.setTransitive(true)
-        project.configurations.embeddedExport.setTransitive(true)
-        project.configurations.embeddedFlat.setTransitive(false)
-        project.configurations.embeddedFlatExport.setTransitive(false)
-
-        project.configurations.compileOnly.extendsFrom(project.configurations.provided)
     }
 
     static Closure generateModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly) {
@@ -108,15 +243,7 @@ class ModulePlugin implements Plugin<Project> {
             def pkgs = Dependencies.getPackages(deps)
 
             Map<String, Set<String>> services = new LinkedHashMap<>();
-            project.configurations.embeddedExport
-                    .filter { it.isFile() }
-                    .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
-                    .collectMany { it.getFiles() }
-                    .forEach { File it3 ->
-                        services.putIfAbsent(it3.name, new LinkedHashSet<String>())
-                        it3.eachLine { if (!it.isEmpty() && !it.startsWith("#") && !it.contains("\$")) services.get(it3.name).add(it) }
-                    }
-            project.configurations.embeddedFlatExport
+            (project.configurations.embeddedExport + project.configurations.embeddedFlatExport)
                     .filter { it.isFile() }
                     .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
                     .collectMany { it.getFiles() }
@@ -163,134 +290,6 @@ ${provides}
 ${uses}
 }
             """
-        }
-    }
-
-    static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
-        def embeddedClassesDir = isIntelliJ
-                ? new File(project.buildDir, 'idea/classes/java/main')
-                :  new File(project.buildDir, 'classes/java/main')
-        def embeddedClassesDirOther = isIntelliJ
-                ? new File(project.buildDir, 'classes/java/main')
-                :  new File(project.buildDir, 'idea/classes/java/main')
-        def embeddedResourcesDir = isIntelliJ
-                ? new File(project.buildDir, 'idea/src/main/resources')
-                :  new File(project.buildDir, 'generated/src/main/resources')
-        def embeddedResourcesDirOther = isIntelliJ
-                ? new File(project.buildDir, 'generated/src/main/resources')
-                :  new File(project.buildDir, 'idea/src/main/resources')
-
-        project.tasks.register('embedClean', Delete) {
-            inputs.property('isIntelliJ', isIntelliJ)
-            delete embeddedClassesDirOther
-            delete embeddedResourcesDirOther
-        }
-
-        project.tasks.register('embedClasses', Copy) {
-            inputs.property('isIntelliJ', isIntelliJ)
-            dependsOn project.tasks.named('embedClean')
-            from {
-                project.configurations.embeddedExport.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            from {
-                project.configurations.embeddedFlatExport.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            include '**/*.class'
-            exclude('**/module-info.class')
-            into embeddedClassesDir
-            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        }
-
-        project.tasks.register('embedResources', Copy) {
-            inputs.property('isIntelliJ', isIntelliJ)
-            from {
-                project.configurations.embeddedExport.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            from {
-                project.configurations.embeddedFlatExport.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            exclude '**/*.class'
-            exclude('META-INF/MANIFEST.MF', 'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', "META-INF/services/*")
-            into embeddedResourcesDir
-            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            finalizedBy project.tasks.named('embedServices')
-        }
-
-        project.tasks.register('embedServices') {
-            inputs.property('isIntelliJ', isIntelliJ)
-            doLast {
-                Map<String, Set<String>> services = new LinkedHashMap<>();
-                def dir = new File(embeddedResourcesDir, 'META-INF/services')
-                Files.createDirectories(dir.toPath())
-                project.configurations.embeddedExport
-                        .filter { it.isFile() }
-                        .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
-                        .collectMany { it.getFiles() }
-                        .forEach { File it3 ->
-                            services.putIfAbsent(it3.name, new LinkedHashSet<String>())
-                            it3.eachLine { if (!it.isEmpty() && !it.startsWith("#")) services.get(it3.name).add(it) }
-                        }
-                project.configurations.embeddedFlatExport
-                        .filter { it.isFile() }
-                        .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
-                        .collectMany { it.getFiles() }
-                        .forEach { File it3 ->
-                            services.putIfAbsent(it3.name, new LinkedHashSet<String>())
-                            it3.eachLine { if (!it.isEmpty() && !it.startsWith("#")) services.get(it3.name).add(it) }
-                        }
-                services.entrySet().forEach {
-                    def file = new File(dir, it.key)
-                    file.createNewFile()
-                    it.value.forEach { line -> file.append(line + "\n") }
-                }
-            }
-        }
-
-        if (isIntelliJ) {
-            ModuleInfoExtension moduleInfoEmbedded = new ModuleInfoExtension();
-            moduleInfoEmbedded.name = "${moduleInfo.name}.embedded"
-            def generatedDir = 'idea/src/embedded/java/'
-            ClassGenerator.generateClassTask(project, 'moduleInfoIntellij', '', 'module-info', {}, generateModuleInfo(project, moduleInfoEmbedded, false), generatedDir)
-
-            project.tasks.register('embedIntellij', Jar) {
-                onlyIf {embeddedClassesDir.exists() && embeddedClassesDir.directory && !(embeddedClassesDir.list() as List).empty}
-                dependsOn project.tasks.named('moduleInfoIntellij')
-                dependsOn project.tasks.named('embedResources')
-                manifest {
-                    //attributes("Automatic-Module-Name": "${moduleInfo.name}.embedded")
-                }
-                archiveAppendix.set("embedded")
-                from embeddedClassesDir
-                from embeddedResourcesDir
-                from new File(project.buildDir, generatedDir)
-
-                destinationDirectory = new File(project.buildDir, 'tmp')
-                doLast {
-                    moduleInfo.requires += "transitive ${moduleInfoEmbedded.name}"
-                }
-            }
-            project.tasks.named('embedClasses') {
-                finalizedBy project.tasks.named('embedIntellij')
-            }
-            project.dependencies.add('api', project.tasks.named('embedIntellij').map {it.outputs.files})
-            project.artifacts {
-                archives project.tasks.named('embedIntellij').map {it.outputs.files.singleFile}
-            }
-        } else {
-            project.sourceSets.main.resources { srcDir embeddedResourcesDir }
-        }
-
-        project.tasks.named('compileJava') {
-            dependsOn project.tasks.named('embedClasses')
-        }
-
-        project.tasks.named('processResources') {
-            dependsOn project.tasks.named('embedResources')
-            //TODO: needed? outputs.dir(embeddedResourcesDir)
-        }
-
-        project.tasks.named('jar') {
-            inputs.property('isIntelliJ', isIntelliJ)
         }
     }
 

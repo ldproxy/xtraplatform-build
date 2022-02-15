@@ -20,7 +20,7 @@ class ClassGenerator {
         newTask.doLast {
             def sourceCode = sourceCodeSupplier()
 
-            File packageDir = new File(generatedSourceDir, packageName)
+            File packageDir = new File(generatedSourceDir, packageName.replaceAll("\\.", "/"))
             packageDir.mkdirs()
 
             new File(packageDir, "${className}.java").write(sourceCode)
