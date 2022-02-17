@@ -19,6 +19,7 @@ class FeaturePlugin implements Plugin<Project> {
 
     public static String XTRAPLATFORM_CORE = "xtraplatform-core"
     public static String XTRAPLATFORM_RUNTIME = "xtraplatform-runtime"
+    public static String XTRAPLATFORM_BASE = "xtraplatform-base"
 
     @Override
     void apply(Project project) {
@@ -82,6 +83,7 @@ class FeaturePlugin implements Plugin<Project> {
                     delegateBuildRunToGradle = true
                     testRunner = ActionDelegationConfig.TestRunner.PLATFORM
                 }
+                //withModuleXml(project.sourceSets.main) { println it }
             }
         }
     }
@@ -125,13 +127,9 @@ class FeaturePlugin implements Plugin<Project> {
 
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('maven-publish')
-            if (subproject.name == XTRAPLATFORM_RUNTIME) {
-                subproject.plugins.apply(RuntimePlugin.class)
-            } else if (subproject.name != "ldproxy-cfg") { //TODO
-                subproject.plugins.apply(BundlePlugin.class)
-            }
+            subproject.plugins.apply(ModulePlugin.class)
 
-            // stay java 8 compatible
+            // stay java 11 compatible
             subproject.setSourceCompatibility(JavaVersion.VERSION_11)
 
             subproject.repositories {
@@ -144,14 +142,9 @@ class FeaturePlugin implements Plugin<Project> {
                 }
             }
 
-            subproject.configurations.all {
-                exclude group: 'org.osgi', module: 'org.osgi.core'
-                exclude group: 'org.osgi', module: 'org.osgi.compendium'
-            }
-
             subproject.afterEvaluate {
                 if (subproject.version != null && subproject.version  != 'unspecified') {
-                    LOGGER.warn("Warning: Bundle version '{}' is set for '{}'. Bundle versions are ignored, the feature version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
+                    LOGGER.warn("Warning: Module version '{}' is set for '{}'. Module versions are ignored, the feature version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
                 }
                 subproject.version = project.version
             }
@@ -160,7 +153,7 @@ class FeaturePlugin implements Plugin<Project> {
             project.configurations.feature.incoming.beforeResolve {
                 project.configurations.feature.dependencies.collect().each {
                     def isIncludedBuild = includedBuilds.contains(it.name)
-                    if (!isIncludedBuild && subproject.name != "ldproxy-cfg") {
+                    if (!isIncludedBuild) {
                         def bom = [group: it.group, name: "${it.name}", version: it.version]
 
                         subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
@@ -172,25 +165,25 @@ class FeaturePlugin implements Plugin<Project> {
                 // add all bundles from all features with all transitive dependencies to compileOnly
                 project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.each({
                         it.children.each { bundle ->
-                            subproject.dependencies.add('compileOnly', bundle.name)
+
+                        subproject.dependencies.add('provided', bundle.name)
                             subproject.dependencies.add('testImplementation', bundle.name)
                         }
                 })
 
                 // special handling for xtraplatform-core bundles
                 if (project.name == XTRAPLATFORM_CORE && subproject.name != XTRAPLATFORM_RUNTIME) {
-                    def runtime = project.subprojects.find {it.name == XTRAPLATFORM_RUNTIME}
+                    def runtime = project.configurations.bundle.dependencies.find {it.name == XTRAPLATFORM_RUNTIME}
 
-                    subproject.dependencies.add('compileOnly', runtime)
+                    subproject.dependencies.add('provided', runtime)
                     subproject.dependencies.add('testImplementation', runtime)
 
-                    // add all bundles from xtraplatform-core with all transitive dependencies to compileOnly
-                    project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies.each({ bundle ->
-                        if (bundle.moduleName.startsWith('org.apache.felix.ipojo')) {
-                            subproject.dependencies.add('compileOnly', bundle.name)
-                            subproject.dependencies.add('testImplementation', bundle.name)
+                    if (subproject.name != XTRAPLATFORM_BASE) {
+                        def base = project.subprojects.find { it.name == XTRAPLATFORM_BASE }
+
+                        subproject.dependencies.add('provided', base)
+                        subproject.dependencies.add('testImplementation', base)
                         }
-                    })
                 }
 
             subproject.extensions.publishing.with {

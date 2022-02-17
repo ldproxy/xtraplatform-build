@@ -5,19 +5,7 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'org.apache.felix', name: 'org.apache.felix.ipojo.metadata', version: '1.6.0'
-    implementation group: 'org.apache.felix', name: 'org.apache.felix.ipojo.annotations', version: '1.12.1'
-    
-    // included source code instead to make java 11 compatible
-    //implementation group: 'org.apache.felix', name: 'org.apache.felix.ipojo.manipulator', version: '1.12.1'
-    
-    implementation 'org.ow2.asm:asm-commons:7.1'
-    implementation 'org.ow2.asm:asm-util:7.1'
-
-    implementation 'com.google.code.gson:gson:2.3.1'
-    implementation 'com.google.guava:guava:23.1-jre'
-
-    implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.0'
+    implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.1.1'
 }
 
 gradlePlugin {
@@ -30,13 +18,9 @@ gradlePlugin {
             id = 'de.interactive_instruments.xtraplatform-application'
             implementationClass = 'de.interactive_instruments.xtraplatform.ApplicationPlugin'
         }
-        bundlePlugin {
-            id = 'de.interactive_instruments.xtraplatform-module'
-            implementationClass = 'de.interactive_instruments.xtraplatform.BundlePlugin'
-        }
         runtimePlugin {
-            id = 'de.interactive_instruments.xtraplatform-runtime-plugin'
-            implementationClass = 'de.interactive_instruments.xtraplatform.RuntimePlugin'
+            id = 'de.interactive_instruments.xtraplatform-module-plugin'
+            implementationClass = 'de.interactive_instruments.xtraplatform.ModulePlugin'
         }
         docPlugin {
             id = 'de.interactive_instruments.xtraplatform-doc'

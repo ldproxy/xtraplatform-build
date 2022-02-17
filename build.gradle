@@ -20,13 +20,12 @@ subprojects { subproject ->
 
     group = 'de.interactive_instruments'
 
-    version = '3.5.3' + versionSuffix
+    version = '4.0.0' + versionSuffix
 
     sourceCompatibility = JavaVersion.VERSION_11
 
     repositories {
         mavenCentral()
-        jcenter()
     }
 
     subproject.tasks.check.finalizedBy rootProject.tasks.dependencyUpdates
