@@ -307,8 +307,8 @@ ${uses}
     static void setupUnitTests(Project project) {
         project.plugins.apply('groovy')
 
-        project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.+")
-        project.dependencies.add('testImplementation', "com.athaydes:spock-reports:2.+", { transitive = false })
+        project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
+        project.dependencies.add('testImplementation', "com.athaydes:spock-reports:2.3.0-groovy-3.0", { transitive = false })
 
         project.dependencies.add('testImplementation', "net.bytebuddy:byte-buddy:1.10.9")
         // needed by spock to mock non-interface types

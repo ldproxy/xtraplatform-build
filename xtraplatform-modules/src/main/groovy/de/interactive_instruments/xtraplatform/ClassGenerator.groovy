@@ -10,8 +10,10 @@ class ClassGenerator {
         File generatedSourceDir = new File(project.buildDir, generated)
         generatedSourceDir.mkdirs()
 
-        if (generated.startsWith('generated'))
-        project.sourceSets.main.java { project.sourceSets.main.java.srcDir generatedSourceDir }
+        boolean isAnnotationProcessorDir = generated.startsWith('generated/sources/annotationProcessor')
+
+        if (generated.startsWith('generated') && !isAnnotationProcessorDir)
+            project.sourceSets.main.java { project.sourceSets.main.java.srcDir generatedSourceDir }
 
         def newTask = project.task(taskName)
 
@@ -27,7 +29,9 @@ class ClassGenerator {
         }
 
         project.tasks.compileJava.with {
-            inputs.dir(generatedSourceDir)
+            if (!isAnnotationProcessorDir) {
+                inputs.dir(generatedSourceDir)
+            }
             dependsOn newTask
         }
 
