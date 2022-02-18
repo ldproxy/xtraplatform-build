@@ -178,7 +178,7 @@ class ModulePlugin implements Plugin<Project> {
                 archives project.tasks.named('embedIntellij').map { it.outputs.files.singleFile }
             }
         } else {
-            project.sourceSets.main.resources { srcDir embeddedResourcesDir }
+            project.sourceSets.main.output.dir(embeddedResourcesDir)
         }
 
         project.tasks.named('compileJava') {
