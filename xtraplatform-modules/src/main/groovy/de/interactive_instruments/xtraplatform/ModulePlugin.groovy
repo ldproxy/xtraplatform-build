@@ -4,6 +4,7 @@ import groovy.io.FileType
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.Exec
@@ -62,6 +63,7 @@ class ModulePlugin implements Plugin<Project> {
         project.configurations.embeddedFlatExport.setTransitive(false)
 
         project.configurations.compileOnly.extendsFrom(project.configurations.provided)
+        project.configurations.testImplementation.extendsFrom(project.configurations.provided)
     }
 
     static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
@@ -218,8 +220,14 @@ class ModulePlugin implements Plugin<Project> {
             }
 
             project.configurations.provided.dependencies.each {
+                // exclude boms
+                // TODO: setForce is deprecated, so the implementation of enforcePlatform might change and break this
+                if (it instanceof DefaultExternalModuleDependency && ((DefaultExternalModuleDependency)it).isForce()) {
+                    return
+                }
                 moduleInfo.requires.add(getModuleName(it.group, it.name))
             }
+
 
             ClassGenerator.generateClassTask(project, 'moduleInfo', '', 'module-info', { inputs.property('isIntelliJ', isIntelliJ) }, generateModuleInfo(project, moduleInfo, isIntelliJ), isIntelliJ ? 'idea/src/main/java/' : 'generated/src/main/java/')
 
@@ -297,9 +305,9 @@ ${uses}
     static void setupAnnotationProcessors(Project project) {
         if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
             project.dependencies.add('implementation', "com.google.dagger:dagger:2.+", { transitive = false })
-            project.dependencies.add('implementation', "com.github.azahnen:dagger-auto:1.+")
+            project.dependencies.add('implementation', "io.github.azahnen:dagger-auto:1.0.0-SNAPSHOT")
             project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.+")
-            project.dependencies.add('annotationProcessor', "com.github.azahnen:dagger-auto-compiler:1.+")
+            project.dependencies.add('annotationProcessor', "io.github.azahnen:dagger-auto-compiler:1.0.0-SNAPSHOT")
         }
         //TODO: immutables
     }

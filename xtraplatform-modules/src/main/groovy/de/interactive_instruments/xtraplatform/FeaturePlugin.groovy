@@ -53,6 +53,9 @@ class FeaturePlugin implements Plugin<Project> {
             maven {
                 url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
             }
+            maven {
+                url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+            }
         }
 
 
@@ -139,6 +142,9 @@ class FeaturePlugin implements Plugin<Project> {
                 }
                 maven {
                     url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+                }
+                maven {
+                    url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
                 }
             }
 
