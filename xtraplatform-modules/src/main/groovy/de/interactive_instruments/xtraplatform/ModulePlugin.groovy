@@ -161,8 +161,15 @@ class ModulePlugin implements Plugin<Project> {
         if (isIntelliJ) {
             ModuleInfoExtension moduleInfoEmbedded = new ModuleInfoExtension();
             moduleInfoEmbedded.name = "${moduleInfo.name}.embedded"
-            def generatedDir = 'idea/src/embedded/java/'
-            ClassGenerator.generateClassTask(project, 'moduleInfoIntellij', '', 'module-info', {}, generateModuleInfo(project, moduleInfoEmbedded, false), generatedDir)
+            def generatedSrcDir = new File(project.buildDir, 'generated/idea/src/main/java')
+            ClassGenerator.generateClassTask(project, 'moduleInfoIntellij', '', 'module-info', {
+                inputs.property('moduleInfo.name', moduleInfoEmbedded.name)
+                inputs.property('moduleInfo.exports', moduleInfoEmbedded.exports)
+                inputs.property('moduleInfo.requires', moduleInfoEmbedded.requires)
+                inputs.property('moduleInfo.provides', moduleInfoEmbedded.provides)
+                inputs.property('moduleInfo.uses', moduleInfoEmbedded.uses)
+                outputs.file(new File(generatedSrcDir, 'module-info.java'))
+            }, generateModuleInfo(project, moduleInfoEmbedded, false), generatedSrcDir)
 
             project.tasks.register('embedIntellij', Jar) {
                 onlyIf { embeddedClassesDir.exists() && embeddedClassesDir.directory && !(embeddedClassesDir.list() as List).empty }
@@ -171,7 +178,7 @@ class ModulePlugin implements Plugin<Project> {
                 archiveAppendix.set("embedded")
                 from embeddedClassesDir
                 from embeddedResourcesDir
-                from new File(project.buildDir, generatedDir)
+                from generatedSrcDir
 
                 destinationDirectory = new File(project.buildDir, 'tmp')
                 doLast {
