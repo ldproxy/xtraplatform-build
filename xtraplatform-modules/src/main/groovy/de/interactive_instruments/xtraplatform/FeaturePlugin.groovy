@@ -4,6 +4,7 @@ package de.interactive_instruments.xtraplatform
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 import org.jetbrains.gradle.ext.ActionDelegationConfig
@@ -205,17 +206,18 @@ class FeaturePlugin implements Plugin<Project> {
                     publications {
                         'default'(MavenPublication) {
                             from subproject.components.java
-
-                            artifact sourceJar {
-                                classifier "sources"
-                            }
                         }
                     }
                 }
             }
 
-            subproject.task('sourceJar', type: Jar) {
-                from sourceSets.main.allSource
+            java {
+                withJavadocJar()
+                withSourcesJar()
+            }
+            subproject.tasks.named('sourcesJar') {
+                dependsOn subproject.tasks.named('compileJava')
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
             }
 
 //            subproject.tasks.register("dependencyUpdates", CustomDependencyUpdatesTask)
