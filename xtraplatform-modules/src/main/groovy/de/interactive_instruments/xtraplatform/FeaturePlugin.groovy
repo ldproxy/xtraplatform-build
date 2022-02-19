@@ -212,7 +212,7 @@ class FeaturePlugin implements Plugin<Project> {
             }
 
             java {
-                withJavadocJar()
+                //TODO withJavadocJar()
                 withSourcesJar()
             }
             subproject.tasks.named('sourcesJar') {
