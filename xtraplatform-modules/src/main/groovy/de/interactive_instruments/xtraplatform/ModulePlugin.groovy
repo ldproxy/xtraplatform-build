@@ -68,17 +68,19 @@ class ModulePlugin implements Plugin<Project> {
 
     static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
         def embeddedClassesDir = isIntelliJ
-                ? new File(project.buildDir, 'idea/classes/java/main')
+                ? new File(project.buildDir, 'generated/idea/classes/java/main')
                 : new File(project.buildDir, 'classes/java/main')
         def embeddedClassesDirOther = isIntelliJ
                 ? new File(project.buildDir, 'classes/java/main')
-                : new File(project.buildDir, 'idea/classes/java/main')
+                : new File(project.buildDir, 'generated/idea/classes/java/main')
         def embeddedResourcesDir = isIntelliJ
-                ? new File(project.buildDir, 'idea/src/main/resources')
-                : new File(project.buildDir, 'generated/src/main/resources')
+                ? new File(project.buildDir, 'generated/idea/src/main/resources')
+                : new File(project.buildDir, 'generated/sources/annotationProcessor/resources/main')
         def embeddedResourcesDirOther = isIntelliJ
-                ? new File(project.buildDir, 'generated/src/main/resources')
-                : new File(project.buildDir, 'idea/src/main/resources')
+                ? new File(project.buildDir, 'generated/sources/annotationProcessor/resources/main')
+                : new File(project.buildDir, 'generated/idea/src/main/resources')
+
+        project.sourceSets.main.output.dir(embeddedResourcesDir)
 
         project.tasks.register('embedClean', Delete) {
             inputs.property('isIntelliJ', isIntelliJ)
@@ -130,6 +132,11 @@ class ModulePlugin implements Plugin<Project> {
 
         project.tasks.register('embedServices') {
             inputs.property('isIntelliJ', isIntelliJ)
+            inputs.files(project.configurations.embedded)
+            inputs.files(project.configurations.embeddedExport)
+            inputs.files(project.configurations.embeddedFlat)
+            inputs.files(project.configurations.embeddedFlatExport)
+            outputs.dir(new File(embeddedResourcesDir, 'META-INF/services'))
             doLast {
                 Map<String, Set<String>> services = new LinkedHashMap<>();
                 def dir = new File(embeddedResourcesDir, 'META-INF/services')
@@ -177,8 +184,6 @@ class ModulePlugin implements Plugin<Project> {
             project.artifacts {
                 archives project.tasks.named('embedIntellij').map { it.outputs.files.singleFile }
             }
-        } else {
-            project.sourceSets.main.output.dir(embeddedResourcesDir)
         }
 
         project.tasks.named('compileJava') {
@@ -187,6 +192,7 @@ class ModulePlugin implements Plugin<Project> {
 
         project.tasks.named('processResources') {
             dependsOn project.tasks.named('embedResources')
+            dependsOn project.tasks.named('embedServices')
             //TODO: needed? outputs.dir(embeddedResourcesDir)
         }
 
@@ -228,14 +234,27 @@ class ModulePlugin implements Plugin<Project> {
                 moduleInfo.requires.add(getModuleName(it.group, it.name))
             }
 
+            def generatedSrcDir = isIntelliJ
+                ? new File(project.buildDir, 'generated/idea/src/main/java')
+                : new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
+            project.sourceSets.main.java { srcDir generatedSrcDir }
 
-            ClassGenerator.generateClassTask(project, 'moduleInfo', '', 'module-info', { inputs.property('isIntelliJ', isIntelliJ) }, generateModuleInfo(project, moduleInfo, isIntelliJ), isIntelliJ ? 'idea/src/main/java/' : 'generated/src/main/java/')
+            ClassGenerator.generateClassTask(project, 'moduleInfo', '', 'module-info', {
+                inputs.property('moduleInfo.name', moduleInfo.name)
+                inputs.property('moduleInfo.exports', moduleInfo.exports)
+                inputs.property('moduleInfo.requires', moduleInfo.requires)
+                inputs.property('moduleInfo.provides', moduleInfo.provides)
+                inputs.property('moduleInfo.uses', moduleInfo.uses)
+                inputs.property('isIntelliJ', isIntelliJ)
+                outputs.file(new File(generatedSrcDir, 'module-info.java'))
+            }, generateModuleInfo(project, moduleInfo, isIntelliJ), generatedSrcDir)
 
-            if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
+            //TODO: is not recognized by dagger-auto
+            /*if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
                 def packageName = "${moduleInfo.name}.domain"
                 def packageInfo = { "@AutoModule(single = true, encapsulate = true)\npackage ${packageName};\n\nimport com.github.azahnen.dagger.annotations.AutoModule;" }
                 ClassGenerator.generateClassTask(project, 'packageInfo', packageName, 'package-info', { inputs.property('isIntelliJ', isIntelliJ) }, packageInfo, 'generated/sources/annotationProcessor/java/main/')
-            }
+            }*/
         }
     }
 
@@ -308,8 +327,11 @@ ${uses}
             project.dependencies.add('implementation', "io.github.azahnen:dagger-auto:1.0.0-SNAPSHOT")
             project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.+")
             project.dependencies.add('annotationProcessor', "io.github.azahnen:dagger-auto-compiler:1.0.0-SNAPSHOT")
+
+            project.dependencies.add('implementation', "org.immutables:value:2.8.8:annotations")
+            project.dependencies.add('implementation', "org.immutables:encode:2.8.8")
+            project.dependencies.add('annotationProcessor', "org.immutables:value:2.8.8")
         }
-        //TODO: immutables
     }
 
     static void setupUnitTests(Project project) {
