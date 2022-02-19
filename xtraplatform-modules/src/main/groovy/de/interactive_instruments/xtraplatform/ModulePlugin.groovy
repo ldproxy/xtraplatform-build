@@ -64,6 +64,7 @@ class ModulePlugin implements Plugin<Project> {
 
         project.configurations.compileOnly.extendsFrom(project.configurations.provided)
         project.configurations.testImplementation.extendsFrom(project.configurations.provided)
+        project.configurations.testFixturesImplementation.extendsFrom(project.configurations.provided)
     }
 
     static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
@@ -334,10 +335,12 @@ ${uses}
         }
     }
 
+    //TODO: configurable versions
     static void setupUnitTests(Project project) {
         project.plugins.apply('groovy')
 
         project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
+        project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
         project.dependencies.add('testImplementation', "com.athaydes:spock-reports:2.3.0-groovy-3.0", { transitive = false })
 
         project.dependencies.add('testImplementation', "net.bytebuddy:byte-buddy:1.10.9")
