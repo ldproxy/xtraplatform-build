@@ -21,7 +21,6 @@ class ClassGenerator {
         }
 
         project.tasks.compileJava.with {
-            inputs.dir(generatedSourceDir)
             dependsOn newTask
         }
 

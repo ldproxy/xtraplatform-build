@@ -7,8 +7,6 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.Exec
-import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.tasks.Jar
 
@@ -19,14 +17,6 @@ import java.util.stream.StreamSupport
 
 class ModulePlugin implements Plugin<Project> {
 
-    static class ModuleInfoExtension {
-        String name = ""
-        Set<String> exports = []
-        Set<String> requires = []
-        Map<String, List<String>> provides = [:]
-        Set<String> uses = []
-    }
-
     @Override
     void apply(Project project) {
         ModuleInfoExtension moduleInfo = project.extensions.create('moduleInfo', ModuleInfoExtension)
@@ -35,6 +25,10 @@ class ModulePlugin implements Plugin<Project> {
 
         setupConfigurations(project)
 
+        setupAnnotationProcessors(project)
+
+        setupUnitTests(project)
+
         project.afterEvaluate {
             moduleInfo.name = getModuleName(project.group as String, project.name)
 
@@ -42,11 +36,6 @@ class ModulePlugin implements Plugin<Project> {
 
             setupModuleInfo(project, moduleInfo, isIntelliJ)
         }
-
-        setupAnnotationProcessors(project)
-
-        //TODO: configurable versions
-        setupUnitTests(project)
     }
 
     static void setupConfigurations(Project project) {
@@ -69,17 +58,20 @@ class ModulePlugin implements Plugin<Project> {
 
     static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
         def embeddedClassesDir = isIntelliJ
-                ? new File(project.buildDir, 'generated/idea/classes/java/main')
+                ? new File(project.buildDir, 'classes/java/intellij')
                 : new File(project.buildDir, 'classes/java/main')
         def embeddedClassesDirOther = isIntelliJ
                 ? new File(project.buildDir, 'classes/java/main')
-                : new File(project.buildDir, 'generated/idea/classes/java/main')
+                : new File(project.buildDir, 'classes/java/intellij')
         def embeddedResourcesDir = isIntelliJ
-                ? new File(project.buildDir, 'generated/idea/src/main/resources')
+                ? new File(project.buildDir, 'generated/sources/annotationProcessor/resources/intellij')
                 : new File(project.buildDir, 'generated/sources/annotationProcessor/resources/main')
         def embeddedResourcesDirOther = isIntelliJ
                 ? new File(project.buildDir, 'generated/sources/annotationProcessor/resources/main')
-                : new File(project.buildDir, 'generated/idea/src/main/resources')
+                : new File(project.buildDir, 'generated/sources/annotationProcessor/resources/intellij')
+        File generatedSourcesDir = isIntelliJ
+                ? new File(project.buildDir, 'generated/sources/annotationProcessor/java/intellij')
+                : new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
 
         project.sourceSets.main.output.dir(embeddedResourcesDir)
 
@@ -91,7 +83,7 @@ class ModulePlugin implements Plugin<Project> {
 
         project.tasks.register('embedClasses', Copy) {
             inputs.property('isIntelliJ', isIntelliJ)
-            dependsOn project.tasks.named('embedClean')
+            //dependsOn project.tasks.named('embedClean')
             from {
                 project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
             }
@@ -159,31 +151,58 @@ class ModulePlugin implements Plugin<Project> {
         }
 
         if (isIntelliJ) {
-            ModuleInfoExtension moduleInfoEmbedded = new ModuleInfoExtension();
-            moduleInfoEmbedded.name = "${moduleInfo.name}.embedded"
-            def generatedSrcDir = new File(project.buildDir, 'generated/idea/src/main/java')
+            ModuleInfoExtension moduleInfoIntelliJ = new ModuleInfoExtension(moduleInfo);
+            moduleInfoIntelliJ.name = "${moduleInfo.name}.intellij"
+            moduleInfo.requires += "transitive ${moduleInfoIntelliJ.name}"
+
+            project.configurations.provided.dependencies.each {
+                // exclude boms
+                // TODO: setForce is deprecated, so the implementation of enforcePlatform might change and break this
+                if (it instanceof DefaultExternalModuleDependency && ((DefaultExternalModuleDependency) it).isForce()) {
+                    return
+                }
+                moduleInfoIntelliJ.requires.add(getModuleName(it.group, it.name))
+            }
+
+            project.sourceSets {
+                intellij {
+                    java {
+                        srcDirs(generatedSourcesDir)
+                    }
+                    resources {
+                        srcDirs(embeddedResourcesDir)
+                    }
+                }
+            }
+
+            project.configurations.intellijCompileOnly.extendsFrom(project.configurations.provided)
+            project.tasks.compileIntellijJava.inputs.dir(generatedSourcesDir)
+
             ClassGenerator.generateClassTask(project, 'moduleInfoIntellij', '', 'module-info', {
-                inputs.property('moduleInfo.name', moduleInfoEmbedded.name)
-                inputs.property('moduleInfo.exports', moduleInfoEmbedded.exports)
-                inputs.property('moduleInfo.requires', moduleInfoEmbedded.requires)
-                inputs.property('moduleInfo.provides', moduleInfoEmbedded.provides)
-                inputs.property('moduleInfo.uses', moduleInfoEmbedded.uses)
-                outputs.file(new File(generatedSrcDir, 'module-info.java'))
-            }, generateModuleInfo(project, moduleInfoEmbedded, false), generatedSrcDir)
+                inputs.property('moduleInfo.name', moduleInfoIntelliJ.name)
+                inputs.property('moduleInfo.exports', moduleInfoIntelliJ.exports)
+                inputs.property('moduleInfo.requires', moduleInfoIntelliJ.requires)
+                inputs.property('moduleInfo.provides', moduleInfoIntelliJ.provides)
+                inputs.property('moduleInfo.uses', moduleInfoIntelliJ.uses)
+                outputs.file(new File(generatedSourcesDir, 'module-info.java'))
+                dependsOn project.tasks.named('embedClasses')
+                dependsOn project.tasks.named('embedResources')
+                dependsOn project.tasks.named('embedServices')
+                finalizedBy project.tasks.named('compileIntellijJava')
+            }, generateModuleInfo(project, moduleInfoIntelliJ, false, true), generatedSourcesDir)
 
             project.tasks.register('embedIntellij', Jar) {
                 onlyIf { embeddedClassesDir.exists() && embeddedClassesDir.directory && !(embeddedClassesDir.list() as List).empty }
                 dependsOn project.tasks.named('moduleInfoIntellij')
                 dependsOn project.tasks.named('embedResources')
-                archiveAppendix.set("embedded")
+                dependsOn project.tasks.named('embedServices')
+                dependsOn project.tasks.named('compileIntellijJava')
+                finalizedBy project.tasks.named('moduleInfo')
+                archiveAppendix.set("intellij")
                 from embeddedClassesDir
                 from embeddedResourcesDir
-                from generatedSrcDir
 
                 destinationDirectory = new File(project.buildDir, 'tmp')
-                doLast {
-                    moduleInfo.requires += "transitive ${moduleInfoEmbedded.name}"
-                }
             }
             project.tasks.named('embedClasses') {
                 finalizedBy project.tasks.named('embedIntellij')
@@ -201,7 +220,6 @@ class ModulePlugin implements Plugin<Project> {
         project.tasks.named('processResources') {
             dependsOn project.tasks.named('embedResources')
             dependsOn project.tasks.named('embedServices')
-            //TODO: needed? outputs.dir(embeddedResourcesDir)
         }
 
         project.tasks.named('jar') {
@@ -210,69 +228,69 @@ class ModulePlugin implements Plugin<Project> {
     }
 
     static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
-        project.afterEvaluate {
-
-            project.sourceSets.main.java.srcDirs.each { File root ->
-                if (root.exists()) {
-                    root.eachFileRecurse(FileType.DIRECTORIES) { File dir ->
-                        Path path = root.toPath().relativize(dir.toPath())
-                        List<String> elements = StreamSupport.stream(Spliterators.spliteratorUnknownSize(path.iterator(), Spliterator.ORDERED), false)
-                                .map({ element -> element.toString() })
-                                .collect(Collectors.toList())
-                        boolean doExport = elements.stream()
-                                .anyMatch({ element -> element.toString() == "domain" || element.toString() == "api" })
-                        if (doExport) {
-                            moduleInfo.exports = [elements.join(".")] + moduleInfo.exports
-                        }
+        project.sourceSets.main.java.srcDirs.each { File root ->
+            if (root.exists()) {
+                root.eachFileRecurse(FileType.DIRECTORIES) { File dir ->
+                    Path path = root.toPath().relativize(dir.toPath())
+                    List<String> elements = StreamSupport.stream(Spliterators.spliteratorUnknownSize(path.iterator(), Spliterator.ORDERED), false)
+                            .map({ element -> element.toString() })
+                            .collect(Collectors.toList())
+                    boolean doExport = elements.stream()
+                            .anyMatch({ element -> element.toString() == "domain" || element.toString() == "api" })
+                    if (doExport) {
+                        moduleInfo.exports = [elements.join(".")] + moduleInfo.exports
                     }
                 }
             }
-
-            if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
-                moduleInfo.requires.add("dagger");
-                moduleInfo.requires.add("com.github.azahnen.dagger");
-            }
-
-            project.configurations.provided.dependencies.each {
-                // exclude boms
-                // TODO: setForce is deprecated, so the implementation of enforcePlatform might change and break this
-                if (it instanceof DefaultExternalModuleDependency && ((DefaultExternalModuleDependency)it).isForce()) {
-                    return
-                }
-                moduleInfo.requires.add(getModuleName(it.group, it.name))
-            }
-
-            def generatedSrcDir = isIntelliJ
-                ? new File(project.buildDir, 'generated/idea/src/main/java')
-                : new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
-            project.sourceSets.main.java { srcDir generatedSrcDir }
-
-            ClassGenerator.generateClassTask(project, 'moduleInfo', '', 'module-info', {
-                inputs.property('moduleInfo.name', moduleInfo.name)
-                inputs.property('moduleInfo.exports', moduleInfo.exports)
-                inputs.property('moduleInfo.requires', moduleInfo.requires)
-                inputs.property('moduleInfo.provides', moduleInfo.provides)
-                inputs.property('moduleInfo.uses', moduleInfo.uses)
-                inputs.property('isIntelliJ', isIntelliJ)
-                outputs.file(new File(generatedSrcDir, 'module-info.java'))
-            }, generateModuleInfo(project, moduleInfo, isIntelliJ), generatedSrcDir)
-
-            //TODO: is not recognized by dagger-auto
-            /*if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
-                def packageName = "${moduleInfo.name}.domain"
-                def packageInfo = { "@AutoModule(single = true, encapsulate = true)\npackage ${packageName};\n\nimport com.github.azahnen.dagger.annotations.AutoModule;" }
-                ClassGenerator.generateClassTask(project, 'packageInfo', packageName, 'package-info', { inputs.property('isIntelliJ', isIntelliJ) }, packageInfo, 'generated/sources/annotationProcessor/java/main/')
-            }*/
         }
+
+        if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
+            moduleInfo.requires.add("dagger");
+            moduleInfo.requires.add("com.github.azahnen.dagger");
+        }
+
+        project.configurations.provided.dependencies.each {
+            // exclude boms
+            // TODO: setForce is deprecated, so the implementation of enforcePlatform might change and break this
+            if (it instanceof DefaultExternalModuleDependency && ((DefaultExternalModuleDependency) it).isForce()) {
+                return
+            }
+            moduleInfo.requires.add(getModuleName(it.group, it.name))
+        }
+
+        File generatedSrcDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
+        project.sourceSets.main.java { srcDir generatedSrcDir }
+        project.tasks.compileJava.inputs.dir(generatedSrcDir)
+
+        ClassGenerator.generateClassTask(project, 'moduleInfo', '', 'module-info', {
+            inputs.property('moduleInfo.name', moduleInfo.name)
+            inputs.property('moduleInfo.exports', moduleInfo.exports)
+            inputs.property('moduleInfo.requires', moduleInfo.requires)
+            inputs.property('moduleInfo.provides', moduleInfo.provides)
+            inputs.property('moduleInfo.uses', moduleInfo.uses)
+            inputs.property('isIntelliJ', isIntelliJ)
+            outputs.file(new File(generatedSrcDir, 'module-info.java'))
+        }, generateModuleInfo(project, moduleInfo, isIntelliJ), generatedSrcDir)
+
+        //TODO: is not recognized by dagger-auto
+        /*if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
+            def packageName = "${moduleInfo.name}.domain"
+            def packageInfo = { "@AutoModule(single = true, encapsulate = true)\npackage ${packageName};\n\nimport com.github.azahnen.dagger.annotations.AutoModule;" }
+            ClassGenerator.generateClassTask(project, 'packageInfo', packageName, 'package-info', { inputs.property('isIntelliJ', isIntelliJ) }, packageInfo, 'generated/sources/annotationProcessor/java/main/')
+        }*/
     }
 
-    static Closure generateModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly) {
+    static Closure generateModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly, boolean exportAll = false) {
         return {
             def excludes = []
 
             // determine artifacts that should be included in the bundle, might be transitive or not
             def deps = Dependencies.getDependencies(project, 'embeddedExport', excludes, true)
             deps += Dependencies.getDependencies(project, 'embeddedFlatExport', excludes, false)
+            if (exportAll) {
+                deps += Dependencies.getDependencies(project, 'embedded', excludes, true)
+                deps += Dependencies.getDependencies(project, 'embeddedFlat', excludes, true)
+            }
 
             // determine packages for export
             def pkgs = Dependencies.getPackages(deps)
