@@ -73,17 +73,16 @@ class ModulePlugin implements Plugin<Project> {
                 ? new File(project.buildDir, 'generated/sources/annotationProcessor/java/intellij')
                 : new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
 
-        project.sourceSets.main.output.dir(embeddedResourcesDir)
-
         project.tasks.register('embedClean', Delete) {
             inputs.property('isIntelliJ', isIntelliJ)
+            outputs.upToDateWhen { true }
             delete embeddedClassesDirOther
             delete embeddedResourcesDirOther
         }
 
         project.tasks.register('embedClasses', Copy) {
             inputs.property('isIntelliJ', isIntelliJ)
-            //dependsOn project.tasks.named('embedClean')
+            dependsOn project.tasks.named('embedClean')
             from {
                 project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
             }
@@ -211,6 +210,8 @@ class ModulePlugin implements Plugin<Project> {
             project.artifacts {
                 archives project.tasks.named('embedIntellij').map { it.outputs.files.singleFile }
             }
+        } else {
+            project.sourceSets.main.output.dir(embeddedResourcesDir)
         }
 
         project.tasks.named('compileJava') {

@@ -133,7 +133,8 @@ class ApplicationPlugin implements Plugin<Project> {
 
     //TODO: use ClassGenerator
     void addCreateRuntimeClassTask(Project project, appExtension) {
-        project.mainClassName = "de.ii.xtraplatform.application.Launcher"
+        project.application.mainClass = "de.ii.xtraplatform.application.Launcher"
+        project.application.mainModule = "de.ii.${project.name.replaceAll('-', '.')}"
 
         File generatedSourceDir = new File(project.buildDir, 'generated/src/main/java/')
         project.mkdir(generatedSourceDir)
