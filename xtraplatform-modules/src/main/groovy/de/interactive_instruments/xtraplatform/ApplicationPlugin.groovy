@@ -127,7 +127,6 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     //TODO: use ClassGenerator
-    //TODO: generate dagger component
     void addCreateRuntimeClassTask(Project project, appExtension) {
         project.mainClassName = "de.ii.xtraplatform.application.Launcher"
 
@@ -136,7 +135,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
         project.sourceSets.main.java { project.sourceSets.main.java.srcDir generatedSourceDir }
 
-        project.task('createRuntimeClass') {
+        project.task('createLauncher') {
             inputs.files project.configurations.feature
             inputs.files project.configurations.featureBundles
             inputs.files project.configurations.featureDevOnly
@@ -210,7 +209,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
         project.tasks.compileJava.with {
             inputs.dir(generatedSourceDir)
-            dependsOn project.tasks.createRuntimeClass
+            dependsOn project.tasks.createLauncher
         }
 
     }
