@@ -52,13 +52,18 @@ class ApplicationPlugin implements Plugin<Project> {
                 feature.collectMany({ bundle ->
                     bundle.moduleArtifacts
                 }).each({ ResolvedArtifact artifact ->
-                    project.dependencies.add('app', "${artifact.moduleVersion.id.group}:${artifact.moduleVersion.id.name}:${artifact.moduleVersion.id.version}")
+                    if (!artifact.moduleVersion.id.name.startsWith("ldproxy-")) {
+                        project.dependencies.add('app', "${artifact.moduleVersion.id.group}:${artifact.moduleVersion.id.name}:${artifact.moduleVersion.id.version}")
+                    }
                 })
+            }
+            project.subprojects.each {
+                project.dependencies.add('app', it)
             }
 
         }
 
-        project.configurations.featureDevOnly.incoming.beforeResolve {
+        /*project.configurations.featureDevOnly.incoming.beforeResolve {
             project.configurations.featureDevOnly.dependencies.collect().each {
                 if (!it.name.endsWith("-bundles")) {
                     if (includedBuilds.contains(it.name)) {
@@ -68,11 +73,11 @@ class ApplicationPlugin implements Plugin<Project> {
                         def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
                         //subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
 
-                        project.dependencies.add('featureDevOnly', bundles)
+                        //project.dependencies.add('featureDevOnly', bundles)
                     }
                 }
             }
-        }
+        }*/
 
         project.dependencies.add('implementation', "com.google.dagger:dagger:2.+", { transitive = false })
         project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.+")
