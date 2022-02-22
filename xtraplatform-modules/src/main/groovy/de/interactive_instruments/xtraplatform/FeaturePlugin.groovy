@@ -285,6 +285,10 @@ class FeaturePlugin implements Plugin<Project> {
                     }
                 }
             }
+            project.tasks.withType(GenerateModuleMetadata).configureEach {
+                suppressedValidationErrors.add('enforced-platform')
+            }
+
         }
     }
 }
