@@ -210,6 +210,9 @@ class FeaturePlugin implements Plugin<Project> {
                         }
                     }
                 }
+                subproject.tasks.withType(GenerateModuleMetadata).configureEach {
+                    suppressedValidationErrors.add('enforced-platform')
+                }
             }
 
             java {
@@ -289,7 +292,6 @@ class FeaturePlugin implements Plugin<Project> {
             project.tasks.withType(GenerateModuleMetadata).configureEach {
                 suppressedValidationErrors.add('enforced-platform')
             }
-
         }
     }
 }
