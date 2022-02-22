@@ -207,6 +207,9 @@ class FeaturePlugin implements Plugin<Project> {
                     publications {
                         'default'(MavenPublication) {
                             from subproject.components.java
+                            suppressPomMetadataWarningsFor('runtimeElements')
+                            suppressPomMetadataWarningsFor('testFixturesApiElements')
+                            suppressPomMetadataWarningsFor('testFixturesRuntimeElements')
                         }
                     }
                 }
