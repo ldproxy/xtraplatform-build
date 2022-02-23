@@ -83,8 +83,7 @@ class ApplicationPlugin implements Plugin<Project> {
         project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.+")
 
         project.tasks.named('compileJava') {
-            // use the project's version or define one directly
-            options.javaModuleVersion = project.version
+            options.javaModuleVersion = project.provider { project.version }
         }
 
         addCreateRuntimeClassTask(project, appExtension)
