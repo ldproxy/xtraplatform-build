@@ -246,8 +246,8 @@ class ModulePlugin implements Plugin<Project> {
         }
 
         if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
-            moduleInfo.requires.add("dagger");
-            moduleInfo.requires.add("com.github.azahnen.dagger");
+            //moduleInfo.requires.add("dagger");
+            //moduleInfo.requires.add("com.github.azahnen.dagger");
         }
 
         project.configurations.provided.dependencies.each {
@@ -279,6 +279,11 @@ class ModulePlugin implements Plugin<Project> {
             def packageInfo = { "@AutoModule(single = true, encapsulate = true)\npackage ${packageName};\n\nimport com.github.azahnen.dagger.annotations.AutoModule;" }
             ClassGenerator.generateClassTask(project, 'packageInfo', packageName, 'package-info', { inputs.property('isIntelliJ', isIntelliJ) }, packageInfo, 'generated/sources/annotationProcessor/java/main/')
         }*/
+
+        project.tasks.named('compileJava') {
+            // use the project's version or define one directly
+            options.javaModuleVersion = project.version
+        }
     }
 
     static Closure generateModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly, boolean exportAll = false) {
@@ -325,7 +330,9 @@ class ModulePlugin implements Plugin<Project> {
                     .collect(Collectors.joining("\n"))
             def requires = moduleInfo.requires.stream()
                     .filter({ require -> !isExcluded(require, moduleInfo.requires) })
-                    .map({ require -> "\trequires ${require};" })
+                    .map({ require -> project.name == FeaturePlugin.XTRAPLATFORM_RUNTIME && !require.startsWith("transitive")
+                            ? "\trequires transitive ${require};"
+                            : "\trequires ${require};" })
                     .collect(Collectors.joining("\n", "\n", ""))
             def provides = moduleInfo.provides.entrySet().stream()
                     .filter({ provide -> !isExcluded(provide.key, moduleInfo.provides.keySet()) })
@@ -350,13 +357,13 @@ ${uses}
     //TODO: configurable versions
     static void setupAnnotationProcessors(Project project) {
         if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
-            project.dependencies.add('implementation', "com.google.dagger:dagger:2.+", { transitive = false })
-            project.dependencies.add('implementation', "io.github.azahnen:dagger-auto:1.0.0-SNAPSHOT")
+            //project.dependencies.add('compileOnly', "com.google.dagger:dagger:2.+", { transitive = false })
+            //project.dependencies.add('compileOnly', "io.github.azahnen:dagger-auto:1.0.0-SNAPSHOT")
             project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.+")
             project.dependencies.add('annotationProcessor', "io.github.azahnen:dagger-auto-compiler:1.0.0-SNAPSHOT")
 
-            project.dependencies.add('implementation', "org.immutables:value:2.8.8:annotations")
-            project.dependencies.add('implementation', "org.immutables:encode:2.8.8")
+            //project.dependencies.add('compileOnly', "org.immutables:value:2.8.8:annotations")
+            //project.dependencies.add('compileOnly', "org.immutables:encode:2.8.8")
             project.dependencies.add('annotationProcessor', "org.immutables:value:2.8.8")
         }
     }

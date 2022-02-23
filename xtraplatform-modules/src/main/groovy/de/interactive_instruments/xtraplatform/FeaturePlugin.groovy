@@ -218,7 +218,7 @@ class FeaturePlugin implements Plugin<Project> {
                 }
             }
 
-            java {
+            subproject.java {
                 //TODO withJavadocJar()
                 withSourcesJar()
             }
