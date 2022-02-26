@@ -3,10 +3,13 @@ package de.interactive_instruments.xtraplatform
 import groovy.io.FileType
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.tasks.Jar
 
@@ -17,24 +20,62 @@ import java.util.stream.StreamSupport
 
 class ModulePlugin implements Plugin<Project> {
 
+    void executeTask(Task task) {
+        task.taskDependencies.getDependencies(task).each {
+            subTask -> executeTask(subTask)
+        }
+        task.actions.each { it.execute(task) }
+    }
+    void executeTask(TaskProvider<Task> task) {
+        task.configure({executeTask(it)})
+    }
+
     @Override
     void apply(Project project) {
-        ModuleInfoExtension moduleInfo = project.extensions.create('moduleInfo', ModuleInfoExtension)
+        ModuleInfoExtension moduleInfo = project.moduleInfo //project.extensions.create('moduleInfo', ModuleInfoExtension)
 
         def isIntelliJ = System.getProperty("idea.active") == "true"
 
-        setupConfigurations(project)
+
+        def includedBuilds = project.gradle.includedBuilds.collect { it.name }
+        def parent = project.gradle.parent
+        while (parent != null) {
+            includedBuilds += parent.includedBuilds.collect { it.name }
+            parent = parent.gradle.parent
+        }
+
+        // apply feature boms
+        //project.parent.configurations.feature.incoming.beforeResolve {
+            project.parent.configurations.feature.dependencies.collect().each {
+                def isIncludedBuild = includedBuilds.contains(it.name)
+                if (!isIncludedBuild) {
+                    def bom = [group: it.group, name: "${it.name}", version: it.version]
+
+                    project.dependencies.add('provided', project.dependencies.enforcedPlatform(bom))
+                }
+            }
+        //}
+
+        //setupConfigurations(project)
 
         setupAnnotationProcessors(project)
 
         setupUnitTests(project)
 
         project.afterEvaluate {
-            moduleInfo.name = getModuleName(project.group as String, project.name)
+            if (moduleInfo.enabled) {
+                moduleInfo.name = getModuleName(project.group as String, project.name)
 
-            setupEmbedding(project, moduleInfo, isIntelliJ)
+                setupEmbedding(project, moduleInfo, isIntelliJ)
 
-            setupModuleInfo(project, moduleInfo, isIntelliJ)
+                setupModuleInfo(project, moduleInfo, isIntelliJ)
+
+                //TODO
+                /*if (System.getProperty("idea.sync.active") == "true") {
+                println "SYNC"
+                executeTask(project.tasks.named("embedIntellij"))
+                }*/
+            }
         }
     }
 
@@ -343,6 +384,7 @@ class ModulePlugin implements Plugin<Project> {
                     .collect(Collectors.joining("\n", "\n", ""))
 
             return """
+@SuppressWarnings("module")
 open module ${moduleInfo.name} {
 ${exports}
 ${requires}

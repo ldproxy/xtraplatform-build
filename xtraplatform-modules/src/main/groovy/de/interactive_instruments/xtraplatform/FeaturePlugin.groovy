@@ -133,7 +133,18 @@ class FeaturePlugin implements Plugin<Project> {
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('java-test-fixtures')
             subproject.plugins.apply('maven-publish')
-            subproject.plugins.apply(ModulePlugin.class)
+
+            ModulePlugin.setupConfigurations(subproject)
+            ModuleInfoExtension moduleInfo = subproject.extensions.create('moduleInfo', ModuleInfoExtension)
+            subproject.ext.notAModule = false
+
+            subproject.afterEvaluate {
+                if (moduleInfo.enabled) {
+                    subproject.plugins.apply(ModulePlugin.class)
+                } else {
+                    println "NOT "+ subproject.name
+                }
+            }
 
             // stay java 11 compatible
             subproject.setSourceCompatibility(JavaVersion.VERSION_11)
@@ -158,19 +169,9 @@ class FeaturePlugin implements Plugin<Project> {
                 subproject.version = project.version
             }
 
-            // apply feature boms
-            project.configurations.feature.incoming.beforeResolve {
-                project.configurations.feature.dependencies.collect().each {
-                    def isIncludedBuild = includedBuilds.contains(it.name)
-                    if (!isIncludedBuild) {
-                        def bom = [group: it.group, name: "${it.name}", version: it.version]
-
-                        subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
-                    }
-                }
-            }
 
             project.afterEvaluate {
+
                 // add all bundles from all features with all transitive dependencies to provided
                 project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.each({
                     it.children.each { bundle ->
