@@ -141,8 +141,6 @@ class FeaturePlugin implements Plugin<Project> {
             subproject.afterEvaluate {
                 if (moduleInfo.enabled) {
                     subproject.plugins.apply(ModulePlugin.class)
-                } else {
-                    println "NOT "+ subproject.name
                 }
             }
 
