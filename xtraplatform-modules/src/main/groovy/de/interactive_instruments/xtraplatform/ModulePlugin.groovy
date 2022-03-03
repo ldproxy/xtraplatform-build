@@ -269,35 +269,40 @@ class ModulePlugin implements Plugin<Project> {
         }
     }
 
-    static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
-        project.sourceSets.main.java.srcDirs.each { File root ->
-            if (root.exists()) {
-                root.eachFileRecurse(FileType.DIRECTORIES) { File dir ->
-                    Path path = root.toPath().relativize(dir.toPath())
-                    List<String> elements = StreamSupport.stream(Spliterators.spliteratorUnknownSize(path.iterator(), Spliterator.ORDERED), false)
-                            .map({ element -> element.toString() })
-                            .collect(Collectors.toList())
-                    boolean doExport = elements.stream()
-                            .anyMatch({ element -> element.toString() == "domain" || element.toString() == "api" })
-                    if (doExport) {
-                        moduleInfo.exports = [elements.join(".")] + moduleInfo.exports
+    static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ, boolean isApp = false) {
+        if (!isApp) {
+            project.sourceSets.main.java.srcDirs.each { File root ->
+                if (root.exists()) {
+                    root.eachFileRecurse(FileType.DIRECTORIES) { File dir ->
+                        Path path = root.toPath().relativize(dir.toPath())
+                        List<String> elements = StreamSupport.stream(Spliterators.spliteratorUnknownSize(path.iterator(), Spliterator.ORDERED), false)
+                                .map({ element -> element.toString() })
+                                .collect(Collectors.toList())
+                        boolean doExport = elements.stream()
+                                .anyMatch({ element -> element.toString() == "domain" || element.toString() == "api" })
+                        if (doExport) {
+                            moduleInfo.exports = [elements.join(".")] + moduleInfo.exports
+                        }
                     }
                 }
             }
-        }
-
-        if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
-            //moduleInfo.requires.add("dagger");
-            //moduleInfo.requires.add("com.github.azahnen.dagger");
-        }
-
-        project.configurations.provided.dependencies.each {
-            // exclude boms
-            // TODO: setForce is deprecated, so the implementation of enforcePlatform might change and break this
-            if (it instanceof DefaultExternalModuleDependency && ((DefaultExternalModuleDependency) it).isForce()) {
-                return
+            project.configurations.provided.dependencies.each {
+                // exclude boms
+                // TODO: setForce is deprecated, so the implementation of enforcePlatform might change and break this
+                if (it instanceof DefaultExternalModuleDependency && ((DefaultExternalModuleDependency) it).isForce()) {
+                    return
+                }
+                moduleInfo.requires.add(getModuleName(it.group, it.name))
             }
-            moduleInfo.requires.add(getModuleName(it.group, it.name))
+        } else {
+            project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.each {
+                it.children.each { module ->
+                    moduleInfo.requires.add(getModuleName(module.moduleGroup, module.moduleName))
+                }
+            }
+            project.configurations.bundle.dependencies.each {
+                moduleInfo.requires.add(getModuleName(it.group, it.name))
+            }
         }
 
         File generatedSrcDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
@@ -312,7 +317,7 @@ class ModulePlugin implements Plugin<Project> {
             inputs.property('moduleInfo.uses', moduleInfo.uses)
             inputs.property('isIntelliJ', isIntelliJ)
             outputs.file(new File(generatedSrcDir, 'module-info.java'))
-        }, generateModuleInfo(project, moduleInfo, isIntelliJ), generatedSrcDir)
+        }, generateModuleInfo(project, moduleInfo, isIntelliJ, false, isApp), generatedSrcDir)
 
         //TODO: is not recognized by dagger-auto
         /*if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
@@ -326,30 +331,34 @@ class ModulePlugin implements Plugin<Project> {
         }
     }
 
-    static Closure generateModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly, boolean exportAll = false) {
+    static Closure generateModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly, boolean exportAll = false, boolean isApp = false) {
         return {
             def excludes = []
-
-            // determine artifacts that should be included in the bundle, might be transitive or not
-            def deps = Dependencies.getDependencies(project, 'embeddedExport', excludes, true)
-            deps += Dependencies.getDependencies(project, 'embeddedFlatExport', excludes, false)
-            if (exportAll) {
-                deps += Dependencies.getDependencies(project, 'embedded', excludes, true)
-                deps += Dependencies.getDependencies(project, 'embeddedFlat', excludes, true)
-            }
-
-            // determine packages for export
-            def pkgs = Dependencies.getPackages(deps)
-
+            def deps = [] as Set
+            def pkgs = [] as Set
             Map<String, Set<String>> services = new LinkedHashMap<>();
-            (project.configurations.embeddedExport + project.configurations.embeddedFlatExport)
-                    .filter { it.isFile() }
-                    .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
-                    .collectMany { it.getFiles() }
-                    .forEach { File it3 ->
-                        services.putIfAbsent(it3.name, new LinkedHashSet<String>())
-                        it3.eachLine { if (!it.isEmpty() && !it.startsWith("#") && !it.contains("\$")) services.get(it3.name).add(it) }
-                    }
+
+            if (!isApp) {
+                // determine artifacts that should be included in the bundle, might be transitive or not
+                deps += Dependencies.getDependencies(project, 'embeddedExport', excludes, true)
+                deps += Dependencies.getDependencies(project, 'embeddedFlatExport', excludes, false)
+                if (exportAll) {
+                    deps += Dependencies.getDependencies(project, 'embedded', excludes, true)
+                    deps += Dependencies.getDependencies(project, 'embeddedFlat', excludes, true)
+                }
+
+                // determine packages for export
+                pkgs += Dependencies.getPackages(deps)
+
+                (project.configurations.embeddedExport + project.configurations.embeddedFlatExport)
+                        .filter { it.isFile() }
+                        .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
+                        .collectMany { it.getFiles() }
+                        .forEach { File it3 ->
+                            services.putIfAbsent(it3.name, new LinkedHashSet<String>())
+                            it3.eachLine { if (!it.isEmpty() && !it.startsWith("#") && !it.contains("\$")) services.get(it3.name).add(it) }
+                        }
+            }
 
             if (!requiresOnly) {
                 pkgs.each { pkg ->
