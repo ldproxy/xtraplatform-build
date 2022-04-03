@@ -7,7 +7,6 @@ import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
-import org.gradle.api.tasks.bundling.Jar
 import org.jetbrains.gradle.ext.ActionDelegationConfig
 import org.jetbrains.gradle.ext.JUnit
 import org.slf4j.LoggerFactory
@@ -15,9 +14,10 @@ import org.slf4j.LoggerFactory
 /**
  * @author zahnen
  */
-class FeaturePlugin implements Plugin<Project> {
+class LayerPlugin implements Plugin<Project> {
 
-    static def LOGGER = LoggerFactory.getLogger(FeaturePlugin.class)
+    static def LOGGER = LoggerFactory.getLogger(LayerPlugin.class)
+
 
     public static String XTRAPLATFORM_CORE = "xtraplatform-core"
     public static String XTRAPLATFORM_RUNTIME = "xtraplatform-runtime"
@@ -28,24 +28,24 @@ class FeaturePlugin implements Plugin<Project> {
         project.plugins.apply("java") // needed for platform constraints
         project.plugins.apply("maven-publish")
 
-        // consumed features
-        project.configurations.create("feature")
+        // consumed layers
+        project.configurations.create("layers")
 
-        // consumed bundles
-        project.configurations.create("featureBundles")
+        // consumed modules
+        project.configurations.create("layerModules")
 
-        //provided bundles
-        project.configurations.create("bundle")
+        //provided modules
+        project.configurations.create("modules")
 
-        project.configurations.runtimeElements.extendsFrom(project.configurations.bundle)
+        project.configurations.runtimeElements.extendsFrom(project.configurations.modules)
         project.configurations.runtimeElements.setTransitive(false)
-        project.configurations.bundle.setTransitive(false)
-        project.configurations.feature.setTransitive(true)
-        project.configurations.featureBundles.setTransitive(true)
-        project.configurations.feature.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
-        project.configurations.featureBundles.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
-        project.configurations.feature.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
-        project.configurations.featureBundles.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
+        project.configurations.modules.setTransitive(false)
+        project.configurations.layers.setTransitive(true)
+        project.configurations.layerModules.setTransitive(true)
+        project.configurations.layers.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        project.configurations.layerModules.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        project.configurations.layers.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
+        project.configurations.layerModules.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
 
         project.repositories {
             mavenCentral()
@@ -68,7 +68,7 @@ class FeaturePlugin implements Plugin<Project> {
             parent = parent.gradle.parent
         }
 
-        addFeatureBundles(project, includedBuilds)
+        addFeatureModules(project, includedBuilds)
 
         addPublication(project)
 
@@ -91,29 +91,42 @@ class FeaturePlugin implements Plugin<Project> {
                 //withModuleXml(project.sourceSets.main) { println it }
             }
         }
+
+
+        project.extensions.create('maturity', LayerMaturityExtension)
+
+        project.tasks.register("modules") {
+            doLast {
+                println "\nLayer ${project.name} ${project.version}"
+                project.subprojects.each {
+                    println "+---- ${it.name} ${it.maturity}${it.deprecated ? " DEPRECATED" : ""} ${project.maturity.forMaturity(it.maturity)}"
+                }
+            }
+        }
+        project.tasks.register("createModule", ModuleCreateTask)
     }
 
-    void addFeatureBundles(Project project, includedBuilds) {
+    void addFeatureModules(Project project, includedBuilds) {
         project.afterEvaluate {
             //println "INC " + includedBuilds
-            project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collect().each {
+            project.configurations.layers.resolvedConfiguration.firstLevelModuleDependencies.collect().each {
                 def isIncludedBuild = includedBuilds.contains(it.moduleName)
 
                 if (!isIncludedBuild) {
                     //println "add bom " + it.moduleName + " to " + project.name
                     def bom = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
 
-                    project.dependencies.add('featureBundles', project.dependencies.enforcedPlatform(bom))
+                    project.dependencies.add('layerModules', project.dependencies.enforcedPlatform(bom))
 
-                    //println "add bundles " + it.moduleName + "-bundles to " + project.name
-                    def bundles = [group: it.moduleGroup, name: "${it.moduleName}-bundles", version: it.moduleVersion]
+                    //println "add modules " + it.moduleName + "-modules to " + project.name
+                    def modules = [group: it.moduleGroup, name: "${it.moduleName}-modules", version: it.moduleVersion]
 
-                    project.dependencies.add('featureBundles', bundles)
+                    project.dependencies.add('layerModules', modules)
                 } else {
-                    //println "add included bundles " + it.moduleName + " to " + project.name
-                    def bundles = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
+                    //println "add included modules " + it.moduleName + " to " + project.name
+                    def modules = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
 
-                    project.dependencies.add('featureBundles', bundles)
+                    project.dependencies.add('layerModules', modules)
                 }
 
             }
@@ -137,6 +150,8 @@ class FeaturePlugin implements Plugin<Project> {
             ModulePlugin.setupConfigurations(subproject)
             ModuleInfoExtension moduleInfo = subproject.extensions.create('moduleInfo', ModuleInfoExtension)
             subproject.ext.notAModule = false
+            subproject.ext.maturity = Maturity.EXPERIMENTAL.name()
+            subproject.ext.deprecated = false
 
             subproject.afterEvaluate {
                 if (moduleInfo.enabled) {
@@ -162,24 +177,34 @@ class FeaturePlugin implements Plugin<Project> {
 
             subproject.afterEvaluate {
                 if (subproject.version != null && subproject.version != 'unspecified') {
-                    LOGGER.warn("Warning: Module version '{}' is set for '{}'. Module versions are ignored, the feature version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
+                    LOGGER.warn("Warning: Module version '{}' is set for '{}'. Module versions are ignored, the layer version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
                 }
                 subproject.version = project.version
+
+                def maturity
+                try {
+                    maturity = subproject.maturity as Maturity
+                } catch (Throwable e) {
+                    throw new IllegalArgumentException("Invalid maturity '${subproject.maturity}' (valid values: ${Maturity.values()})")
+                }
+                if (!project.maturity.isValid(maturity)) {
+                    throw new IllegalArgumentException("Invalid maturity '${subproject.maturity}' (minimum required for this layer: ${project.maturity.minimumModuleMaturity})")
+                }
             }
 
 
             project.afterEvaluate {
 
-                // add all bundles from all features with all transitive dependencies to provided
-                project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.each({
-                    it.children.each { bundle ->
-                        subproject.dependencies.add('provided', bundle.name)
+                // add all modules from all layers with all transitive dependencies to provided
+                project.configurations.layerModules.resolvedConfiguration.firstLevelModuleDependencies.each({
+                    it.children.each { module ->
+                        subproject.dependencies.add('provided', module.name)
                     }
                 })
 
-                // special handling for xtraplatform-core bundles
+                // special handling for xtraplatform-core modules
                 if (project.name == XTRAPLATFORM_CORE && subproject.name != XTRAPLATFORM_RUNTIME) {
-                    def runtime = project.configurations.bundle.dependencies.find { it.name == XTRAPLATFORM_RUNTIME }
+                    def runtime = project.configurations.modules.dependencies.find { it.name == XTRAPLATFORM_RUNTIME }
 
                     subproject.dependencies.add('provided', runtime)
 
@@ -252,7 +277,7 @@ class FeaturePlugin implements Plugin<Project> {
 
                             def dependencyManagementNode = asNode().appendNode('dependencyManagement').appendNode('dependencies')
 
-                            project.configurations.bundle.dependencies.each {
+                            project.configurations.modules.dependencies.each {
                                 def dependencyNode = dependencyManagementNode.appendNode('dependency')
                                 dependencyNode.appendNode('groupId', it.group)
                                 dependencyNode.appendNode('artifactId', it.name)
@@ -262,15 +287,15 @@ class FeaturePlugin implements Plugin<Project> {
 
                         }
                     }
-                    bundles(MavenPublication) {
+                    modules(MavenPublication) {
 
-                        artifactId "${project.name}-bundles"
+                        artifactId "${project.name}-modules"
 
                         pom.withXml {
 
                             def dependenciesNode = asNode().appendNode('dependencies')
 
-                            /*project.configurations.feature.dependencies.each {
+                            /*project.configurations.layers.dependencies.each {
                                 def dependencyNode = dependenciesNode.appendNode('dependency')
                                 dependencyNode.appendNode('groupId', it.group)
                                 dependencyNode.appendNode('artifactId', it.name)
@@ -278,7 +303,7 @@ class FeaturePlugin implements Plugin<Project> {
                                 dependencyNode.appendNode('scope', 'runtime')
                             }*/
 
-                            project.configurations.bundle.dependencies.each {
+                            project.configurations.modules.dependencies.each {
                                 def dependencyNode = dependenciesNode.appendNode('dependency')
                                 dependencyNode.appendNode('groupId', it.group)
                                 dependencyNode.appendNode('artifactId', it.name)

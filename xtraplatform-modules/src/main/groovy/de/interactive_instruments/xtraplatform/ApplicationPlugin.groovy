@@ -14,7 +14,7 @@ import java.util.regex.Pattern
 class ApplicationPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
-        project.plugins.apply(FeaturePlugin.class)
+        project.plugins.apply(LayerPlugin.class)
         project.plugins.apply("application")
 
         def appExtension = project.extensions.create('app', ApplicationExtension, project)
@@ -33,18 +33,18 @@ class ApplicationPlugin implements Plugin<Project> {
         project.afterEvaluate {
             def baseFound = false
             project.configurations.feature.dependencies.each {
-                if (it.name == FeaturePlugin.XTRAPLATFORM_CORE) {
+                if (it.name == LayerPlugin.XTRAPLATFORM_CORE) {
                     if (!includedBuilds.contains(it.name)) {
                         project.dependencies.add('app', project.dependencies.enforcedPlatform(it))
                     }
 
-                    project.dependencies.add('app', "de.interactive_instruments:${FeaturePlugin.XTRAPLATFORM_RUNTIME}")
-                    project.dependencies.add('app', "de.interactive_instruments:${FeaturePlugin.XTRAPLATFORM_BASE}")
+                    project.dependencies.add('app', "de.interactive_instruments:${LayerPlugin.XTRAPLATFORM_RUNTIME}")
+                    project.dependencies.add('app', "de.interactive_instruments:${LayerPlugin.XTRAPLATFORM_BASE}")
                     baseFound = true
                 }
             }
             if (!baseFound) {
-                throw new IllegalStateException("You have to add '${FeaturePlugin.XTRAPLATFORM_CORE}' to configuration 'feature'")
+                throw new IllegalStateException("You have to add '${LayerPlugin.XTRAPLATFORM_CORE}' to configuration 'feature'")
             }
 
             def features = getModules(project)
@@ -160,7 +160,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
             doLast {
 
-                def modules = createModules(project, [FeaturePlugin.XTRAPLATFORM_RUNTIME])
+                def modules = createModules(project, [LayerPlugin.XTRAPLATFORM_RUNTIME])
                 def baseConfigs = createBaseConfigList(appExtension.additionalBaseConfigs)
 
                 def mainClass = """

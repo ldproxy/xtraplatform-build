@@ -6,20 +6,22 @@ repositories {
 
 dependencies {
     implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.1.1'
+    implementation "com.github.ben-manes:gradle-versions-plugin:0.36.0"
+    implementation "se.patrikerdes:gradle-use-latest-versions-plugin:0.2.15"
 }
 
 gradlePlugin {
     plugins {
-        featurePlugin {
-            id = 'de.interactive_instruments.xtraplatform-feature'
-            implementationClass = 'de.interactive_instruments.xtraplatform.FeaturePlugin'
+        layerPlugin {
+            id = 'de.interactive_instruments.xtraplatform-layer'
+            implementationClass = 'de.interactive_instruments.xtraplatform.LayerPlugin'
         }
         applicationPlugin {
             id = 'de.interactive_instruments.xtraplatform-application'
             implementationClass = 'de.interactive_instruments.xtraplatform.ApplicationPlugin'
         }
-        runtimePlugin {
-            id = 'de.interactive_instruments.xtraplatform-module-plugin'
+        modulePlugin {
+            id = 'de.interactive_instruments.xtraplatform-module'
             implementationClass = 'de.interactive_instruments.xtraplatform.ModulePlugin'
         }
         docPlugin {

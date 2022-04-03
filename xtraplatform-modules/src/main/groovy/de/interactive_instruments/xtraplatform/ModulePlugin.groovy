@@ -6,13 +6,13 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.tasks.Jar
 
+import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.stream.Collectors
@@ -44,9 +44,9 @@ class ModulePlugin implements Plugin<Project> {
             parent = parent.gradle.parent
         }
 
-        // apply feature boms
-        //project.parent.configurations.feature.incoming.beforeResolve {
-            project.parent.configurations.feature.dependencies.collect().each {
+        // apply layer boms
+        //project.parent.configurations.layers.incoming.beforeResolve {
+            project.parent.configurations.layers.dependencies.collect().each {
                 def isIncludedBuild = includedBuilds.contains(it.name)
                 if (!isIncludedBuild) {
                     def bom = [group: it.group, name: "${it.name}", version: it.version]
@@ -295,12 +295,12 @@ class ModulePlugin implements Plugin<Project> {
                 moduleInfo.requires.add(getModuleName(it.group, it.name))
             }
         } else {
-            project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.each {
+            project.configurations.layerModules.resolvedConfiguration.firstLevelModuleDependencies.each {
                 it.children.each { module ->
                     moduleInfo.requires.add(getModuleName(module.moduleGroup, module.moduleName))
                 }
             }
-            project.configurations.bundle.dependencies.each {
+            project.configurations.modules.dependencies.each {
                 moduleInfo.requires.add(getModuleName(it.group, it.name))
             }
         }
@@ -320,7 +320,7 @@ class ModulePlugin implements Plugin<Project> {
         }, generateModuleInfo(project, moduleInfo, isIntelliJ, false, isApp), generatedSrcDir)
 
         //TODO: is not recognized by dagger-auto
-        /*if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
+        /*if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
             def packageName = "${moduleInfo.name}.domain"
             def packageInfo = { "@AutoModule(single = true, encapsulate = true)\npackage ${packageName};\n\nimport com.github.azahnen.dagger.annotations.AutoModule;" }
             ClassGenerator.generateClassTask(project, 'packageInfo', packageName, 'package-info', { inputs.property('isIntelliJ', isIntelliJ) }, packageInfo, 'generated/sources/annotationProcessor/java/main/')
@@ -339,7 +339,7 @@ class ModulePlugin implements Plugin<Project> {
             Map<String, Set<String>> services = new LinkedHashMap<>();
 
             if (!isApp) {
-                // determine artifacts that should be included in the bundle, might be transitive or not
+                // determine artifacts that should be included in the module, might be transitive or not
                 deps += Dependencies.getDependencies(project, 'embeddedExport', excludes, true)
                 deps += Dependencies.getDependencies(project, 'embeddedFlatExport', excludes, false)
                 if (exportAll) {
@@ -379,7 +379,7 @@ class ModulePlugin implements Plugin<Project> {
                     .collect(Collectors.joining("\n"))
             def requires = moduleInfo.requires.stream()
                     .filter({ require -> !isExcluded(require, moduleInfo.requires) })
-                    .map({ require -> project.name == FeaturePlugin.XTRAPLATFORM_RUNTIME && !require.startsWith("transitive")
+                    .map({ require -> project.name == LayerPlugin.XTRAPLATFORM_RUNTIME && !require.startsWith("transitive")
                             ? "\trequires transitive ${require};"
                             : "\trequires ${require};" })
                     .collect(Collectors.joining("\n", "\n", ""))
@@ -406,7 +406,7 @@ ${uses}
 
     //TODO: configurable versions
     static void setupAnnotationProcessors(Project project) {
-        if (project.name != FeaturePlugin.XTRAPLATFORM_RUNTIME) {
+        if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
             //project.dependencies.add('compileOnly', "com.google.dagger:dagger:2.+", { transitive = false })
             //project.dependencies.add('compileOnly', "io.github.azahnen:dagger-auto:1.0.0-SNAPSHOT")
             project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.+")
@@ -421,6 +421,7 @@ ${uses}
     //TODO: configurable versions
     static void setupUnitTests(Project project) {
         project.plugins.apply('groovy')
+        project.plugins.apply('jacoco')
 
         project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
         project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
@@ -437,6 +438,12 @@ ${uses}
         // needed by spock-reports
         project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-json:3.+")
         // needed by spock-reports
+
+        project.tasks.register("coverageReportInfo") {
+            doLast {
+                println "\nJacoco report: file://${project.buildDir}/reports/jacoco/test/html/index.html"
+            }
+        }
 
         def testConfig = {
             useJUnitPlatform()
@@ -460,6 +467,41 @@ ${uses}
             systemProperty 'spock.configuration', 'SpockConfig.groovy'
 
             finalizedBy project.rootProject.tasks.testReportInfo
+            finalizedBy project.tasks.jacocoTestReport
+            finalizedBy project.tasks.jacocoTestCoverageVerification
+            finalizedBy project.tasks.coverageReportInfo
+
+            jacoco {
+                includes = ['de.ii.*']
+            }
+        }
+
+        project.tasks.check.dependsOn project.tasks.jacocoTestCoverageVerification
+        project.tasks.jacocoTestCoverageVerification.dependsOn project.tasks.test
+
+        project.jacocoTestReport {
+            project.afterEvaluate {
+                classDirectories.setFrom(project.files(classDirectories.files.collect {
+                    project.fileTree(dir: it, include: 'de/ii/**')
+                }))
+            }
+        }
+        project.jacocoTestCoverageVerification {
+            project.afterEvaluate {
+                classDirectories.setFrom(project.files(classDirectories.files.collect {
+                    project.fileTree(dir: it, include: 'de/ii/**')
+                }))
+                LayerMaturityExtension.MaturityConfiguration cfg = project.parent.maturity.forMaturity(project.maturity)
+                violationRules {
+                    rule {
+                        limit {
+                            counter = 'LINE'
+                            value = 'COVEREDRATIO'
+                            minimum = new BigDecimal(cfg.minimumCoverage).setScale(2, RoundingMode.UP)
+                        }
+                    }
+                }
+            }
         }
 
         project.tasks.test.with testConfig
@@ -468,20 +510,6 @@ ${uses}
             with testConfig
             systemProperty 'spock.include.Slow', 'true'
         }
-
-        /*tasks.withType(Test).configureEach { testTask ->
-        testTask.configure {
-            useJUnitPlatform()
-
-            afterSuite { desc, result ->
-                if (!desc.parent) {
-                    if (result.testCount == 0) {
-                        throw new IllegalStateException("No tests were found. Failing the build")
-                    }
-                }
-            }
-        }
-    }*/
     }
 
     static boolean isExcluded(String item, Collection<String> items) {
