@@ -270,6 +270,7 @@ class ModulePlugin implements Plugin<Project> {
     }
 
     static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ, boolean isApp = false) {
+        moduleInfo.requires.add("de.ii.xtraplatform.build")
         if (!isApp) {
             project.sourceSets.main.java.srcDirs.each { File root ->
                 if (root.exists()) {

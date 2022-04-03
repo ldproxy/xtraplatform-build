@@ -240,6 +240,12 @@ class LayerPlugin implements Plugin<Project> {
                 subproject.tasks.withType(GenerateModuleMetadata).configureEach {
                     suppressedValidationErrors.add('enforced-platform')
                 }
+
+                subproject.dependencies.add('compileOnly', [group: 'de.interactive_instruments', name: 'xtraplatform-modules'], {
+                    capabilities {
+                        requireCapability("de.interactive_instruments:xtraplatform-modules-annotations")
+                    }
+                })
             }
 
             subproject.java {

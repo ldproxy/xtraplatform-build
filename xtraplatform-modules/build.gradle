@@ -36,3 +36,16 @@ gradlePlugin {
 }
 
 
+sourceSets {
+    annotations {
+        java {
+            srcDir 'src/annotations/java'
+        }
+    }
+}
+
+java {
+    registerFeature('annotations') {
+        usingSourceSet(sourceSets.annotations)
+    }
+}
