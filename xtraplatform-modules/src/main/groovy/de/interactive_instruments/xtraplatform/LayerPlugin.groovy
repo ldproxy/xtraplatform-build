@@ -99,7 +99,7 @@ class LayerPlugin implements Plugin<Project> {
             doLast {
                 println "\nLayer ${project.name} ${project.version}"
                 project.subprojects.each {
-                    println "+---- ${it.name} ${it.maturity}${it.deprecated ? " DEPRECATED" : ""} ${project.maturity.forMaturity(it.maturity)}"
+                    println "+---- ${it.name} ${it.maturity}${it.deprecated ? " DEPRECATED" : ""}"
                 }
             }
         }
