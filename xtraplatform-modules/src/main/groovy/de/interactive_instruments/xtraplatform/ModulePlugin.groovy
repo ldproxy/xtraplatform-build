@@ -216,6 +216,7 @@ class ModulePlugin implements Plugin<Project> {
             }
 
             project.configurations.intellijCompileOnly.extendsFrom(project.configurations.provided)
+            project.configurations.intellijCompileOnly.extendsFrom(project.configurations.compileOnly)
             project.tasks.compileIntellijJava.inputs.dir(generatedSourcesDir)
 
             ClassGenerator.generateClassTask(project, 'moduleInfoIntellij', '', 'module-info', {
