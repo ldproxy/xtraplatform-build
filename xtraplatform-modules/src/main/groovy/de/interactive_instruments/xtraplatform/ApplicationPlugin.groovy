@@ -32,7 +32,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
         project.afterEvaluate {
             def baseFound = false
-            project.configurations.feature.dependencies.each {
+            project.configurations.layers.dependencies.each {
                 if (it.name == LayerPlugin.XTRAPLATFORM_CORE) {
                     if (!includedBuilds.contains(it.name)) {
                         project.dependencies.add('app', project.dependencies.enforcedPlatform(it))
@@ -44,11 +44,11 @@ class ApplicationPlugin implements Plugin<Project> {
                 }
             }
             if (!baseFound) {
-                throw new IllegalStateException("You have to add '${LayerPlugin.XTRAPLATFORM_CORE}' to configuration 'feature'")
+                throw new IllegalStateException("You have to add '${LayerPlugin.XTRAPLATFORM_CORE}' to configuration 'layers'")
             }
 
-            def features = getModules(project)
-            features.eachWithIndex { feature, index ->
+            def layers = getModules(project)
+            layers.eachWithIndex { feature, index ->
 
                 feature.collectMany({ bundle ->
                     bundle.moduleArtifacts
@@ -149,10 +149,10 @@ class ApplicationPlugin implements Plugin<Project> {
         project.sourceSets.main.java { project.sourceSets.main.java.srcDir generatedSourceDir }
 
         project.task('createLauncher') {
-            inputs.files project.configurations.feature
-            inputs.files project.configurations.featureBundles
+            inputs.files project.configurations.layers
+            inputs.files project.configurations.layerModules
             inputs.files project.configurations.featureDevOnly
-            inputs.files project.configurations.bundle
+            inputs.files project.configurations.modules
             inputs.property("name", {appExtension.name2})
             inputs.property("version", {appExtension.version2})
             inputs.property("baseConfigs", {appExtension.additionalBaseConfigs})
@@ -229,11 +229,11 @@ class ApplicationPlugin implements Plugin<Project> {
 
     List<Set<ResolvedDependency>> getModules(Project project) {
         def includedBuilds = getIncludedBuilds(project)
-        def deps = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName)}) + project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> feature.moduleName.endsWith("-bundles")})
+        def deps = project.configurations.layers.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName)}) + project.configurations.layerModules.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> feature.moduleName.endsWith("-modules")})
         def features = sortByDependencyGraph(deps)
         def bundles = features.collect({ it.children.findAll({ bundle -> !(bundle in features) }) })
 
-        bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
+        bundles.add(project.configurations.modules.resolvedConfiguration.firstLevelModuleDependencies)
 
         return bundles
     }
