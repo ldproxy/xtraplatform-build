@@ -7,7 +7,7 @@ class LayerMaturityExtension {
         boolean allowExperimentalComponents = true
     }
 
-    private final Map<Maturity, MaturityConfiguration> configurations = [:]
+    protected final Map<Maturity, MaturityConfiguration> configurations = [:]
 
     Maturity minimumModuleMaturity = Maturity.EXPERIMENTAL
     boolean lowLevel = false
@@ -31,11 +31,11 @@ class LayerMaturityExtension {
         configurations.get(maturity).with(closure.get(0))
     }
 
-    MaturityConfiguration forMaturity(String maturity) {
+    MaturityConfiguration cfgForMaturity(String maturity) {
         return configurations.get(maturity as Maturity)
     }
 
     boolean isValid(Maturity maturity) {
-        return maturity.ordinal() <= minimumModuleMaturity.ordinal()
+        return maturity.ordinal() >= minimumModuleMaturity.ordinal()
     }
 }

@@ -35,7 +35,9 @@
   </rule>
 
   <rule ref="category/java/design.xml">
-  </rule><!-- TODO: enable-->
+    <exclude name="LawOfDemeter"/>
+    <exclude name="LoosePackageCoupling"/>
+  </rule>
 
   <rule ref="category/java/errorprone.xml">
     <exclude name="AvoidCatchingThrowable"/>
@@ -58,7 +60,7 @@
   <rule ref="category/java/documentation.xml/CommentContent">
     <properties>
       <property name="caseSensitive" value="false" />
-      <property name="disallowedTerms" value="todo" />
+      <property name="disallowedTerms" value="TODO" />
     </properties>
   </rule>
 

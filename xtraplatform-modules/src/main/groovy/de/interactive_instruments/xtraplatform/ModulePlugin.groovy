@@ -505,7 +505,7 @@ ${uses}
                 classDirectories.setFrom(project.files(classDirectories.files.collect {
                     project.fileTree(dir: it, include: 'de/ii/**')
                 }))
-                LayerMaturityExtension.MaturityConfiguration cfg = project.parent.maturity.forMaturity(project.maturity)
+                LayerMaturityExtension.MaturityConfiguration cfg = project.parent.layer.cfgForMaturity(project.maturity)
                 violationRules {
                     rule {
                         limit {
@@ -536,6 +536,17 @@ ${uses}
             into project.parent.buildDir
         }
 
+        project.pmd {
+            toolVersion = '6.44.0'
+            consoleOutput = project.maturity as Maturity >= Maturity.CANDIDATE
+            ignoreFailures = project.maturity as Maturity <= Maturity.CANDIDATE
+            ruleSets = []
+            ruleSetFiles new File(project.parent.buildDir, "pmd/code.xml")
+            if (!project.parent.layer.lowLevel) {
+                ruleSetFiles new File(project.parent.buildDir, "pmd/highlevel.xml")
+            }
+        }
+
         project.tasks.withType(Pmd).configureEach { pmd ->
             pmd.dependsOn project.tasks.named("pmdInit")
             pmd.actions.clear()
@@ -551,9 +562,9 @@ ${uses}
                 } else {
                     rootPath += "/"
                 }
-                def severity = project.maturity == Maturity.PRODUCTION
+                def severity = project.maturity as Maturity == Maturity.PRODUCTION
                         ? SarifForGithub.Severity.error
-                        : project.maturity == Maturity.CANDIDATE
+                        : project.maturity as Maturity == Maturity.CANDIDATE
                         ? SarifForGithub.Severity.warning
                         : SarifForGithub.Severity.recommendation
 
@@ -563,19 +574,6 @@ ${uses}
                 }
             }
         }
-
-
-        project.pmd {
-            toolVersion = '6.44.0'
-            consoleOutput = project.maturity >= Maturity.CANDIDATE
-            ignoreFailures = project.maturity <= Maturity.CANDIDATE
-            ruleSets = []
-            ruleSetFiles new File(project.parent.buildDir, "pmd/code.xml")
-            if (!project.parent.maturity.lowLevel) {
-                ruleSetFiles new File(project.parent.buildDir, "pmd/highlevel.xml")
-            }
-        }
-        println project.pmd
     }
 
     static boolean isExcluded(String item, Collection<String> items) {

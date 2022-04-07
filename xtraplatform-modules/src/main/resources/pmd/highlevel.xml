@@ -34,4 +34,24 @@
     </properties>
   </rule>
 
+  <rule name="DoNotUseSql"
+    language="java"
+    message="Importing 'java.sql' is not allowed"
+    class="net.sourceforge.pmd.lang.rule.XPathRule">
+    <description>
+
+    </description>
+    <priority>3</priority>
+    <properties>
+      <property name="version" value="2.0"/>
+      <property name="xpath">
+        <value>
+          <![CDATA[
+//ImportDeclaration[Name[starts-with(@Image, 'java.sql')]]
+]]>
+        </value>
+      </property>
+    </properties>
+  </rule>
+
 </ruleset>

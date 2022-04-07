@@ -100,9 +100,7 @@ abstract class PmdInvokerSarif {
 
                 if (reports.html.required.get()) {
                     assert reports.html.outputLocation.asFile.get().parentFile.exists()
-                    formatter(type: 'xslt', toFile: reports.html.outputLocation.asFile.get()) {
-                        param(name: 'xsltFilename', value: 'bla.xsl')
-                    }
+                    formatter(type: 'html', toFile: reports.html.outputLocation.asFile.get())
                     formatter(type: 'sarif', toFile: new File(reports.html.outputLocation.asFile.get().absolutePath.replace(".html", ".json")))
                 }
                 if (reports.xml.required.get()) {
@@ -117,19 +115,19 @@ abstract class PmdInvokerSarif {
                     a.builder.saveStreams = false
                     formatter(type: consoleOutputType, toConsole: true)
                 }
-                def failureCount = ant.project.properties["pmdFailureCount"]
-                if (failureCount) {
-                    def message = "$failureCount PMD rule violations were found."
-                    def report = reports.firstEnabled
-                    if (report) {
-                        def reportUrl = new ConsoleRenderer().asClickableFileUrl(report.outputLocation.asFile.get())
-                        message += " See the report at: $reportUrl"
-                    }
-                    if (ignoreFailures || ((failureCount as Integer) <= maxFailures)) {
-                        logger.warn(message)
-                    } else {
-                        throw new GradleException(message)
-                    }
+            }
+            def failureCount = ant.project.properties["pmdFailureCount"]
+            if (failureCount) {
+                def message = "$failureCount PMD rule violations were found."
+                def report = reports.firstEnabled
+                if (report) {
+                    def reportUrl = new ConsoleRenderer().asClickableFileUrl(report.outputLocation.asFile.get())
+                    message += " See the report at: $reportUrl"
+                }
+                if (ignoreFailures || ((failureCount as Integer) <= maxFailures)) {
+                    logger.warn(message)
+                } else {
+                    throw new GradleException(message)
                 }
             }
         }

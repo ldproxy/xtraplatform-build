@@ -1,3 +1,5 @@
 package de.interactive_instruments.xtraplatform
 
-enum Maturity {PRODUCTION, CANDIDATE, EXPERIMENTAL}
+enum Maturity {
+    EXPERIMENTAL, CANDIDATE, PRODUCTION;
+}

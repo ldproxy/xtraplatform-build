@@ -189,8 +189,8 @@ class LayerPlugin implements Plugin<Project> {
                 } catch (Throwable e) {
                     throw new IllegalArgumentException("Invalid maturity '${subproject.maturity}' (valid values: ${Maturity.values()})")
                 }
-                if (!project.maturity.isValid(maturity)) {
-                    throw new IllegalArgumentException("Invalid maturity '${subproject.maturity}' (minimum required for this layer: ${project.maturity.minimumModuleMaturity})")
+                if (!project.layer.isValid(maturity)) {
+                    throw new IllegalArgumentException("Invalid maturity '${subproject.maturity}' (minimum required for this layer: ${project.layer.minimumModuleMaturity})")
                 }
             }
 
