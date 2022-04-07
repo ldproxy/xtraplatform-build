@@ -20,6 +20,7 @@ java {
 
 dependencies {
     implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.1.1'
+    implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.6'
     implementation "com.github.ben-manes:gradle-versions-plugin:0.36.0"
     implementation "se.patrikerdes:gradle-use-latest-versions-plugin:0.2.15"
 }

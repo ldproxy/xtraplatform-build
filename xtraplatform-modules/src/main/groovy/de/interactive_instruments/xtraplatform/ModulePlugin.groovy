@@ -1,5 +1,6 @@
 package de.interactive_instruments.xtraplatform
 
+import com.github.spotbugs.snom.SpotBugsTask
 import de.interactive_instruments.xtraplatform.pmd.SarifForGithub
 import groovy.io.FileType
 import groovy.json.JsonOutput
@@ -528,6 +529,7 @@ ${uses}
 
     static void setupCodeQuality(Project project, boolean isParentIncluded) {
         project.plugins.apply('pmd')
+        project.plugins.apply('com.github.spotbugs')
 
         project.tasks.register('pmdInit', Copy) {
             from(project.zipTree(ModulePlugin.class.getResource("").file.split('!')[0])) {
@@ -547,8 +549,18 @@ ${uses}
             }
         }
 
+        project.spotbugs {
+            toolVersion = '4.6.0'
+            showStackTraces = project.maturity as Maturity >= Maturity.CANDIDATE
+            showProgress = true //project.maturity as Maturity >= Maturity.CANDIDATE
+            ignoreFailures = project.maturity as Maturity <= Maturity.CANDIDATE
+            onlyAnalyze = [ 'de.ii.-' ]
+            //extraArgs = ['-choosePlugins', '+com.h3xstream.findsecbugs']
+        }
+
         project.tasks.withType(Pmd).configureEach { pmd ->
             pmd.dependsOn project.tasks.named("pmdInit")
+            pmd.reports.xml.required = false
             pmd.actions.clear()
             pmd.doFirst {
                 validate(rulesMinimumPriority.get());
@@ -574,6 +586,33 @@ ${uses}
                 }
             }
         }
+
+        project.tasks.withType(SpotBugsTask).configureEach { spotbugs ->
+            spotbugs.onlyIf {false} //TODO: pretty slow, when to run?
+            spotbugs.reports {
+                html {
+                    required = true
+                    stylesheet = 'fancy-hist.xsl'
+                }
+                sarif {
+                    required = true
+                }
+            }
+            spotbugs.classes = spotbugs.classes.filter { File it ->
+                !it.absolutePath.contains("/build/generated/")
+            }
+            spotbugs.doLast {
+                def json = spotbugs.reports.SARIF.outputLocation.asFile.get()
+                //TODO: SarifForGithub
+                if (json.exists()) {
+                    def sarif = new JsonSlurper().parse(json)
+                    def sarifText = JsonOutput.prettyPrint(JsonOutput.toJson(sarif))
+                    json.text = sarifText
+                }
+            }
+        }
+        //TODO: The following classes needed for analysis were missing: apply
+        //project.dependencies.add('spotbugsPlugins', "com.h3xstream.findsecbugs:findsecbugs-plugin:1.11.0")
     }
 
     static boolean isExcluded(String item, Collection<String> items) {
