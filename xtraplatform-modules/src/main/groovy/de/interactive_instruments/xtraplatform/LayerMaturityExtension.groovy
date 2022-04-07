@@ -4,22 +4,13 @@ class LayerMaturityExtension {
 
     class MaturityConfiguration {
         double minimumCoverage = 0.0
-        Maturity minimumComponentMaturity = Maturity.EXPERIMENTAL
-        Set<String> forbiddenImports = []
-        boolean isMinimumModuleMaturity = false
-
-        @Override
-        public String toString() {
-            return "MaturityConfiguration{" +
-                    "minimumCoverage=" + minimumCoverage +
-                    ", minimumComponentMaturity=" + minimumComponentMaturity +
-                    ", forbiddenImports=" + forbiddenImports +
-                    ", isMinimumModuleMaturity=" + isMinimumModuleMaturity +
-                    '}';
-        }
+        boolean allowExperimentalComponents = true
     }
 
-    final Map<Maturity, MaturityConfiguration> configurations = [:]
+    private final Map<Maturity, MaturityConfiguration> configurations = [:]
+
+    Maturity minimumModuleMaturity = Maturity.EXPERIMENTAL
+    boolean lowLevel = false
 
     LayerMaturityExtension() {
         Maturity.values().each {
@@ -27,7 +18,7 @@ class LayerMaturityExtension {
         }
         configurations.get(Maturity.PRODUCTION).with {
             minimumCoverage = 1.0
-            minimumComponentMaturity = 'PRODUCTION'
+            allowExperimentalComponents = false
         }
         configurations.get(Maturity.CANDIDATE).with {
             minimumCoverage = 0.5
@@ -44,17 +35,7 @@ class LayerMaturityExtension {
         return configurations.get(maturity as Maturity)
     }
 
-    Maturity getMinimumModuleMaturity() {
-        return configurations.entrySet()
-                .stream()
-                .filter(entry -> entry.getValue().isMinimumModuleMaturity)
-                .map(entry -> entry.getKey())
-                .findFirst()
-                .orElse(Maturity.EXPERIMENTAL)
-    }
-
     boolean isValid(Maturity maturity) {
-        Maturity minimumModuleMaturity = getMinimumModuleMaturity()
         return maturity.ordinal() <= minimumModuleMaturity.ordinal()
     }
 }

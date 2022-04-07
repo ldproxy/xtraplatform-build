@@ -1,11 +1,16 @@
 package de.interactive_instruments.xtraplatform
 
+import de.interactive_instruments.xtraplatform.pmd.SarifForGithub
 import groovy.io.FileType
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
+import org.gradle.api.plugins.quality.Pmd
+import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
@@ -26,13 +31,15 @@ class ModulePlugin implements Plugin<Project> {
         }
         task.actions.each { it.execute(task) }
     }
+
     void executeTask(TaskProvider<Task> task) {
-        task.configure({executeTask(it)})
+        task.configure({ executeTask(it) })
     }
 
     @Override
     void apply(Project project) {
-        ModuleInfoExtension moduleInfo = project.moduleInfo //project.extensions.create('moduleInfo', ModuleInfoExtension)
+        ModuleInfoExtension moduleInfo = project.moduleInfo
+        //project.extensions.create('moduleInfo', ModuleInfoExtension)
 
         def isIntelliJ = System.getProperty("idea.active") == "true"
 
@@ -46,14 +53,14 @@ class ModulePlugin implements Plugin<Project> {
 
         // apply layer boms
         //project.parent.configurations.layers.incoming.beforeResolve {
-            project.parent.configurations.layers.dependencies.collect().each {
-                def isIncludedBuild = includedBuilds.contains(it.name)
-                if (!isIncludedBuild) {
-                    def bom = [group: it.group, name: "${it.name}", version: it.version]
+        project.parent.configurations.layers.dependencies.collect().each {
+            def isIncludedBuild = includedBuilds.contains(it.name)
+            if (!isIncludedBuild) {
+                def bom = [group: it.group, name: "${it.name}", version: it.version]
 
-                    project.dependencies.add('provided', project.dependencies.enforcedPlatform(bom))
-                }
+                project.dependencies.add('provided', project.dependencies.enforcedPlatform(bom))
             }
+        }
         //}
 
         //setupConfigurations(project)
@@ -61,6 +68,8 @@ class ModulePlugin implements Plugin<Project> {
         setupAnnotationProcessors(project)
 
         setupUnitTests(project)
+
+        setupCodeQuality(project, includedBuilds.contains(project.parent.name))
 
         project.afterEvaluate {
             if (moduleInfo.enabled) {
@@ -382,9 +391,11 @@ class ModulePlugin implements Plugin<Project> {
                     .collect(Collectors.joining("\n"))
             def requires = moduleInfo.requires.stream()
                     .filter({ require -> !isExcluded(require, moduleInfo.requires) })
-                    .map({ require -> project.name == LayerPlugin.XTRAPLATFORM_RUNTIME && !require.startsWith("transitive")
-                            ? "\trequires transitive ${require};"
-                            : "\trequires ${require};" })
+                    .map({ require ->
+                        project.name == LayerPlugin.XTRAPLATFORM_RUNTIME && !require.startsWith("transitive")
+                                ? "\trequires transitive ${require};"
+                                : "\trequires ${require};"
+                    })
                     .collect(Collectors.joining("\n", "\n", ""))
             def provides = moduleInfo.provides.entrySet().stream()
                     .filter({ provide -> !isExcluded(provide.key, moduleInfo.provides.keySet()) })
@@ -513,6 +524,58 @@ ${uses}
             with testConfig
             systemProperty 'spock.include.Slow', 'true'
         }
+    }
+
+    static void setupCodeQuality(Project project, boolean isParentIncluded) {
+        project.plugins.apply('pmd')
+
+        project.tasks.register('pmdInit', Copy) {
+            from(project.zipTree(ModulePlugin.class.getResource("").file.split('!')[0])) {
+                include "/pmd/*"
+            }
+            into project.parent.buildDir
+        }
+
+        project.tasks.withType(Pmd).configureEach { pmd ->
+            pmd.dependsOn project.tasks.named("pmdInit")
+            pmd.actions.clear()
+            pmd.doFirst {
+                validate(rulesMinimumPriority.get());
+                PmdInvokerSarif.invoke(pmd);
+            }
+            pmd.doLast {
+                def json = new File(pmd.reports.html.outputLocation.asFile.get().absolutePath.replace(".html", ".json"))
+                def rootPath = project.rootDir.absolutePath
+                if (isParentIncluded) {
+                    rootPath.replace(project.parent.name, "")
+                } else {
+                    rootPath += "/"
+                }
+                def severity = project.maturity == Maturity.PRODUCTION
+                        ? SarifForGithub.Severity.error
+                        : project.maturity == Maturity.CANDIDATE
+                        ? SarifForGithub.Severity.warning
+                        : SarifForGithub.Severity.recommendation
+
+
+                if (json.exists()) {
+                    SarifForGithub.prepare(json, rootPath, project.name, pmd.name.toLowerCase().replace("pmd", ""), severity)
+                }
+            }
+        }
+
+
+        project.pmd {
+            toolVersion = '6.44.0'
+            consoleOutput = project.maturity >= Maturity.CANDIDATE
+            ignoreFailures = project.maturity <= Maturity.CANDIDATE
+            ruleSets = []
+            ruleSetFiles new File(project.parent.buildDir, "pmd/code.xml")
+            if (!project.parent.maturity.lowLevel) {
+                ruleSetFiles new File(project.parent.buildDir, "pmd/highlevel.xml")
+            }
+        }
+        println project.pmd
     }
 
     static boolean isExcluded(String item, Collection<String> items) {

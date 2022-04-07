@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+
+<ruleset name="xtraplatform general"
+  xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>
+    xtraplatform general code rules
+  </description>
+
+  <exclude-pattern>.*/build/generated/.*</exclude-pattern>
+
+  <rule ref="category/java/bestpractices.xml">
+  </rule>
+
+  <rule ref="category/java/codestyle.xml">
+    <exclude name="LocalVariableCouldBeFinal"/><!-- TODO: enable-->
+    <exclude name="MethodArgumentCouldBeFinal"/><!-- TODO: enable-->
+    <exclude name="ClassNamingConventions"/>
+    <exclude name="CommentDefaultAccessModifier"/>
+    <exclude name="EmptyMethodInAbstractClassShouldBeAbstract"/>
+    <exclude name="LongVariable"/>
+    <exclude name="OnlyOneReturn"/>
+    <exclude name="ShortClassName"/>
+    <exclude name="ShortMethodName"/>
+    <exclude name="ShortVariable"/>
+    <exclude name="UnnecessaryLocalBeforeReturn"/>
+  </rule>
+
+  <rule ref="category/java/codestyle.xml/ClassNamingConventions">
+    <properties>
+      <property name="utilityClassPattern" value="[A-Z][a-zA-Z0-9]*"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml">
+  </rule><!-- TODO: enable-->
+
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="AvoidCatchingThrowable"/>
+    <exclude name="AvoidFieldNameMatchingMethodName"/>
+    <exclude name="AvoidFieldNameMatchingTypeName"/>
+    <exclude name="BeanMembersShouldSerialize"/>
+    <exclude name="DataflowAnomalyAnalysis"/>
+  </rule>
+
+  <rule ref="category/java/multithreading.xml">
+    <exclude name="DoNotUseThreads"/>
+  </rule>
+
+  <rule ref="category/java/performance.xml">
+  </rule>
+
+  <rule ref="category/java/security.xml">
+  </rule>
+
+  <rule ref="category/java/documentation.xml/CommentContent">
+    <properties>
+      <property name="caseSensitive" value="false" />
+      <property name="disallowedTerms" value="todo" />
+    </properties>
+  </rule>
+
+</ruleset>

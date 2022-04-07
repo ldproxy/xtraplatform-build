@@ -93,7 +93,7 @@ class LayerPlugin implements Plugin<Project> {
         }
 
 
-        project.extensions.create('maturity', LayerMaturityExtension)
+        project.extensions.create('layer', LayerMaturityExtension)
 
         project.tasks.register("modules") {
             doLast {
@@ -104,6 +104,8 @@ class LayerPlugin implements Plugin<Project> {
             }
         }
         project.tasks.register("createModule", ModuleCreateTask)
+
+        project.plugins.apply('build-dashboard')
     }
 
     void addFeatureModules(Project project, includedBuilds) {

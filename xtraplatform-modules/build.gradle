@@ -4,6 +4,20 @@ repositories {
     }
 }
 
+sourceSets {
+    annotations {
+        java {
+            srcDir 'src/annotations/java'
+        }
+    }
+}
+
+java {
+    registerFeature('annotations') {
+        usingSourceSet(sourceSets.annotations)
+    }
+}
+
 dependencies {
     implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.1.1'
     implementation "com.github.ben-manes:gradle-versions-plugin:0.36.0"
@@ -32,20 +46,5 @@ gradlePlugin {
             id = 'de.interactive_instruments.xtraplatform-composite'
             implementationClass = 'de.interactive_instruments.xtraplatform.CompositePlugin'
         }
-    }
-}
-
-
-sourceSets {
-    annotations {
-        java {
-            srcDir 'src/annotations/java'
-        }
-    }
-}
-
-java {
-    registerFeature('annotations') {
-        usingSourceSet(sourceSets.annotations)
     }
 }
