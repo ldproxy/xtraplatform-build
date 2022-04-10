@@ -588,7 +588,7 @@ ${uses}
         }
 
         project.tasks.withType(SpotBugsTask).configureEach { spotbugs ->
-            spotbugs.onlyIf {false} //TODO: pretty slow, when to run?
+            spotbugs.onlyIf {project.findProperty('spotbugs') == 'true'} //TODO: pretty slow, when to run?
             spotbugs.reports {
                 html {
                     required = true
