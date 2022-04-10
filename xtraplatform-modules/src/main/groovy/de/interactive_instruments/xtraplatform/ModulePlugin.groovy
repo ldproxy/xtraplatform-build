@@ -262,6 +262,11 @@ class ModulePlugin implements Plugin<Project> {
             project.artifacts {
                 archives project.tasks.named('embedIntellij').map { it.outputs.files.singleFile }
             }
+
+            project.tasks.named('processIntellijResources') {
+                dependsOn project.tasks.named('embedResources')
+                dependsOn project.tasks.named('embedServices')
+            }
         } else {
             project.sourceSets.main.output.dir(embeddedResourcesDir)
         }
@@ -531,13 +536,6 @@ ${uses}
         project.plugins.apply('pmd')
         project.plugins.apply('com.github.spotbugs')
 
-        project.tasks.register('pmdInit', Copy) {
-            from(project.zipTree(ModulePlugin.class.getResource("").file.split('!')[0])) {
-                include "/pmd/*"
-            }
-            into project.parent.buildDir
-        }
-
         project.pmd {
             toolVersion = '6.44.0'
             consoleOutput = project.maturity as Maturity >= Maturity.CANDIDATE
@@ -559,7 +557,7 @@ ${uses}
         }
 
         project.tasks.withType(Pmd).configureEach { pmd ->
-            pmd.dependsOn project.tasks.named("pmdInit")
+            pmd.dependsOn project.parent.tasks.named("pmdInit")
             pmd.reports.xml.required = false
             pmd.actions.clear()
             pmd.doFirst {
@@ -588,6 +586,10 @@ ${uses}
         }
 
         project.tasks.withType(SpotBugsTask).configureEach { spotbugs ->
+            // workaround for spotbugsIntellij
+            if (spotbugs.classDirs == null) {
+                spotbugs.classDirs = project.files()
+            }
             spotbugs.onlyIf {project.findProperty('spotbugs') == 'true'} //TODO: pretty slow, when to run?
             spotbugs.reports {
                 html {

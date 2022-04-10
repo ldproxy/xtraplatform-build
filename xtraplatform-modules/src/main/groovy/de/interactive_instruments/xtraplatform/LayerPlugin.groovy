@@ -7,6 +7,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
+import org.gradle.api.tasks.Copy
 import org.jetbrains.gradle.ext.ActionDelegationConfig
 import org.jetbrains.gradle.ext.JUnit
 import org.slf4j.LoggerFactory
@@ -106,6 +107,8 @@ class LayerPlugin implements Plugin<Project> {
         project.tasks.register("createModule", ModuleCreateTask)
 
         project.plugins.apply('build-dashboard')
+
+        project.tasks.check.finalizedBy project.tasks.named("buildDashboard")
     }
 
     void addFeatureModules(Project project, includedBuilds) {
@@ -141,6 +144,13 @@ class LayerPlugin implements Plugin<Project> {
             doLast {
                 println "\nSpock report: file://${project.buildDir}/reports/spock/index.html"
             }
+        }
+
+        project.tasks.register('pmdInit', Copy) {
+            from(project.zipTree(LayerPlugin.class.getResource("").file.split('!')[0])) {
+                include "/pmd/*"
+            }
+            into project.buildDir
         }
 
         project.subprojects { Project subproject ->
