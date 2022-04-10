@@ -65,7 +65,8 @@ class ApplicationPlugin implements Plugin<Project> {
             moduleInfo.name = ModulePlugin.getModuleName(project.group as String, project.name)
             ModulePlugin.setupModuleInfo(project, moduleInfo, false, true)
 
-            project.dependencies.add('compileOnly', [group: 'de.interactive_instruments', name: 'xtraplatform-modules', version: '+'], {
+            project.dependencies.add('app', [group: 'de.interactive_instruments', name: 'xtraplatform-modules', version: '+'], {
+                transitive = false
                 capabilities {
                     requireCapability("de.interactive_instruments:xtraplatform-modules-annotations")
                 }

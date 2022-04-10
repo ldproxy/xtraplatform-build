@@ -465,8 +465,8 @@ ${uses}
 
             testLogging.showStandardStreams = true
             reports {
-                html.enabled false
-                junitXml.enabled = false
+                html.required = false
+                junitXml.required = false
             }
 
             //outputs.dir("${project.rootProject.buildDir}/reports/spock")
