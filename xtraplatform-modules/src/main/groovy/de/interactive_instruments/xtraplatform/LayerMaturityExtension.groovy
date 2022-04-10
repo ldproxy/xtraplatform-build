@@ -5,6 +5,7 @@ class LayerMaturityExtension {
     class MaturityConfiguration {
         double minimumCoverage = 0.0
         boolean allowExperimentalComponents = true
+        boolean warningsAsErrors = false
     }
 
     protected final Map<Maturity, MaturityConfiguration> configurations = [:]
@@ -19,6 +20,7 @@ class LayerMaturityExtension {
         configurations.get(Maturity.PRODUCTION).with {
             minimumCoverage = 1.0
             allowExperimentalComponents = false
+            warningsAsErrors = true
         }
         configurations.get(Maturity.CANDIDATE).with {
             minimumCoverage = 0.5

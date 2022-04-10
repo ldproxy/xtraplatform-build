@@ -15,6 +15,7 @@ import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.tasks.Jar
 
@@ -552,7 +553,7 @@ ${uses}
             showStackTraces = project.maturity as Maturity >= Maturity.CANDIDATE
             showProgress = true //project.maturity as Maturity >= Maturity.CANDIDATE
             ignoreFailures = project.maturity as Maturity <= Maturity.CANDIDATE
-            onlyAnalyze = [ 'de.ii.-' ]
+            onlyAnalyze = ['de.ii.-']
             //extraArgs = ['-choosePlugins', '+com.h3xstream.findsecbugs']
         }
 
@@ -590,7 +591,7 @@ ${uses}
             if (spotbugs.classDirs == null) {
                 spotbugs.classDirs = project.files()
             }
-            spotbugs.onlyIf {project.findProperty('spotbugs') == 'true'} //TODO: pretty slow, when to run?
+            spotbugs.onlyIf { project.findProperty('spotbugs') == 'true' } //TODO: pretty slow, when to run?
             spotbugs.reports {
                 html {
                     required = true
@@ -615,6 +616,16 @@ ${uses}
         }
         //TODO: The following classes needed for analysis were missing: apply
         //project.dependencies.add('spotbugsPlugins', "com.h3xstream.findsecbugs:findsecbugs-plugin:1.11.0")
+
+        project.afterEvaluate {
+            project.tasks.withType(JavaCompile).configureEach {
+                LayerMaturityExtension.MaturityConfiguration cfg = project.parent.layer.cfgForMaturity(project.maturity)
+                if (cfg.warningsAsErrors) {
+                    options.compilerArgs.add("-Werror")
+                    //TODO: Xlint, siehe https://sol.cs.hm.edu/4129/html/431-warnungendesjavacompilers.xhtml
+                }
+            }
+        }
     }
 
     static boolean isExcluded(String item, Collection<String> items) {
