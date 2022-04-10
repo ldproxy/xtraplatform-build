@@ -75,4 +75,24 @@
     </properties>
   </rule>
 
+  <rule name="DeprecatedSince"
+    language="java"
+    message="Always provide a version for @Deprecated, e.g. @Deprecated(since=&quot;1.0.0&quot;)"
+    class="net.sourceforge.pmd.lang.rule.XPathRule">
+    <description>
+
+    </description>
+    <priority>3</priority>
+    <properties>
+      <property name="version" value="2.0"/>
+      <property name="xpath">
+        <value>
+          <![CDATA[
+//(TypeDeclaration|ClassOrInterfaceBodyDeclaration)/Annotation/*[Name[pmd-java:typeIs('java.lang.Deprecated')] and (count(MemberValuePairs/MemberValuePair[@Image = "since"]) = 0 or string-length(MemberValuePairs/MemberValuePair[@Image = "since"]//Literal/@Image) <= 2)]
+]]>
+        </value>
+      </property>
+    </properties>
+  </rule>
+
 </ruleset>
