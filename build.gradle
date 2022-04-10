@@ -20,7 +20,7 @@ subprojects { subproject ->
 
     group = 'de.interactive_instruments'
 
-    version = '4.1.0' + versionSuffix
+    version = '4.1.1' + versionSuffix
 
     sourceCompatibility = JavaVersion.VERSION_11
 
