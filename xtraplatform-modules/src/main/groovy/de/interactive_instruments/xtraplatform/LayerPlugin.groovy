@@ -1,10 +1,10 @@
 package de.interactive_instruments.xtraplatform
 
-
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.file.FileCopyDetails
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
@@ -150,7 +150,12 @@ class LayerPlugin implements Plugin<Project> {
             from(project.zipTree(LayerPlugin.class.getResource("").file.split('!')[0])) {
                 include "/pmd/*"
             }
-            into project.buildDir
+            eachFile { FileCopyDetails fcd ->
+                int slashIndex = fcd.path.indexOf('/', 1)
+                fcd.path = fcd.path.substring(slashIndex+1)
+            }
+            includeEmptyDirs = false
+            into new File(project.buildDir, 'pmd')
         }
 
         project.subprojects { Project subproject ->
