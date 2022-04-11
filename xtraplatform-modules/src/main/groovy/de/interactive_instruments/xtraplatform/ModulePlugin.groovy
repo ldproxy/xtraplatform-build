@@ -43,9 +43,9 @@ class ModulePlugin implements Plugin<Project> {
         ModuleInfoExtension moduleInfo = project.moduleInfo
         //project.extensions.create('moduleInfo', ModuleInfoExtension)
 
-        def isIntelliJ = System.getProperty("idea.active") == "true"
-
-
+        def isCi = project.hasProperty('ci') || Objects.nonNull(System.getenv("CI"))
+        def isIntelliJ = System.getProperty("idea.active") == "true" || !isCi
+        
         def includedBuilds = project.gradle.includedBuilds.collect { it.name }
         def parent = project.gradle.parent
         while (parent != null) {

@@ -29,6 +29,13 @@ class LayerPlugin implements Plugin<Project> {
         project.plugins.apply("java") // needed for platform constraints
         project.plugins.apply("maven-publish")
 
+        def isBranch = project.hasProperty('branch')
+        def isMainBranch = isBranch && (project.getProperty('branch') == 'master' || project.getProperty('branch') == 'main')
+        def isRelease = project.findProperty('release') == 'true'
+        project.ext {
+            versionSuffix = (isBranch && !isMainBranch && !isRelease ? ('-' + project.getProperty('branch')) : '') + (!isRelease ? '-SNAPSHOT' : '')
+        }
+
         // consumed layers
         project.configurations.create("layers")
 
