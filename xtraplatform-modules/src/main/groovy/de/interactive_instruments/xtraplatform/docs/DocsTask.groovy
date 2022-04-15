@@ -1,4 +1,4 @@
-package de.interactive_instruments.xtraplatform
+package de.interactive_instruments.xtraplatform.docs
 
 import groovy.io.FileType
 import groovy.json.JsonBuilder
@@ -47,32 +47,34 @@ class DocsTask extends DefaultTask {
         bundles.each { k,v ->
             println k
             println '  - version: ' + v.info.version
-            println '  - provides: ' + v.info.provided2Packages
-            println '  - consumes: ' + v.info.imported3Packages.findAll {it.startsWith('de.ii.ldproxy')}
+            println '  - provides: ' + v.info.providedPackages
+            println '  - consumes: ' + v.info.imported2Packages.findAll {it.startsWith('de.ii')}
             println '  - deps: ' + bundles.findAll {
-                it.key != k && !v.info.imported3Packages.disjoint(it.value.info.provided2Packages)
+                it.key != k && !v.info.imported2Packages.disjoint(it.value.info.provided2Packages)
             }.collect { it.key }
-            println '  - components: ' + v.classes.findAll {it.value.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'org.apache.felix.ipojo.annotations.Component'})}.collect { it.value.qualifiedName }
-            println '  - required: ' + v.classes.findAll {it.value.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'org.apache.felix.ipojo.annotations.Component'})}.collect {
-                it.value.fields.stream()
-                        .filter({field -> field.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'org.apache.felix.ipojo.annotations.Requires'})})
-                        .map({field -> field.type.qualifiedName})
+            println '  - components: ' + v.classes.findAll {it.value.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'AutoBind'})}.collect { it.value.qualifiedName }
+            println '  - required: ' + v.classes.findAll {it.value.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'AutoBind'})}.collect {
+                it.value.constructors.stream()
+                        .filter({field -> field.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'Inject'})})
+                        .flatMap({field -> field.parameters.stream()})
+                        .map({parameter -> parameter.type.qualifiedName})
                         .collect(Collectors.toList())
             }
 
             appInfo.bundles[k] = [
                     name: v.info.name,
                     version: v.info.version,
-                    provides: v.info.provided2Packages,
-                    consumes: v.info.imported3Packages.findAll {it.startsWith('de.ii.ldproxy')},
+                    provides: v.info.providedPackages,
+                    consumes: v.info.imported2Packages.findAll {it.startsWith('de.ii')},
                     deps: bundles.findAll {
-                        it.key != k && !v.info.imported3Packages.disjoint(it.value.info.provided2Packages)
+                        it.key != k && !v.info.imported2Packages.disjoint(it.value.info.provided2Packages)
                     }.collect { it.key },
-                    components: v.classes.findAll {it.value.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'org.apache.felix.ipojo.annotations.Component'})}.collect { it.value.qualifiedName },
-                    required: v.classes.findAll {it.value.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'org.apache.felix.ipojo.annotations.Component'})}.collectEntries {
-                        [(it.value.qualifiedName): it.value.fields.stream()
-                                .filter({field -> field.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'org.apache.felix.ipojo.annotations.Requires'})})
-                                .map({field -> field.type.qualifiedName})
+                    components: v.classes.findAll {it.value.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'AutoBind'})}.collect { it.value.qualifiedName },
+                    required: v.classes.findAll {it.value.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'AutoBind'})}.collectEntries {
+                        [(it.value.qualifiedName): it.value.constructors.stream()
+                                .filter({field -> field.annotations.stream().anyMatch({ann -> ann.qualifiedTypeName == 'Inject'})})
+                                .flatMap({field -> field.parameters.stream()})
+                                .map({parameter -> parameter.type.qualifiedName})
                                 .collect(Collectors.toList())
                         ]
                     }

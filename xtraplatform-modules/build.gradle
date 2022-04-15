@@ -23,6 +23,7 @@ dependencies {
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.6'
     implementation "com.github.ben-manes:gradle-versions-plugin:0.36.0"
     implementation "se.patrikerdes:gradle-use-latest-versions-plugin:0.2.15"
+    implementation 'com.google.code.gson:gson:2.9.0'
 }
 
 gradlePlugin {
@@ -41,7 +42,7 @@ gradlePlugin {
         }
         docPlugin {
             id = 'de.interactive_instruments.xtraplatform-doc'
-            implementationClass = 'de.interactive_instruments.xtraplatform.DocPlugin'
+            implementationClass = 'de.interactive_instruments.xtraplatform.docs.DocPlugin'
         }
         compositePlugin {
             id = 'de.interactive_instruments.xtraplatform-composite'

@@ -45,7 +45,7 @@ class ModulePlugin implements Plugin<Project> {
 
         def isCi = project.hasProperty('ci') || Objects.nonNull(System.getenv("CI"))
         def isIntelliJ = System.getProperty("idea.active") == "true" || !isCi
-        
+
         def includedBuilds = project.gradle.includedBuilds.collect { it.name }
         def parent = project.gradle.parent
         while (parent != null) {

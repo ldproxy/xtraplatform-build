@@ -82,7 +82,7 @@ class LayerPlugin implements Plugin<Project> {
 
         configureSubprojects(project, includedBuilds)
 
-        project.plugins.apply(DocPlugin.class)
+        project.plugins.apply(de.interactive_instruments.xtraplatform.docs.DocPlugin.class)
         project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
 
         project.with {
