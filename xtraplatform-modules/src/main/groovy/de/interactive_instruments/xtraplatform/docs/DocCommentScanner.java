@@ -1,10 +1,7 @@
 package de.interactive_instruments.xtraplatform.docs;
 
-import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocCommentTree;
-import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ParamTree;
-import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
@@ -26,11 +23,13 @@ import javax.lang.model.util.Elements;
 class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
 
   private final Elements elementUtils;
+  private final String enclosingPackage;
   private final List<Map<String, List<String>>> tags;
   private Map<String, List<String>> currentTags;
 
-  DocCommentScanner(Elements elementUtils, List<Map<String, List<String>>> tags) {
+  DocCommentScanner(Elements elementUtils, String enclosingPackage, List<Map<String, List<String>>> tags) {
     this.elementUtils = elementUtils;
+    this.enclosingPackage = enclosingPackage;
     this.tags = tags;
     this.currentTags = new LinkedHashMap<>();
     tags.add(currentTags);
@@ -56,8 +55,13 @@ class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
   public Void visitSee(SeeTree node, Void unused) {
     String name = node.getTagName();
     node.getReference()
+        .stream()
+        .filter(docTree -> docTree instanceof ReferenceTree) //TODO: <a href
         .forEach(docTree -> {
           String ref = ((ReferenceTree) docTree).getSignature();
+          if (!ref.contains(".")) {
+            ref = enclosingPackage + "." + ref;
+          }
           TypeElement refElement = elementUtils.getTypeElement(ref);
           if (Objects.isNull(refElement)) {
             throw new IllegalArgumentException(

@@ -2,7 +2,7 @@ package de.interactive_instruments.xtraplatform.docs;
 
 import java.util.List;
 
-class ClassDocs extends ElementDocs {
+class TypeDocs extends ElementDocs {
 
   ElementDocs superClass;
   List<ElementDocs> interfaces;

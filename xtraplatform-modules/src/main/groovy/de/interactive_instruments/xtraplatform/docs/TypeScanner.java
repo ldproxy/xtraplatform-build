@@ -49,10 +49,9 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
 
   @Override
   public List<ElementDocs> visitType(TypeElement e, Integer integer) {
-    //out.println("  -> TYPE " + integer + " " + e.getQualifiedName());
+    //TODO: ancestors of superClass and interfaces
     if (integer == 1) {
-      ClassDocs c = new ClassDocs();
-      DEFAULT_VALUE.add(c);
+      TypeDocs c = new TypeDocs();
 
       c.qualifiedName = e.getQualifiedName().toString();
       //c.name = e.getSimpleName().toString();
@@ -62,7 +61,8 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
           .collect(Collectors.toSet());
       c.types = e.getTypeParameters()
           .stream()
-          .map(typeParameterElement -> typeParameterElement.toString() + typeParameterElement.getBounds().toString())//TODO
+          .map(typeParameterElement -> typeParameterElement.toString()
+              + typeParameterElement.getBounds().toString())//TODO
           .collect(Collectors.toList());
       c.superClass = scanElementRef(e.getSuperclass());
       c.interfaces = e.getInterfaces()
@@ -72,10 +72,23 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
       c.doc = scanDocComment(e);
       c.annotations = scanAnnotations(e);
 
-      super.visitType(e, integer);
+      if (shouldInclude(c)) {
+        DEFAULT_VALUE.add(c);
+        super.visitType(e, integer);
+      }
     }
 
     return DEFAULT_VALUE;
+  }
+
+  private boolean shouldInclude(TypeDocs typeDocs) {
+    if (typeDocs.hasAnnotation("dagger.internal.DaggerGenerated")
+        || typeDocs.getName().startsWith("AutoBindings") //TODO: Generated in dagger-auto
+        || typeDocs.hasAnnotation("org.immutables.value.Generated")) {
+      //System.out.println("EXCLUDE " + typeDocs.qualifiedName);
+      return false;
+    }
+    return true;
   }
 
   @Override
@@ -84,25 +97,24 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
       MethodDocs m = new MethodDocs();
       m.qualifiedName = e.getSimpleName().toString();
       m.isConstructor = e.getKind() == ElementKind.CONSTRUCTOR;
-      //m.parameters = e.getParameters();//TODO: direct or using super.visit
       m.modifiers = e.getModifiers()
           .stream()
           .map(Modifier::toString)
           .collect(Collectors.toSet());
       m.types = e.getTypeParameters()
           .stream()
-          .map(typeParameterElement -> typeParameterElement.toString() + typeParameterElement.getBounds().toString())//TODO
+          .map(typeParameterElement -> typeParameterElement.toString()
+              + typeParameterElement.getBounds().toString())//TODO
           .collect(Collectors.toList());
       m.doc = scanDocComment(e);
       m.annotations = scanAnnotations(e);
       //TODO: exceptions, returnType
 
-      ClassDocs classDocs = (ClassDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
-      if (Objects.isNull(classDocs.methods)) {
-        classDocs.methods = new ArrayList<>();
+      TypeDocs typeDocs = (TypeDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
+      if (Objects.isNull(typeDocs.methods)) {
+        typeDocs.methods = new ArrayList<>();
       }
-      classDocs.methods.add(m);
-
+      typeDocs.methods.add(m);
 
       super.visitExecutable(e, integer);
     }
@@ -111,7 +123,8 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
   }
 
   @Override
-  public List<ElementDocs> visitVariable(VariableElement e, Integer integer) {VariableDocs v = new VariableDocs();
+  public List<ElementDocs> visitVariable(VariableElement e, Integer integer) {
+    VariableDocs v = new VariableDocs();
     v.qualifiedName = e.getSimpleName().toString();
     v.modifiers = e.getModifiers()
         .stream()
@@ -122,15 +135,15 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
     v.type = e.asType().toString();
 
     if (e.getKind() == ElementKind.FIELD) {
-      ClassDocs classDocs = (ClassDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
-      if (Objects.isNull(classDocs.fields)) {
-        classDocs.fields = new ArrayList<>();
+      TypeDocs typeDocs = (TypeDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
+      if (Objects.isNull(typeDocs.fields)) {
+        typeDocs.fields = new ArrayList<>();
       }
-      classDocs.fields.add(v);
+      typeDocs.fields.add(v);
     } else if (e.getKind() == ElementKind.PARAMETER) {
-      ClassDocs classDocs = (ClassDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
-      if (Objects.nonNull(classDocs.methods) && !classDocs.methods.isEmpty()) {
-        MethodDocs methodDocs = classDocs.methods.get(classDocs.methods.size()-1);
+      TypeDocs typeDocs = (TypeDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
+      if (Objects.nonNull(typeDocs.methods) && !typeDocs.methods.isEmpty()) {
+        MethodDocs methodDocs = typeDocs.methods.get(typeDocs.methods.size() - 1);
         if (Objects.isNull(methodDocs.parameters)) {
           methodDocs.parameters = new ArrayList<>();
         }
@@ -170,7 +183,8 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
     DocCommentTree docCommentTree = treeUtils.getDocCommentTree(e);
 
     if (docCommentTree != null) {
-      new DocCommentScanner(elementUtils, tags).visit(docCommentTree, null);
+      String enclosingPackage = elementUtils.getPackageOf(e).getQualifiedName().toString();
+      new DocCommentScanner(elementUtils, enclosingPackage, tags).visit(docCommentTree, null);
     }
 
     return tags;

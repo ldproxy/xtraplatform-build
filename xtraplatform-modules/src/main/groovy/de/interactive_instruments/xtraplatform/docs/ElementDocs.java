@@ -1,17 +1,12 @@
 package de.interactive_instruments.xtraplatform.docs;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 class ElementDocs {
+
   String qualifiedName;
   List<Map<String, List<String>>> doc;
   List<AnnotationDocs> annotations;
@@ -24,5 +19,11 @@ class ElementDocs {
     }
 
     return qualifiedName;
+  }
+
+  boolean hasAnnotation(String qualifiedName) {
+    return Objects.nonNull(annotations)
+        && annotations.stream()
+        .anyMatch(annotationDocs -> Objects.equals(annotationDocs.qualifiedName, qualifiedName));
   }
 }
