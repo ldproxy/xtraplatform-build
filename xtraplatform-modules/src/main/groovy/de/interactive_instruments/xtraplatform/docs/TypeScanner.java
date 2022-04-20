@@ -69,7 +69,7 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
           .stream()
           .map(typeMirror -> scanElementRef(typeMirror))
           .collect(Collectors.toList());
-      c.doc = scanDocComment(e);
+      c.doc = scanDocComment(e, c.qualifiedName);
       c.annotations = scanAnnotations(e);
 
       if (shouldInclude(c)) {
@@ -83,8 +83,8 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
 
   private boolean shouldInclude(TypeDocs typeDocs) {
     if (typeDocs.hasAnnotation("dagger.internal.DaggerGenerated")
-        || typeDocs.getName().startsWith("AutoBindings") //TODO: Generated in dagger-auto
-        || typeDocs.hasAnnotation("org.immutables.value.Generated")) {
+        //TODO: Generated in dagger-auto
+        || typeDocs.getName().startsWith("AutoBindings")) {
       //System.out.println("EXCLUDE " + typeDocs.qualifiedName);
       return false;
     }
@@ -94,6 +94,7 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
   @Override
   public List<ElementDocs> visitExecutable(ExecutableElement e, Integer integer) {
     if (e.getKind() == ElementKind.CONSTRUCTOR || e.getKind() == ElementKind.METHOD) {
+      TypeDocs typeDocs = getCurrentTypeDocs();
       MethodDocs m = new MethodDocs();
       m.qualifiedName = e.getSimpleName().toString();
       m.isConstructor = e.getKind() == ElementKind.CONSTRUCTOR;
@@ -106,11 +107,10 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
           .map(typeParameterElement -> typeParameterElement.toString()
               + typeParameterElement.getBounds().toString())//TODO
           .collect(Collectors.toList());
-      m.doc = scanDocComment(e);
+      m.doc = scanDocComment(e,typeDocs.qualifiedName + "::" + m.qualifiedName);
       m.annotations = scanAnnotations(e);
       //TODO: exceptions, returnType
 
-      TypeDocs typeDocs = (TypeDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
       if (Objects.isNull(typeDocs.methods)) {
         typeDocs.methods = new ArrayList<>();
       }
@@ -122,26 +122,29 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
     return DEFAULT_VALUE;
   }
 
+  private TypeDocs getCurrentTypeDocs() {
+    return (TypeDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
+  }
+
   @Override
   public List<ElementDocs> visitVariable(VariableElement e, Integer integer) {
+    TypeDocs typeDocs = getCurrentTypeDocs();
     VariableDocs v = new VariableDocs();
     v.qualifiedName = e.getSimpleName().toString();
     v.modifiers = e.getModifiers()
         .stream()
         .map(Modifier::toString)
         .collect(Collectors.toSet());
-    v.doc = scanDocComment(e);
+    v.doc = scanDocComment(e, typeDocs.qualifiedName);
     v.annotations = scanAnnotations(e);
     v.type = e.asType().toString();
 
     if (e.getKind() == ElementKind.FIELD) {
-      TypeDocs typeDocs = (TypeDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
       if (Objects.isNull(typeDocs.fields)) {
         typeDocs.fields = new ArrayList<>();
       }
       typeDocs.fields.add(v);
     } else if (e.getKind() == ElementKind.PARAMETER) {
-      TypeDocs typeDocs = (TypeDocs) DEFAULT_VALUE.get(DEFAULT_VALUE.size() - 1);
       if (Objects.nonNull(typeDocs.methods) && !typeDocs.methods.isEmpty()) {
         MethodDocs methodDocs = typeDocs.methods.get(typeDocs.methods.size() - 1);
         if (Objects.isNull(methodDocs.parameters)) {
@@ -178,13 +181,12 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
         .collect(Collectors.toList());
   }
 
-  private List<Map<String, List<String>>> scanDocComment(Element e) {
+  private List<Map<String, List<String>>> scanDocComment(Element e, String enclosingElement) {
     List<Map<String, List<String>>> tags = new ArrayList<>();
     DocCommentTree docCommentTree = treeUtils.getDocCommentTree(e);
 
     if (docCommentTree != null) {
-      String enclosingPackage = elementUtils.getPackageOf(e).getQualifiedName().toString();
-      new DocCommentScanner(elementUtils, enclosingPackage, tags).visit(docCommentTree, null);
+      new DocCommentScanner(elementUtils, enclosingElement, DEFAULT_VALUE, tags).visit(docCommentTree, null);
     }
 
     return tags;

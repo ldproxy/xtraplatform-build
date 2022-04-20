@@ -24,6 +24,8 @@ dependencies {
     implementation "com.github.ben-manes:gradle-versions-plugin:0.36.0"
     implementation "se.patrikerdes:gradle-use-latest-versions-plugin:0.2.15"
     implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'com.google.guava:guava:31.0.1-jre'
+    annotationsImplementation 'com.google.guava:guava:31.0.1-jre'
 }
 
 gradlePlugin {

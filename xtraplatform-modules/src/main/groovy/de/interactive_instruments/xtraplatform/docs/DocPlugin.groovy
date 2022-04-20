@@ -6,7 +6,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.JavadocMemberLevel
-import org.gradle.external.javadoc.JavadocOutputLevel
 
 class DocPlugin implements Plugin<Project> {
 
@@ -22,25 +21,17 @@ class DocPlugin implements Plugin<Project> {
 
         project.subprojects { subProject ->
             def modTask = subProject.task("moduleDocs", type: Javadoc) {
-                outputs.upToDateWhen { false }
-                dependsOn subProject.tasks.findByName('jar')
+                //outputs.upToDateWhen { false }
+                dependsOn subProject.tasks.named('jar')
                 group = 'Documentation'
                 description = 'Generates module docs'
                 source = subProject.sourceSets.main.allJava
-                //exclude '**/build/generated/**/*'
-                /*exclude {
-                    if (it.file.absolutePath.contains('/build/generated/') && it.file.name != "module-info.java") {
-                        //println it.file.absolutePath;
-                        return true
-                    }
-                    return false
-                }*/
-                classpath = subProject.sourceSets.main.compileClasspath + subProject.files(subProject.tasks.jar)
-                destinationDir = subProject.reporting.file("mod-docs")
+                classpath = subProject.sourceSets.main.compileClasspath
+                destinationDir = new File(subProject.buildDir, 'tmp/module-docs')
                 options.with {
                     doclet = XtraPlatformDoclet.class.name
                     docletpath = project.buildscript.configurations.classpath.resolvedConfiguration.files as List
-                    memberLevel = JavadocMemberLevel.PRIVATE
+                    memberLevel = JavadocMemberLevel.PUBLIC
                     //outputLevel = JavadocOutputLevel.VERBOSE
                 }
                 doFirst {

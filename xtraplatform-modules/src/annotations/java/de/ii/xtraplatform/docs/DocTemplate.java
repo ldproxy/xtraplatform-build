@@ -1,17 +1,16 @@
 package de.ii.xtraplatform.docs;
 
+import de.ii.xtraplatform.docs.DocFileTemplate.CaseFormat;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
-@Target(ElementType.TYPE)
-public @interface DocFile {
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface DocTemplate {
 
-  /**
-   * relative markdown file path (default is derived from class name with com.google.common.base.CaseFormat#LOWER_HYPHEN)
-   * @return
-   */
-  String path() default "";
+  String language();
+
+  String template();
 }
