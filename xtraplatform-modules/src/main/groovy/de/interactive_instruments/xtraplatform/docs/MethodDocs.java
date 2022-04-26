@@ -3,7 +3,6 @@ package de.interactive_instruments.xtraplatform.docs;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 
 public class MethodDocs extends ElementDocs {
 
@@ -13,7 +12,7 @@ public class MethodDocs extends ElementDocs {
   //TODO: return value
   //TODO: JsonAlias -> deprecated
   //TODO: since ?
-  String getPropertyRow(String language, Function<String, TypeDocs> typeFinder) {
+  String getPropertyRow(String language, TypeFinder typeFinder) {
     if (Objects.isNull(doc)
         || hasAnnotation("com.fasterxml.jackson.annotation.JsonIgnore")) {
       return "";
@@ -26,9 +25,9 @@ public class MethodDocs extends ElementDocs {
     }
 
     String dataType = "TODO";
-    String defaultValue = doc.get(0).getOrDefault("default", List.of("")).get(0).replaceAll("\n", " ");
+    String defaultValue = doc.get(0).getOrDefault("default", List.of("")).get(0).replaceAll("\n", " ").trim();
     String description = getDocText(language, typeFinder, Optional.empty()).replaceAll("\n", " ");
 
-    return String.format("| `%s` | %s | `%s` | %s |\n", name.get(), dataType, defaultValue, description);
+    return String.format("| `%s` | %s | %s | %s |\n", name.get(), dataType, defaultValue.isEmpty() ? "" : String.format("`%s`", defaultValue), description);
   }
 }

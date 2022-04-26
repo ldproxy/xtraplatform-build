@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 class LayerDocs {
     String id;
@@ -23,5 +25,15 @@ class LayerDocs {
             .filter(Optional::isPresent)
             .map(Optional::get)
             .findFirst();
+    }
+
+    Stream<TypeDocs> getTypes(Predicate<TypeDocs> predicate) {
+        if (Objects.isNull(modules)) {
+            return Stream.of();
+        }
+
+        return modules.values()
+            .stream()
+            .flatMap(moduleDocs -> moduleDocs.getTypes(predicate));
     }
 }

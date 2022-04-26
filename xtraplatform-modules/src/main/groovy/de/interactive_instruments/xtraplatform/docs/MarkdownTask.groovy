@@ -17,7 +17,7 @@ import static java.util.Optional.*
 class MarkdownTask extends DefaultTask {
     //TODO: other layers
     private FileCollection sourceFiles = project.files(project.configurations.layers.resolvedConfiguration.firstLevelModuleDependencies.collectMany { it.moduleArtifacts }.collect { it.file }) + project.files(project.tasks.jar);
-    private File outputDir = new File(project.buildDir, "docs")
+    private File outputDir = new File(project.buildDir, "tmp/markdown")
     private String docsName
 
     @SkipWhenEmpty
@@ -51,12 +51,7 @@ class MarkdownTask extends DefaultTask {
         Type listMapType = new TypeToken<List<Map<String, String>>>() {}.getType();
         List<LayerDocs> layers = loadLayers()
         Map<String, AnnotationDocs> templates = getDocTemplates(layers)
-        Function<String, TypeDocs> typeFinder = qualifiedName -> layers.stream()
-                .map(layer -> layer.getType(qualifiedName))
-                .filter(java.util.Optional::isPresent)
-                .map(java.util.Optional::get)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Referenced type could not be resolved: " + qualifiedName))
+        TypeFinder typeFinder = new TypeFinder(layers)
 
         layers.each {
             it.modules.values().each {
@@ -134,11 +129,11 @@ class MarkdownTask extends DefaultTask {
         return templates
     }
 
-    protected void writeDocFile(TypeDocs typeDocs, String path, Function<String, TypeDocs> typeFinder, List<Map<String, String>> mdTemplates) {
+    protected void writeDocFile(TypeDocs typeDocs, String path, TypeFinder typeFinder, List<Map<String, String>> mdTemplates) {
         def languages = typeDocs.getDocLanguages()
         println "DOC " + typeDocs.qualifiedName + " - " + path + " - " + languages + " - " + mdTemplates.size()
         languages.each { lang ->
-            def md = new File(new File(getOutputDir(), lang), path)
+            def md = new File(new File(getOutputDir(), lang == 'en' ? '' : lang), path)
             md.parentFile.mkdirs()
             java.util.Optional<String> template = mdTemplates.stream()
                     .filter(t -> Objects.equals(t.get("language"), lang))
