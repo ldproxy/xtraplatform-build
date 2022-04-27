@@ -30,7 +30,7 @@ public class XtraPlatformDoclet implements Doclet {
         @Override
         public boolean process(String option, List<String> arguments) {
           XtraPlatformDoclet.this.targetPath = Path.of(arguments.get(0));
-          System.out.println("targetPath: " + targetPath);
+          //System.out.println("targetPath: " + targetPath);
           return true;
         }
       },
@@ -39,7 +39,7 @@ public class XtraPlatformDoclet implements Doclet {
         public boolean process(String option, List<String> arguments) {
           Gson gson = new GsonBuilder().create();
           XtraPlatformDoclet.this.moduleDocs = gson.fromJson(arguments.get(0), ModuleDocs.class);
-          System.out.println("moduleInfo: " + gson.toJson(moduleDocs));
+          //System.out.println("moduleInfo: " + gson.toJson(moduleDocs));
           return true;
         }
       },

@@ -53,15 +53,23 @@ class MarkdownTask extends DefaultTask {
         Map<String, AnnotationDocs> templates = getDocTemplates(layers)
         TypeFinder typeFinder = new TypeFinder(layers)
 
-        layers.each {
-            it.modules.values().each {
-                it.api.values().each {
+        layers.each {lay ->
+            lay.modules.values().each {mod ->
+                Map<String, String> vars = [
+                        'layer.name': lay.name,
+                        'module.name': mod.name,
+                        'module.version': mod.version,
+                        'module.description': mod.description,
+                        'module.maturity': mod.maturity.name()
+                ]
+
+                mod.api.values().each {
                     def docFile = it.getAnnotation("de.ii.xtraplatform.docs.DocFile")
                     if (docFile.isPresent()) {
                         def path = docFile.get()
                                 .getAttribute("path")
                                 .orElse(it.qualifiedName.replaceAll("\\.", "/") + ".md")
-                        writeDocFile(it, path, typeFinder, [])
+                        writeDocFile(it, path, typeFinder, [], vars)
                     }
                     if (!templates.isEmpty()) {
                         templates.each { template ->
@@ -85,7 +93,7 @@ class MarkdownTask extends DefaultTask {
                                         .map(t -> gson.fromJson(t, listMapType))
                                         .orElse([])
                                 name = CaseFormat.UPPER_CAMEL.to(caseFormat, name) + ".md"
-                                writeDocFile(it, path + "/" + name, typeFinder, mdTemplates)
+                                writeDocFile(it, path + "/" + name, typeFinder, mdTemplates, vars)
                             }
                         }
                     }
@@ -129,7 +137,7 @@ class MarkdownTask extends DefaultTask {
         return templates
     }
 
-    protected void writeDocFile(TypeDocs typeDocs, String path, TypeFinder typeFinder, List<Map<String, String>> mdTemplates) {
+    protected void writeDocFile(TypeDocs typeDocs, String path, TypeFinder typeFinder, List<Map<String, String>> mdTemplates, Map<String, String> vars) {
         def languages = typeDocs.getDocLanguages()
         println "DOC " + typeDocs.qualifiedName + " - " + path + " - " + languages + " - " + mdTemplates.size()
         languages.each { lang ->
@@ -139,7 +147,7 @@ class MarkdownTask extends DefaultTask {
                     .filter(t -> Objects.equals(t.get("language"), lang))
                     .map(t -> t.get("template"))
                     .findFirst()
-            md.text = typeDocs.getDocText(lang, typeFinder, template)
+            md.text = typeDocs.getDocText(lang, typeFinder, template, vars)
         }
     }
 }

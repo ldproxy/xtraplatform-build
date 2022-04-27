@@ -1,6 +1,7 @@
 package de.interactive_instruments.xtraplatform.docs;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,13 +19,29 @@ class TypeDocs extends ElementDocs {
         .anyMatch(elementDocs -> Objects.equals(elementDocs.qualifiedName, qualifiedName));
   }
 
+  boolean hasInterfaces() {
+    return Objects.nonNull(interfaces)
+        && !interfaces.isEmpty();
+  }
+
+  Optional<MethodDocs> findOverride(MethodDocs child) {
+    if (Objects.isNull(methods)) {
+      return Optional.empty();
+    }
+    return methods.stream()
+        //TODO: methodDocs.getSignature
+        .filter(methodDocs -> Objects.equals(methodDocs.qualifiedName, child.qualifiedName)
+            && Objects.equals(methodDocs.parameters, child.parameters))
+        .findFirst();
+  }
+
   String getPropertyTable(String language, TypeFinder typeFinder) {
     if (Objects.isNull(methods)) {
       return "";
     }
 
     //TODO: multilang
-    String header = String.format("| %s | %s | %s | %s |\n| --- | --- | --- | --- |\n", "Option", "Type", "Default", "Description");
+    String header = String.format("| %s | %s | %s | %s | %s |\n| --- | --- | --- | --- | --- |\n", "Option", "Type", "Default", "Since", "Description");
 
     return methods.stream()
         .map(methodDocs -> methodDocs.getPropertyRow(language, typeFinder))
@@ -36,17 +53,21 @@ class TypeDocs extends ElementDocs {
       return "";
     }
 
-    String description = getDocText(language, typeFinder, Optional.empty()).replaceAll("\n", " ").trim();
-
-    if (description.isEmpty()) {
-      return "";
-    }
-
+    String name = getDocTag("name").findFirst()
+        .orElse("")
+        .replaceAll("\n", " ")
+        .trim();
     String path = getDocTag("path").findFirst()
         .map(p -> "`" + p.trim() + "`")
         .orElse("")
         .replaceAll("\n", " ")
         .trim();
+
+    if (name.isEmpty() || path.isEmpty()) {
+      return "";
+    }
+
+    String description = getDocText(language).replaceAll("\n", " ").trim();
     String httpMethods = methods.stream()
         .flatMap(methodDocs -> methodDocs.annotations.stream())
         .filter(annotationDocs -> ElementDocs.METHODS.contains(annotationDocs.qualifiedName))
@@ -65,7 +86,7 @@ class TypeDocs extends ElementDocs {
         .orElse("")
         .replaceAll("\n", " ");
 
-    return String.format("| %s | %s | %s | %s |\n", description, path, httpMethods, formats);
+    return String.format("| %s | %s | %s | %s | %s |\n", name, path, httpMethods, formats, description);
   }
 
   String getQueryParameterRow(String language, TypeFinder typeFinder) {
@@ -73,7 +94,7 @@ class TypeDocs extends ElementDocs {
       return "";
     }
 
-    String description = getDocText(language, typeFinder, Optional.empty()).replaceAll("\n", " ").trim();
+    String description = getDocText(language).replaceAll("\n", " ").trim();
 
     if (description.isEmpty()) {
       return "";

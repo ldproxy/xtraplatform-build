@@ -107,9 +107,17 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
           .map(typeParameterElement -> typeParameterElement.toString()
               + typeParameterElement.getBounds().toString())//TODO
           .collect(Collectors.toList());
-      m.doc = scanDocComment(e,typeDocs.qualifiedName + "::" + m.qualifiedName);
       m.annotations = scanAnnotations(e);
+      m.doc = scanDocComment(e,typeDocs.qualifiedName + "::" + m.qualifiedName);
+      //TODO: always add for JsonProperty?
+      if (/*m.doc.stream().flatMap(d -> d.keySet().stream()).allMatch(k -> k.equals("return"))
+          &&*/ m.hasAnnotation(MethodDocs.JSON_PROPERTY)
+          && typeDocs.hasInterfaces()) {
+        List<String> parentDocs = findParentDocs(e, ((TypeElement) e.getEnclosingElement()).getInterfaces());
+        m.doc.add(Map.of("_overrides_", parentDocs));
+      }
       //TODO: exceptions, returnType
+      m.returnType = e.getReturnType().toString();
 
       if (Objects.isNull(typeDocs.methods)) {
         typeDocs.methods = new ArrayList<>();
@@ -120,6 +128,28 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
     }
     //return super.visitExecutable(e, integer);
     return DEFAULT_VALUE;
+  }
+
+  private List<String> findParentDocs(ExecutableElement e, List<? extends TypeMirror> interfaces) {
+    List<String> p = new ArrayList<>();
+    for (TypeMirror typeMirror : interfaces) {
+      p.addAll(findParentDocs(e, ((TypeElement) typeUtils.asElement(typeMirror)).getInterfaces()));
+    }
+    for (TypeMirror typeMirror : interfaces) {
+      p.addAll(findParentDocs(e, (TypeElement) typeUtils.asElement(typeMirror)));
+    }
+    return p;
+  }
+  private List<String> findParentDocs(ExecutableElement e, TypeElement parent) {
+    List<String> p = new ArrayList<>();
+    for (Element element : parent.getEnclosedElements()) {
+      if (element instanceof ExecutableElement
+          && element.getSimpleName().equals(e.getSimpleName())
+          && ((ExecutableElement) element).getParameters().equals(e.getParameters())) {
+        p.add(parent.getQualifiedName().toString());
+      }
+    }
+    return p;
   }
 
   private TypeDocs getCurrentTypeDocs() {
@@ -153,7 +183,8 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
         methodDocs.parameters.add(v);
       }
     } else {
-      System.out.println("UNHANDLED VARIABLE " + e.getKind() + e.getSimpleName());
+      //TODO: enums
+      //System.out.println("UNHANDLED VARIABLE " + e.getKind() + e.getSimpleName());
     }
 
     return null;

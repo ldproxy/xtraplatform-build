@@ -1,5 +1,6 @@
 package de.interactive_instruments.xtraplatform.docs;
 
+import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
@@ -9,6 +10,7 @@ import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -66,19 +68,31 @@ class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
   }
 
   private String parseContent(List<? extends DocTree> docTrees) {
+    final boolean[] inCode = {false};
     return docTrees.stream()
         .flatMap(docTree -> {
           if (docTree instanceof StartElementTree || docTree instanceof EndElementTree || docTree instanceof ErroneousTree) {
+            if (docTree instanceof StartElementTree && !((StartElementTree) docTree).getAttributes().isEmpty()) {
+              return Stream.of(docTree.toString().replaceAll("(?<!=)\"", "\" "));
+            }
             return Stream.of(docTree.toString())
-                .map(line -> line.startsWith(" ") ? line.substring(1) : line)
+                //.map(line -> line.startsWith(" ") ? line.substring(1) : line)
                 .map(line -> {
                   switch (line) {
                     case ">":
                       return line + " ";
                     case "<p>":
+                    case "<p/>":
+                    case "<br>":
+                    case "<br/>":
+                      return "\n\n";
                     case "</p>":
+                      return "";
                     case "<code>":
+                      inCode[0] = true;
+                      return "";
                     case "</code>":
+                      inCode[0] = false;
                       return "";
                     default:
                   }
@@ -90,8 +104,11 @@ class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
           }
           return docTree.toString()
               .lines()
-              .map(line -> line.startsWith(" ") ? line.substring(1) : line)
-              .map(line -> line + "\n");
+              .map(line -> line.replaceAll(":::", "\n:::"))
+              .map(line -> line.replaceAll("(::: \\w+ \\w+)", "$1\n"))
+              .map(line -> line.replaceAll("(```\\w*)", "\n$1\n"))
+              .map(line -> inCode[0] && line.startsWith(" ") ? line.substring(1) : line)
+              .map(line -> inCode[0] ? line + "\n" : line);
         })
         .collect(Collectors.joining());
   }
@@ -142,6 +159,17 @@ class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
     return super.visitThrows(node, unused);
   }
 
+  @Override
+  public Void visitSince(SinceTree node, Void unused) {
+    String name = node.getTagName();
+    String content = node.getBody()
+        .stream()
+        .map(Object::toString)
+        .collect(Collectors.joining());
+    addTag(name, content, true);
+    return super.visitSince(node, unused);
+  }
+
   private void addTag(String name, String content, boolean append) {
     if (!append && currentTags.containsKey(name)) {
       this.currentTags = new LinkedHashMap<>();
@@ -175,7 +203,7 @@ class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
       refName = refElement.getQualifiedName().toString();
     }
     if (Objects.isNull(refName)) {
-      types.forEach(elementDocs -> System.out.println(elementDocs.qualifiedName));
+      //types.forEach(elementDocs -> System.out.println(elementDocs.qualifiedName));
       throw new IllegalArgumentException(
           "Could not resolve '@see " + ref + "' in '" + enclosingElement  + "'. Try to use a fully qualified name.");
     }
