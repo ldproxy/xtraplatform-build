@@ -1,9 +1,11 @@
 package de.interactive_instruments.xtraplatform.docs;
 
 import com.google.common.base.Splitter;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -105,14 +107,21 @@ class ElementDocs {
 
     String body = getDocText(language);
 
-    Optional<String> propertyTable = doc.stream()
+    Map<String, String> propertyTables = doc.stream()
         .flatMap(map -> map.entrySet().stream())
-        .filter(entry -> Objects.equals(entry.getKey(), PROPERTY_TABLE))
+        .filter(entry -> entry.getKey().startsWith(PROPERTY_TABLE))
         .map(entry -> {
           TypeDocs typeDocs = typeFinder.find(entry.getValue().get(0));
-          return typeDocs.getPropertyTable(language, typeFinder);
+          return new SimpleEntry<>(entry.getKey(), typeDocs.getPropertyTable(language, typeFinder));
         })
-        .findFirst();
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+    Map<String, String> docTables = getAnnotation("de.ii.xtraplatform.docs.DocTable")
+        .map(docTableDef -> {
+          Entry<String, String> docTable = DocTableGenerator.generate(docTableDef, this, typeFinder, vars);
+          return Map.ofEntries(docTable);
+        })
+        .orElse(Map.<String, String>of());
 
     //TODO: multilang
     String endpointHeader = String.format("| %s | %s | %s | %s | %s |\n| --- | --- | --- | --- | --- |\n", "Resource", "Path", "HTTP Methods", "Media Types", "Description");
@@ -158,68 +167,19 @@ class ElementDocs {
         .findFirst();
 
     Map<String, String> specialties = new LinkedHashMap<>(vars);
-    propertyTable.ifPresent(p -> specialties.put(PROPERTY_TABLE, p));
+    specialties.putAll(docTables);
+    propertyTables.forEach((k,p) -> specialties.put(k, p));
     endpointTable.ifPresent(e -> specialties.put(ENDPOINT_TABLE, e));
     queryParameterTable.ifPresent(q -> specialties.put(QUERY_PARAMETER_TABLE, q));
     example.ifPresent(e -> specialties.put(EXAMPLE, e));
 
-
-    Function<String, Optional<String>> findTag = tag -> doc.stream()
-        .flatMap(map -> map.entrySet().stream())
-        .filter(entry -> Objects.equals(entry.getKey(), tag))
-        .flatMap(entry -> entry.getValue().stream())
-        .findFirst();
+    TagReplacer tagReplacer = new TagReplacer(this, specialties, language);
 
     String docText = template.isEmpty()
         ? body
         : template.get().replace(asTag(BODY), body);
 
-    return replaceTags(docText, replacer(specialties, findTag));
-
-    /*if (template.isEmpty()) {
-      //TODO: parser adds blank to inline tags
-      return body
-          .replace(asTag(PROPERTY_TABLE + " "), propertyTable)
-          .replace(asTag(ENDPOINT_TABLE + " "), endpointTable)
-          .replace(asTag(EXAMPLE + " "), example);
-    }
-
-    return template.get()
-        .replace(asTag(BODY), body)
-        .replace(asTag(PROPERTY_TABLE), propertyTable)
-        .replace(asTag(ENDPOINT_TABLE), endpointTable)
-        .replace(asTag(QUERY_PARAMETER_TABLE), queryParameterTable)
-        .replace(asTag(EXAMPLE), example);*/
-  }
-
-  static final Pattern TAG_PATTERN = Pattern.compile("\\{@(?<tag>[\\w\\.]*?)(\\s+(?<prefix>.*?)(\\|\\|\\|(?<ifempty>.*?))?)?}", Pattern.DOTALL);
-  static String replaceTags(String text, Function<Matcher, String> replacer) {
-    int lastIndex = 0;
-    StringBuilder output = new StringBuilder();
-    Matcher matcher = TAG_PATTERN.matcher(text);
-    while (matcher.find()) {
-      output.append(text, lastIndex, matcher.start())
-          .append(replacer.apply(matcher));
-
-      lastIndex = matcher.end();
-    }
-    if (lastIndex < text.length()) {
-      output.append(text, lastIndex, text.length());
-    }
-    return output.toString();
-  }
-
-  static Function<Matcher, String> replacer(Map<String, String> specialties, Function<String, Optional<String>> findTag) {
-    return matcher -> {
-      String tag = matcher.group("tag");
-      String prefix = Optional.ofNullable(matcher.group("prefix")).orElse("");
-      String ifempty = Optional.ofNullable(matcher.group("ifempty")).orElse(matcher.group());
-
-      return Optional.ofNullable(specialties.get(tag))
-          .or(() -> findTag.apply(tag))
-          .map(text -> prefix + text)
-          .orElse(ifempty);
-    };
+    return tagReplacer.replaceStrings(docText);
   }
   static String asTag(String name) {
     return String.format("{@%s}", name);

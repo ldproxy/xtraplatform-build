@@ -53,14 +53,15 @@ class MarkdownTask extends DefaultTask {
         Map<String, AnnotationDocs> templates = getDocTemplates(layers)
         TypeFinder typeFinder = new TypeFinder(layers)
 
-        layers.each {lay ->
-            lay.modules.values().each {mod ->
+        layers.each { lay ->
+            lay.modules.values().each { mod ->
                 Map<String, String> vars = [
-                        'layer.name': lay.name,
-                        'module.name': mod.name,
-                        'module.version': mod.version,
+                        'layer.name'        : lay.name,
+                        'layer.nameSuffix'  : lay.name.contains('-') ? lay.name.substring(lay.name.lastIndexOf('-') + 1) : lay.name,
+                        'module.name'       : mod.name,
+                        'module.version'    : mod.version,
                         'module.description': mod.description,
-                        'module.maturity': mod.maturity.name()
+                        'module.maturity'   : mod.maturity.name().toLowerCase()
                 ]
 
                 mod.api.values().each {
@@ -80,16 +81,16 @@ class MarkdownTask extends DefaultTask {
                                 def name = it.getName()
                                 template.value
                                         .getAttribute("stripPrefix")
-                                        .ifPresent {if (name.startsWith(it)) name = name.substring(it.length())}
+                                        .ifPresent { if (name.startsWith(it)) name = name.substring(it.length()) }
                                 template.value
                                         .getAttribute("stripSuffix")
-                                        .ifPresent {if (name.endsWith(it)) name = name.substring(0, name.length() - it.length())}
+                                        .ifPresent { if (name.endsWith(it)) name = name.substring(0, name.length() - it.length()) }
                                 def caseFormat = template.value
                                         .getAttribute("caseFormat")
                                         .map(cf -> cf as CaseFormat)
                                         .orElse(CaseFormat.LOWER_UNDERSCORE)
                                 List<Map<String, String>> mdTemplates = template.value
-                                        .getAttribute("template")
+                                        .getAttributeAsJson("template")
                                         .map(t -> gson.fromJson(t, listMapType))
                                         .orElse([])
                                 name = CaseFormat.UPPER_CAMEL.to(caseFormat, name) + ".md"
@@ -120,15 +121,8 @@ class MarkdownTask extends DefaultTask {
         layers.each {
             it.modules.values().each {
                 it.api.values().each {
-                    if (it.hasAnnotation("de.ii.xtraplatform.docs.DocFileTemplate")) {
-                        AnnotationDocs a = it.getAnnotation("de.ii.xtraplatform.docs.DocFileTemplate").get()
-                        if (a.hasAttribute("template")) {
-                            a.attributes.put("template", "[" + a.attributes.get("template")
-                                    .replaceAll("@de.ii.xtraplatform.docs.DocTemplate\\(", "{")
-                                    .replaceAll("\\)", "}")
-                                    .replaceAll("=", ":") + "]")
-                        }
-                        templates.put(it.qualifiedName, a)
+                    if (it.hasAnnotation("de.ii.xtraplatform.docs.DocFilesTemplate")) {
+                        templates.put(it.qualifiedName, it.getAnnotation("de.ii.xtraplatform.docs.DocFilesTemplate").get())
                     }
                 }
             }
@@ -145,7 +139,7 @@ class MarkdownTask extends DefaultTask {
             md.parentFile.mkdirs()
             java.util.Optional<String> template = mdTemplates.stream()
                     .filter(t -> Objects.equals(t.get("language"), lang))
-                    .map(t -> t.get("template"))
+                    .map(t -> t.get("value"))
                     .findFirst()
             md.text = typeDocs.getDocText(lang, typeFinder, template, vars)
         }

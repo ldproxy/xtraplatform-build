@@ -5,9 +5,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Generate a markdown file for every implementation of this interface or class
+ */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE)
-public @interface DocFileTemplate {
+public @interface DocFilesTemplate {
 
   enum CaseFormat {
     /** Hyphenated variable naming convention, e.g., "lower-hyphen". */
@@ -34,5 +37,5 @@ public @interface DocFileTemplate {
 
   CaseFormat caseFormat() default CaseFormat.LOWER_UNDERSCORE;
 
-  DocTemplate[] template() default {};
+  DocI18n[] template() default {};
 }

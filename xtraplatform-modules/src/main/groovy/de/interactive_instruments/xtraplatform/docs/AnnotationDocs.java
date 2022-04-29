@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-class AnnotationDocs extends ElementDocs{
+class AnnotationDocs extends ElementDocs {
 
   Map<String, String> attributes;
 
@@ -22,5 +22,16 @@ class AnnotationDocs extends ElementDocs{
     }
 
     return Optional.ofNullable(attributes.get(name));
+  }
+
+  Optional<String> getAttributeAsJson(String name) {
+    return getAttribute(name).map(attribute -> attribute
+        .replaceAll("(^|=)\\{?@[\\w.]+\\(", "$1[{")
+        .replaceAll("\\{?@[\\w.]+\\(", "{")
+        .replaceAll("\\),", "},")
+        .replaceAll("\\)}", "}]")
+        .replaceAll("\\)$", "}]")
+        .replaceAll("=([\"\\[])", ":$1")
+        .replaceAll("=(?:\\w+\\.)*(\\w+)", ":\"$1\""));
   }
 }

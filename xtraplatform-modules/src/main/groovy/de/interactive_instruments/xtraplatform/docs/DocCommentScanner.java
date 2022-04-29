@@ -52,6 +52,8 @@ class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
   @Override
   public Void visitDocComment(DocCommentTree tree, Void p) {
     tree.getFullBody().forEach(body -> addTag(ElementDocs.BODY, body.toString(), true));
+    //String content = parseContent(tree.getFullBody());
+    //addTag(ElementDocs.BODY, content, true);
 
     return visit(tree.getBlockTags(), null);
   }
@@ -105,7 +107,7 @@ class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
           return docTree.toString()
               .lines()
               .map(line -> line.replaceAll(":::", "\n:::"))
-              .map(line -> line.replaceAll("(::: \\w+ \\w+)", "$1\n"))
+              .map(line -> line.replaceAll("(::: \\w+)(?::(\\w+))?", "$1 $2\n"))
               .map(line -> line.replaceAll("(```\\w*)", "\n$1\n"))
               .map(line -> inCode[0] && line.startsWith(" ") ? line.substring(1) : line)
               .map(line -> inCode[0] ? line + "\n" : line);
