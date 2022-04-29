@@ -3,6 +3,8 @@ package de.interactive_instruments.xtraplatform
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 
@@ -65,7 +67,7 @@ class ApplicationPlugin implements Plugin<Project> {
             moduleInfo.name = ModulePlugin.getModuleName(project.group as String, project.name)
             ModulePlugin.setupModuleInfo(project, moduleInfo, false, true)
 
-            project.dependencies.add('app', [group: 'de.interactive_instruments', name: 'xtraplatform-modules', version: '+'], {
+            project.dependencies.add('app', [group: 'de.interactive_instruments', name: 'xtraplatform-modules', version: getVersion(project)], {
                 transitive = false
                 capabilities {
                     requireCapability("de.interactive_instruments:xtraplatform-modules-annotations")
@@ -101,6 +103,16 @@ class ApplicationPlugin implements Plugin<Project> {
         addDistribution(project)
 
         addRunConfiguration(project)
+    }
+
+    static String getVersion(Project project) {
+        final Configuration classpath = project.getBuildscript().getConfigurations().getByName("classpath");
+        return classpath.getResolvedConfiguration().getResolvedArtifacts().stream()
+                .map(artifact -> artifact.getModuleVersion().getId())
+                .filter(id -> "de.interactive_instruments".equals(id.getGroup()) && id.getName().startsWith("xtraplatform-"))
+                .findAny()
+                .map(ModuleVersionIdentifier::getVersion)
+                .orElse("+");
     }
 
     void addRunConfiguration(Project project) {

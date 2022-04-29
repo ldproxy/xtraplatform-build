@@ -265,7 +265,7 @@ class LayerPlugin implements Plugin<Project> {
                     suppressedValidationErrors.add('enforced-platform')
                 }
 
-                subproject.dependencies.add('compileOnly', [group: 'de.interactive_instruments', name: 'xtraplatform-modules', version: '+'], {
+                subproject.dependencies.add('compileOnly', [group: 'de.interactive_instruments', name: 'xtraplatform-modules', version: ApplicationPlugin.getVersion(project)], {
                     transitive = false
                     capabilities {
                         requireCapability("de.interactive_instruments:xtraplatform-modules-annotations")
