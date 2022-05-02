@@ -13,8 +13,18 @@ import java.lang.annotation.Target;
 public @interface DocFile {
 
   /**
-   * relative markdown file path (default is derived from class name with com.google.common.base.CaseFormat#LOWER_HYPHEN)
+   * relative markdown directory
    * @return
    */
   String path() default "";
+
+  /**
+   * markdown file name (default is derived from class name with com.google.common.base.CaseFormat#LOWER_HYPHEN)
+   * @return
+   */
+  String name() default "";
+
+  DocTable[] tables() default {};
+
+  DocVar[] vars() default {};
 }

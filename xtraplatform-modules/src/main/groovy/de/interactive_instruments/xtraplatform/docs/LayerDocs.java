@@ -26,14 +26,4 @@ class LayerDocs {
             .map(Optional::get)
             .findFirst();
     }
-
-    Stream<TypeDocs> getTypes(Predicate<TypeDocs> predicate) {
-        if (Objects.isNull(modules)) {
-            return Stream.of();
-        }
-
-        return modules.values()
-            .stream()
-            .flatMap(moduleDocs -> moduleDocs.getTypes(predicate));
-    }
 }

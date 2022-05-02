@@ -6,14 +6,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
-@Target(ElementType.TYPE)
+@Target(ElementType.ANNOTATION_TYPE)
 public @interface DocTable {
 
-  enum ForEach {PROPERTIES, IMPLEMENTATION}
+  enum ColumnSet {NONE,JSON_PROPERTIES}
 
   String name();
 
-  ForEach rows();
+  DocStep[] rows() default {};
 
-  DocColumn[] columns();
+  DocColumn[] columns() default {};
+
+  ColumnSet columnSet() default ColumnSet.NONE;
 }

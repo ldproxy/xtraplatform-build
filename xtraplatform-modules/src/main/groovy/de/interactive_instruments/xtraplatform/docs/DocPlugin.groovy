@@ -26,7 +26,7 @@ class DocPlugin implements Plugin<Project> {
                 group = 'Documentation'
                 description = 'Generates module docs'
                 source = subProject.sourceSets.main.allJava
-                classpath = subProject.sourceSets.main.compileClasspath
+                classpath = subProject.sourceSets.main.compileClasspath + subProject.sourceSets.main.runtimeClasspath
                 destinationDir = new File(subProject.buildDir, 'tmp/module-docs')
                 options.with {
                     doclet = XtraPlatformDoclet.class.name

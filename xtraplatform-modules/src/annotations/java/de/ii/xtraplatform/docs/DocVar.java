@@ -7,11 +7,9 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.ANNOTATION_TYPE)
-public @interface DocColumn {
+public @interface DocVar {
 
-  DocStep[] value();
+  String name();
 
-  String valueDefault() default "";
-
-  DocI18n[] header();
+  DocStep[] value() default {};
 }

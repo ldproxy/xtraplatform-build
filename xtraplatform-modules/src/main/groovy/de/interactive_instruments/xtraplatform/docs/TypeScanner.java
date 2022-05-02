@@ -111,7 +111,7 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
       m.doc = scanDocComment(e,typeDocs.qualifiedName + "::" + m.qualifiedName);
       //TODO: always add for JsonProperty?
       if (/*m.doc.stream().flatMap(d -> d.keySet().stream()).allMatch(k -> k.equals("return"))
-          &&*/ m.hasAnnotation(MethodDocs.JSON_PROPERTY)
+          &&*/ m.hasAnnotation(StepResolver.JSON_PROPERTY)
           && typeDocs.hasInterfaces()) {
         List<String> parentDocs = findParentDocs(e, ((TypeElement) e.getEnclosingElement()).getInterfaces());
         m.doc.add(Map.of("_overrides_", parentDocs));

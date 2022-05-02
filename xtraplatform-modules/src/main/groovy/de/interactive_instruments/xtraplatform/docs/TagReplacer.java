@@ -9,18 +9,17 @@ import java.util.regex.Pattern;
 
 public class TagReplacer {
 
-  enum Mode {PREFIX_AND_IF_EMPTY}
+  private static final Pattern PREFIX_AND_IF_EMPTY_PATTERN = Pattern.compile(
+      "\\{@(?<tag>[\\w.:]+?)(\\s+(?<prefix>.*?)(\\|\\|\\|(?<ifempty>.*?))?)?}", Pattern.DOTALL);
 
-  private final Mode mode;
-  private final Map<String, String> vars;
-  private final ElementDocs element;
+  private final DocRef docRef;
   private final String language;
+  private final Map<String, String> vars;
 
-  public TagReplacer(ElementDocs element, Map<String, String> vars, String language) {
+  public TagReplacer(DocRef docRef, String language, Map<String, String> vars) {
     this.language = language;
-    this.mode = Mode.PREFIX_AND_IF_EMPTY;
+    this.docRef = docRef;
     this.vars = vars;
-    this.element = element;
   }
 
   String replaceStrings(String text) {
@@ -43,26 +42,26 @@ public class TagReplacer {
     return output.toString();
   }
 
-  static final Pattern PREFIX_AND_IF_EMPTY_PATTERN = Pattern.compile("\\{@(?<tag>[\\w.:]+?)(\\s+(?<prefix>.*?)(\\|\\|\\|(?<ifempty>.*?))?)?}", Pattern.DOTALL);
-
   private String prefixAndIfEmptyReplacer(Matcher matcher) {
-      String tag = matcher.group("tag");
-      String prefix = Optional.ofNullable(matcher.group("prefix")).orElse("");
-      String ifempty = Optional.ofNullable(matcher.group("ifempty")).orElse(matcher.group());
+    String tag = matcher.group("tag");
+    String prefix = Optional.ofNullable(matcher.group("prefix")).orElse("");
+    String ifempty = Optional.ofNullable(matcher.group("ifempty")).orElse(matcher.group());
 
-      return Optional.ofNullable(vars.get(tag))
-          .or(() -> findTag(tag))
-          .map(text -> prefix + text)
-          .orElse(ifempty);
+    return Optional.ofNullable(docRef.getVars().get(tag))
+        .or(() -> Optional.ofNullable(vars.get(tag)))
+        .or(() -> findTag(tag))
+        .map(text -> prefix + text)
+        .orElse(ifempty);
   }
 
   private Optional<String> findTag(String tag) {
     if (Objects.equals(tag, "body")) {
-      return Optional.of(element.getDocText(language)
+      return Optional.of(docRef.getDocText(language)
           .replaceAll("\n", " ")
           .trim());
     }
-    return element.getDocTag(tag)
+
+    return docRef.getDocTag(tag)
         .findFirst();
   }
 }

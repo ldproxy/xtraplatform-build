@@ -32,6 +32,8 @@ class AnnotationDocs extends ElementDocs {
         .replaceAll("\\)}", "}]")
         .replaceAll("\\)$", "}]")
         .replaceAll("=([\"\\[])", ":$1")
+        .replaceAll("=\\{\"", ":[\"")
+        .replaceAll("\"}}", "\"]}")
         .replaceAll("=(?:\\w+\\.)*(\\w+)", ":\"$1\""));
   }
 }

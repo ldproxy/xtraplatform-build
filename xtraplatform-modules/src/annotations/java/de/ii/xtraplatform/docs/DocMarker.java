@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
-@Target(ElementType.TYPE)
-public @interface DocTag {
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface DocMarker {
 
   String value();
 }

@@ -51,7 +51,7 @@ class DocCommentScanner extends SimpleDocTreeVisitor<Void, Void> {
 
   @Override
   public Void visitDocComment(DocCommentTree tree, Void p) {
-    tree.getFullBody().forEach(body -> addTag(ElementDocs.BODY, body.toString(), true));
+    tree.getFullBody().forEach(body -> addTag(DocRef.BODY, body.toString(), true));
     //String content = parseContent(tree.getFullBody());
     //addTag(ElementDocs.BODY, content, true);
 

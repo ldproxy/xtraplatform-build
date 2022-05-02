@@ -25,6 +25,9 @@ public @interface DocFilesTemplate {
     UPPER_UNDERSCORE;
   }
 
+  enum ForEach {IMPLEMENTATION}
+
+  ForEach files();
   /**
    * relative markdown file path (default is derived from class name with com.google.common.base.CaseFormat#LOWER_HYPHEN)
    * @return
@@ -38,4 +41,8 @@ public @interface DocFilesTemplate {
   CaseFormat caseFormat() default CaseFormat.LOWER_UNDERSCORE;
 
   DocI18n[] template() default {};
+
+  DocTable[] tables() default {};
+
+  DocVar[] vars() default {};
 }

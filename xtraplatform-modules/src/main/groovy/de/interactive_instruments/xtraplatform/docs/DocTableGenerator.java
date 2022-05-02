@@ -1,128 +1,46 @@
 package de.interactive_instruments.xtraplatform.docs;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DocTableGenerator {
 
-  private static final Gson GSON = new Gson();
-  private static final Type LIST_COL_TYPE = new TypeToken<List<Col>>() {
-  }.getType();
+  private final DocRef docRef;
+  private final Docs docs;
 
-  enum From {
-    TAG
+  public DocTableGenerator(DocRef docRef, Docs docs) {
+    this.docRef = docRef;
+    this.docs = docs;
   }
 
-  enum ForEach {
-    IMPLEMENTATION, PROPERTY
-  }
+  Optional<String> generate(DocTable docTable, String language) {
+    String rows = generateRows(docTable, language);
 
-  static class I18n {
-
-    String language;
-    String value;
-
-    @Override
-    public String toString() {
-      return "I18n{" +
-          "language='" + language + '\'' +
-          ", value='" + value + '\'' +
-          '}';
-    }
-  }
-
-  static class Col {
-
-    From value;
-    String valueRef;
-    String valueDefault = "";
-    List<I18n> header;
-
-    @Override
-    public String toString() {
-      return "Col{" +
-          "value=" + value +
-          ", valueRef='" + valueRef + '\'' +
-          ", valueDefault='" + valueDefault + '\'' +
-          ", header=" + header +
-          '}';
-    }
-  }
-
-  static class Table {
-
-    Table(String name, ForEach rows, List<Col> cols) {
-      this.name = name;
-      this.rows = rows;
-      this.cols = cols;
+    if (rows.isBlank()) {
+      return Optional.empty();
     }
 
-    String name;
-    ForEach rows;
-    List<Col> cols;
+    String table = generateHeader(docTable.getColumns(), language) + rows;
 
-    @Override
-    public String toString() {
-      return "Table{" +
-          "name='" + name + '\'' +
-          ", rows=" + rows +
-          ", cols=" + cols +
-          '}';
-    }
+    return Optional.of(table);
   }
 
-  static Table parse(AnnotationDocs def) {
-    String name = def.getAttribute("name")
-        .orElseThrow();
-    String rows = def.getAttribute("rows")
-        .orElseThrow();
-    String cols = def.getAttributeAsJson("columns")
-        .orElseThrow();
-    List<Col> colDef = GSON.fromJson(cols, LIST_COL_TYPE);
-
-    return new Table(name, ForEach.valueOf(rows), colDef);
-  }
-
-  static Map.Entry<String, String> generate(AnnotationDocs def, ElementDocs elementDocs,
-      TypeFinder typeFinder, Map<String, String> vars) {
-    Table table = parse(def);
-    String md = "TODO";
-
-    if (table.rows == ForEach.IMPLEMENTATION) {
-      md = generateHeader(table.cols, "en") + generateImplementationRows(elementDocs.qualifiedName,
-          table.cols, typeFinder, vars);
-    }
-
-    return new SimpleEntry<>("docTable:" + table.name, md);
-  }
-
-  static String generateImplementationRows(String intrfc, List<Col> cols, TypeFinder typeFinder,
-      Map<String, String> vars) {
-    return typeFinder.findByInterface(intrfc)
-        .stream()
-        .map(typeDocs -> generateImplementationRow(typeDocs, cols, typeFinder, vars))
+  String generateRows(DocTable docTable, String language) {
+    return resolveRowSteps(docs, docRef, docTable.rows, language)
+        .map(typeRef2 -> generateRow(docs, typeRef2, docTable.getColumns(), language))
         .collect(Collectors.joining("", "", "\n\n"));
   }
 
-  static String generateImplementationRow(TypeDocs typeDocs, List<Col> cols,
-      TypeFinder typeFinder, Map<String, String> vars) {
+  static String generateRow(Docs docs, DocRef docRef, List<DocTable.Col> cols, String language) {
     return cols.stream()
-        .map(col -> {
-          switch (col.value) {
-            case TAG:
-            default:
-              return resolveValueTag(typeDocs, col, vars);
-          }
-        })
+        .map(col -> resolveColumnSteps(docs, docRef, col.value, language))
         .collect(Collectors.joining(" | ", "| ", " |\n"));
   }
 
-  static String generateHeader(List<Col> cols, String language) {
+  static String generateHeader(List<DocTable.Col> cols, String language) {
     return cols.stream()
         .map(col -> col.header
             .stream()
@@ -136,12 +54,27 @@ public class DocTableGenerator {
         .collect(Collectors.joining(" | ", "| ", " |\n"));
   }
 
-  //TODO i18n
-  static String resolveValueTag(TypeDocs typeDocs, Col col, Map<String, String> vars) {
-    TagReplacer tagReplacer = new TagReplacer(typeDocs, vars, "en");
-    return tagReplacer.replaceStrings(col.valueRef);
-    /*return typeDocs.getDocTag(col.valueRef)
+  static Stream<DocRef> resolveRowSteps(Docs docs, DocRef root, List<DocStep> steps, String language) {
+    Entry<Class<?>, Stream<?>> result = StepResolver.resolve(docs, root, steps, language);
+
+    if (result.getKey() != DocRef.class) {
+      throw new IllegalArgumentException();
+    }
+
+    return result.getValue()
+        .map(DocRef.class::cast);
+  }
+
+  static String resolveColumnSteps(Docs docs, DocRef root, List<DocStep> steps, String language) {
+    Entry<Class<?>, Stream<?>> result = StepResolver.resolve(docs, root, steps, language);
+
+    if (result.getKey() != String.class) {
+      throw new IllegalArgumentException();
+    }
+
+    return result.getValue()
+        .map(String.class::cast)
         .findFirst()
-        .orElse(col.valueDefault);*/
+        .orElse("");
   }
 }
