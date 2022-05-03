@@ -21,12 +21,12 @@ class DocPlugin implements Plugin<Project> {
 
         project.subprojects { subProject ->
             def modTask = subProject.task("moduleDocs", type: Javadoc) {
-                //outputs.upToDateWhen { false }
                 dependsOn subProject.tasks.named('jar')
                 group = 'Documentation'
                 description = 'Generates module docs'
-                source = subProject.sourceSets.main.allJava
-                classpath = subProject.sourceSets.main.compileClasspath + subProject.sourceSets.main.runtimeClasspath
+                source = subProject.sourceSets.main.allJava.filter { it.name != 'module-info.java' }
+                classpath = subProject.sourceSets.main.compileClasspath + subProject.files(new File(subProject.buildDir, 'classes/java/main'))
+                modularity.inferModulePath = false
                 destinationDir = new File(subProject.buildDir, 'tmp/module-docs')
                 options.with {
                     doclet = XtraPlatformDoclet.class.name
