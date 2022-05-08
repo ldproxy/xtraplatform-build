@@ -143,7 +143,7 @@ class LayerPlugin implements Plugin<Project> {
 
                     def docs = [group: it.moduleGroup, name: "${it.moduleName}-docs", version: it.moduleVersion]
 
-                    project.dependencies.add('layerDocs', modules)
+                    project.dependencies.add('layerDocs', docs)
                 } else {
                     //println "add included modules " + it.moduleName + " to " + project.name
                     def modules = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
