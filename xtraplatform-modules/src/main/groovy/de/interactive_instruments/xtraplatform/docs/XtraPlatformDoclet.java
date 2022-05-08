@@ -98,7 +98,6 @@ public class XtraPlatformDoclet implements Doclet {
     return true;
   }
 
-  //TODO: unpretty
   static void writeJson(File f, Object o) throws IOException {
     if (f.exists()) {
       f.delete();
@@ -112,7 +111,7 @@ public class XtraPlatformDoclet implements Doclet {
 
     FileWriter fw = new FileWriter(f);
     Gson gson = new GsonBuilder()
-        .setPrettyPrinting()
+        //.setPrettyPrinting()
         .create();
     String json = gson.toJson(o);
     fw.write(json);

@@ -303,9 +303,8 @@ class LayerPlugin implements Plugin<Project> {
                 }
                 publications {
                     'default'(MavenPublication) {
-
+                        from project.components.java
                         pom.withXml {
-
                             def dependencyManagementNode = asNode().appendNode('dependencyManagement').appendNode('dependencies')
 
                             project.configurations.modules.dependencies.each {
@@ -315,15 +314,11 @@ class LayerPlugin implements Plugin<Project> {
                                 dependencyNode.appendNode('version', it.version)
                                 //dependencyNode.appendNode('scope', 'compile')
                             }
-
                         }
                     }
                     modules(MavenPublication) {
-
                         artifactId "${project.name}-modules"
-
                         pom.withXml {
-
                             def dependenciesNode = asNode().appendNode('dependencies')
 
                             /*project.configurations.layers.dependencies.each {
@@ -341,9 +336,7 @@ class LayerPlugin implements Plugin<Project> {
                                 dependencyNode.appendNode('version', it.version)
                                 dependencyNode.appendNode('scope', 'runtime')
                             }
-
                         }
-
                     }
                 }
             }
