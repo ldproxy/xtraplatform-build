@@ -7,7 +7,7 @@ import org.gradle.api.tasks.*
 
 @CacheableTask
 class MarkdownTask extends DefaultTask {
-    private FileCollection sourceFiles = project.files(project.configurations.layers.resolvedConfiguration.firstLevelModuleDependencies.collectMany { it.moduleArtifacts }.collect { it.file }) + project.files(project.tasks.jar);
+    private FileCollection sourceFiles = project.files(project.configurations.layerDocs.resolvedConfiguration.firstLevelModuleDependencies.collectMany { it.moduleArtifacts }.collect { it.file }) + project.files(project.tasks.jar);
     private File outputDir = new File(project.buildDir, "tmp/markdown")
     private String docsName
 

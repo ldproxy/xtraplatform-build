@@ -42,6 +42,9 @@ class LayerPlugin implements Plugin<Project> {
         // consumed modules
         project.configurations.create("layerModules")
 
+        // consumed docs
+        project.configurations.create("layerDocs")
+
         //provided modules
         project.configurations.create("modules")
 
@@ -50,10 +53,13 @@ class LayerPlugin implements Plugin<Project> {
         project.configurations.modules.setTransitive(false)
         project.configurations.layers.setTransitive(true)
         project.configurations.layerModules.setTransitive(true)
+        project.configurations.layerDocs.setTransitive(false)
         project.configurations.layers.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
         project.configurations.layerModules.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        project.configurations.layerDocs.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
         project.configurations.layers.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
         project.configurations.layerModules.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
+        project.configurations.layerDocs.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
 
         project.repositories {
             mavenCentral()
@@ -134,11 +140,16 @@ class LayerPlugin implements Plugin<Project> {
                     def modules = [group: it.moduleGroup, name: "${it.moduleName}-modules", version: it.moduleVersion]
 
                     project.dependencies.add('layerModules', modules)
+
+                    def docs = [group: it.moduleGroup, name: "${it.moduleName}-docs", version: it.moduleVersion]
+
+                    project.dependencies.add('layerDocs', modules)
                 } else {
                     //println "add included modules " + it.moduleName + " to " + project.name
                     def modules = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
 
                     project.dependencies.add('layerModules', modules)
+                    project.dependencies.add('layerDocs', modules)
                 }
 
             }
@@ -303,7 +314,6 @@ class LayerPlugin implements Plugin<Project> {
                 }
                 publications {
                     'default'(MavenPublication) {
-                        from project.components.java
                         pom.withXml {
                             def dependencyManagementNode = asNode().appendNode('dependencyManagement').appendNode('dependencies')
 
@@ -337,6 +347,10 @@ class LayerPlugin implements Plugin<Project> {
                                 dependencyNode.appendNode('scope', 'runtime')
                             }
                         }
+                    }
+                    docs(MavenPublication) {
+                        from project.components.java
+                        artifactId "${project.name}-docs"
                     }
                 }
             }
