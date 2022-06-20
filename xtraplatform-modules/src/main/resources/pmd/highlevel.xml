@@ -14,9 +14,9 @@
   <rule ref="category/java/multithreading.xml/DoNotUseThreads">
   </rule>
 
-  <rule name="DoNotUseIo"
+  <rule name="DoNotUseFileIo"
     language="java"
-    message="Importing 'java.io' or 'java.nio' is not allowed"
+    message="Importing 'java.io.File*' or 'java.nio.file' is not allowed"
     class="net.sourceforge.pmd.lang.rule.XPathRule">
     <description>
 
@@ -27,7 +27,7 @@
       <property name="xpath">
         <value>
           <![CDATA[
-//ImportDeclaration[Name[starts-with(@Image, 'java.io') or starts-with(@Image, 'java.nio')]]
+//ImportDeclaration[Name[starts-with(@Image, 'java.io.File') or starts-with(@Image, 'java.nio.file')]]
 ]]>
         </value>
       </property>

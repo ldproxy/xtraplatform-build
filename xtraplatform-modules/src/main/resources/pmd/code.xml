@@ -18,6 +18,8 @@
   <rule ref="category/java/codestyle.xml">
     <exclude name="LocalVariableCouldBeFinal"/><!-- TODO: enable-->
     <exclude name="MethodArgumentCouldBeFinal"/><!-- TODO: enable-->
+    <exclude name="AtLeastOneConstructor"/>
+    <exclude name="BooleanGetMethodName"/>
     <exclude name="ClassNamingConventions"/>
     <exclude name="CommentDefaultAccessModifier"/>
     <exclude name="EmptyMethodInAbstractClassShouldBeAbstract"/>
@@ -36,19 +38,35 @@
   </rule>
 
   <rule ref="category/java/design.xml">
+    <exclude name="AbstractClassWithoutAnyMethod"/>
     <exclude name="AvoidCatchingGenericException"/>
     <exclude name="ExcessiveImports"/>
+    <exclude name="ExcessiveParameterList"/>
     <exclude name="LawOfDemeter"/>
     <exclude name="LoosePackageCoupling"/>
   </rule>
 
+  <rule ref="category/java/design.xml/ExcessiveParameterList">
+    <properties>
+      <property name="minimum" value="15.0" />
+    </properties>
+  </rule>
+
   <rule ref="category/java/errorprone.xml">
     <exclude name="AvoidCatchingThrowable"/>
+    <exclude name="AvoidDuplicateLiterals"/>
     <exclude name="AvoidFieldNameMatchingMethodName"/>
     <exclude name="AvoidFieldNameMatchingTypeName"/>
+    <exclude name="AvoidLiteralsInIfCondition"/>
     <exclude name="BeanMembersShouldSerialize"/>
     <exclude name="DataflowAnomalyAnalysis"/>
     <exclude name="EmptyCatchBlock"/>
+  </rule>
+
+  <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+    <properties>
+      <property name="skipAnnotations" value="true" />
+    </properties>
   </rule>
 
   <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
