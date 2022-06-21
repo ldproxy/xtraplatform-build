@@ -13,6 +13,14 @@
 
   <rule ref="category/java/bestpractices.xml">
     <exclude name="ConstantsInInterface"/>
+    <exclude name="GuardLogStatement"/>
+  </rule>
+
+  <rule ref="category/java/bestpractices.xml/GuardLogStatement">
+    <properties>
+      <property name="logLevels" value="trace,debug,info,warn" />
+      <property name="guardsMethods" value="isTraceEnabled,isDebugEnabled,isInfoEnabled,isWarnEnabled" />
+    </properties>
   </rule>
 
   <rule ref="category/java/codestyle.xml">
