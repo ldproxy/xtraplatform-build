@@ -494,6 +494,7 @@ ${uses}
 
             jacoco {
                 includes = ['de.ii.*']
+                excludes = ['*AutoBindings*', '*Dagger*']
             }
         }
 
@@ -503,14 +504,18 @@ ${uses}
         project.jacocoTestReport {
             project.afterEvaluate {
                 classDirectories.setFrom(project.files(classDirectories.files.collect {
-                    project.fileTree(dir: it, include: 'de/ii/**')
+                    project.fileTree(dir: it, include: 'de/ii/**').filter { File file ->
+                        !file.name.contains("AutoBindings") && !file.name.contains("Dagger")
+                    }
                 }))
             }
         }
         project.jacocoTestCoverageVerification {
             project.afterEvaluate {
                 classDirectories.setFrom(project.files(classDirectories.files.collect {
-                    project.fileTree(dir: it, include: 'de/ii/**')
+                    project.fileTree(dir: it, include: 'de/ii/**').filter { File file ->
+                        !file.name.contains("AutoBindings") && !file.name.contains("Dagger")
+                    }
                 }))
                 LayerMaturityExtension.MaturityConfiguration cfg = project.parent.layer.cfgForMaturity(project.maturity)
                 violationRules {
