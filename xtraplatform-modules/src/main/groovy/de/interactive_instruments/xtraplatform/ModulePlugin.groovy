@@ -494,7 +494,7 @@ ${uses}
 
             jacoco {
                 includes = ['de.ii.*']
-                excludes = ['*AutoBindings*', '*Dagger*']
+                excludes = ['*AutoBindings*', '*Dagger*', '*Factory']
             }
         }
 
@@ -505,7 +505,7 @@ ${uses}
             project.afterEvaluate {
                 classDirectories.setFrom(project.files(classDirectories.files.collect {
                     project.fileTree(dir: it, include: 'de/ii/**').filter { File file ->
-                        !file.name.contains("AutoBindings") && !file.name.contains("Dagger")
+                        !file.name.contains("AutoBindings") && !file.name.contains("Dagger") && !file.name.endsWith("Factory.class")
                     }
                 }))
             }
@@ -514,7 +514,7 @@ ${uses}
             project.afterEvaluate {
                 classDirectories.setFrom(project.files(classDirectories.files.collect {
                     project.fileTree(dir: it, include: 'de/ii/**').filter { File file ->
-                        !file.name.contains("AutoBindings") && !file.name.contains("Dagger")
+                        !file.name.contains("AutoBindings") && !file.name.contains("Dagger") && !file.name.endsWith("Factory.class")
                     }
                 }))
                 LayerMaturityExtension.MaturityConfiguration cfg = project.parent.layer.cfgForMaturity(project.maturity)
