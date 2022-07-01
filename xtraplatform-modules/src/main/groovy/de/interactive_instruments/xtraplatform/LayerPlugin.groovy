@@ -28,6 +28,7 @@ class LayerPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.plugins.apply("java") // needed for platform constraints
         project.plugins.apply("maven-publish")
+        project.plugins.apply('com.google.osdetector')
 
         def isBranch = project.hasProperty('branch')
         def isMainBranch = isBranch && (project.getProperty('branch') == 'master' || project.getProperty('branch') == 'main')
