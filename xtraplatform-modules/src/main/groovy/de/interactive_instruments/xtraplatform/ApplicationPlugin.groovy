@@ -7,6 +7,9 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
+import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Exec
+import org.gradle.internal.os.OperatingSystem
 
 import java.util.regex.Pattern
 
@@ -103,6 +106,8 @@ class ApplicationPlugin implements Plugin<Project> {
         addDistribution(project)
 
         addRunConfiguration(project)
+
+        addDocker(project)
     }
 
     static String getVersion(Project project) {
@@ -118,6 +123,10 @@ class ApplicationPlugin implements Plugin<Project> {
     void addRunConfiguration(Project project) {
         def dataDir = new File(project.buildDir, 'data')
 
+        project.ext.useNativeRun = isSupportedOs()
+                ? project.findProperty('runInDocker') != 'true'
+                : project.findProperty('runInDocker') == 'false'
+
         project.task('initData') {
             doLast {
                 dataDir.mkdirs()
@@ -127,11 +136,22 @@ class ApplicationPlugin implements Plugin<Project> {
         project.tasks.run.with {
             dependsOn project.tasks.installDist
             dependsOn project.tasks.initData
+            onlyIf {project.ext.useNativeRun}
             workingDir = project.tasks.installDist.destinationDir
-            args dataDir.absolutePath
+            debug = project.findProperty('debug') ?: false
+            args project.findProperty('data') ?: dataDir.absolutePath
             standardInput = System.in
             environment 'XTRAPLATFORM_ENV', 'DEVELOPMENT'
+            doFirst {
+                if (project.ext.useNativeRun && !isSupportedOs()) {
+                    logger.warn("WARNING: Running natively is not supported for '${System.getProperty("os.name")}' and will most likely lead to errors.")
+                }
+            }
         }
+    }
+
+    static boolean isSupportedOs() {
+        return OperatingSystem.current().isLinux()
     }
 
     void addDistribution(Project project) {
@@ -155,6 +175,59 @@ class ApplicationPlugin implements Plugin<Project> {
         // for docker
         project.tasks.distTar.archiveVersion.set('')
         project.tasks.distZip.archiveVersion.set('')
+    }
+
+    void addDocker(Project project) {
+        File dockerFile = new File(project.buildDir, 'tmp/Dockerfile')
+        File dockerContext = new File(project.buildDir, 'docker')
+
+        project.tasks.register('dockerFile') {
+            outputs.file dockerFile
+            doLast {
+                dockerFile.text = """
+FROM openjdk:11-jre-slim
+MAINTAINER interactive instruments GmbH
+ARG TARGETOS
+ARG TARGETARCH
+ADD ${project.name}-\$TARGETOS-\$TARGETARCH.tar /
+ENTRYPOINT ["/${project.name}/bin/${project.name}"]
+EXPOSE 7080
+WORKDIR /${project.name}
+ENV XTRAPLATFORM_ENV CONTAINER
+"""
+            }
+        }
+
+        project.tasks.register('dockerContext', Copy) {
+            from project.tasks.distTar
+            from project.tasks.dockerFile
+            into dockerContext
+            rename {
+                it.replace("${project.name}", "${project.name}-${project.platform}")
+            }
+        }
+
+        project.tasks.register('dockerBuild', Exec) {
+            dependsOn project.tasks.dockerContext
+            outputs.upToDateWhen { project.tasks.dockerContext.state.upToDate }
+            workingDir dockerContext
+            commandLine 'docker', 'buildx', 'build', '-t', 'iide/ldproxy:local-dev', '--load', '.'
+        }
+
+        project.tasks.register('dockerRun', Exec) {
+            dependsOn project.tasks.dockerBuild
+            //network=host is only supported in linux
+            if (OperatingSystem.current().isLinux()) {
+                commandLine 'docker', 'run', '--rm', '-i', '--network=host', '-v', "${project.findProperty('data') ?: "$project.buildDir/data"}:/ldproxy/data", '-e', 'XTRAPLATFORM_ENV=DEVELOPMENT', '-e', "JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=${project.findProperty('debug') ? 'y' : 'n'},address=*:5005", 'iide/ldproxy:local-dev'
+            } else {
+                commandLine 'docker', 'run', '--rm', '-i', '-p', '7080:7080', '-p', '7081:7081', '-p', '5005:5005', '-v', "${project.findProperty('data') ?: "$project.buildDir/data"}:/ldproxy/data", '-e', 'XTRAPLATFORM_ENV=DEVELOPMENT', '-e', "JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=${project.findProperty('debug') ? 'y' : 'n'},address=*:5005", 'iide/ldproxy:local-dev'
+            }
+        }
+
+
+        if (!project.useNativeRun) {
+            project.tasks.run.finalizedBy project.tasks.dockerRun
+        }
     }
 
     //TODO: use ClassGenerator
