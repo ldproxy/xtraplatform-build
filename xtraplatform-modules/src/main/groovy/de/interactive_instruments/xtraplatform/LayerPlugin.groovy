@@ -35,7 +35,7 @@ class LayerPlugin implements Plugin<Project> {
         def isRelease = project.findProperty('release') == 'true'
         project.ext {
             versionSuffix = (isBranch && !isMainBranch && !isRelease ? ('-' + project.getProperty('branch')) : '') + (!isRelease ? '-SNAPSHOT' : '')
-            platform = project.findProperty('platform') ?: project.osdetector.classifier.replace('x86_64', 'amd64').replace('aarch_64', 'arm64').replace('osx', 'linux')
+            platform = project.findProperty('platform') ?: project.osdetector.classifier.replace('x86_64', 'amd64').replace('aarch_64', 'arm64')
         }
 
         // consumed layers
