@@ -494,7 +494,7 @@ ${uses}
 
             jacoco {
                 includes = ['de.ii.*']
-                excludes = ['*AutoBindings*', '*Dagger*', '*Factory']
+                excludes = ['*AutoBindings*', '*Dagger*', '*Factory.class']
             }
         }
 
@@ -505,7 +505,15 @@ ${uses}
             project.afterEvaluate {
                 classDirectories.setFrom(project.files(classDirectories.files.collect {
                     project.fileTree(dir: it, include: 'de/ii/**').filter { File file ->
-                        !file.name.contains("AutoBindings") && !file.name.contains("Dagger") && !file.name.endsWith("Factory.class")
+                        project.test.jacoco.excludes.stream().allMatch((String e) -> {
+                            if (e.startsWith("*") && e.endsWith("*"))
+                                return !file.name.contains(e.replace('*', ''));
+                            else if (e.startsWith("*"))
+                                return !file.name.endsWith(e.replace('*', ''));
+                            else if (e.endsWith("*"))
+                                return !file.name.startsWith(e.replace('*', ''));
+                            return !file.name.equals(e);
+                        })
                     }
                 }))
             }
@@ -514,7 +522,15 @@ ${uses}
             project.afterEvaluate {
                 classDirectories.setFrom(project.files(classDirectories.files.collect {
                     project.fileTree(dir: it, include: 'de/ii/**').filter { File file ->
-                        !file.name.contains("AutoBindings") && !file.name.contains("Dagger") && !file.name.endsWith("Factory.class")
+                        project.test.jacoco.excludes.stream().allMatch((String e) -> {
+                            if (e.startsWith("*") && e.endsWith("*"))
+                                return !file.name.contains(e.replace('*', ''));
+                            else if (e.startsWith("*"))
+                                return !file.name.endsWith(e.replace('*', ''));
+                            else if (e.endsWith("*"))
+                                return !file.name.startsWith(e.replace('*', ''));
+                            return !file.name.equals(e);
+                        })
                     }
                 }))
                 LayerMaturityExtension.MaturityConfiguration cfg = project.parent.layer.cfgForMaturity(project.maturity)
