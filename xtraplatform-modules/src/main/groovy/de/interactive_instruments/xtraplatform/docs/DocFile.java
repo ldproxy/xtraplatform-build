@@ -7,6 +7,7 @@ import java.util.List;
 
 public class DocFile {
   static final String ANNOTATION = "de.ii.xtraplatform.docs.DocFile";
+  static final String ANNOTATION_DEFS = "de.ii.xtraplatform.docs.DocDefs";
 
   private static final Gson GSON = new Gson();
   private static final Type LIST_TABLE = new TypeToken<List<DocTable>>() {

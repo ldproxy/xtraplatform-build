@@ -9,8 +9,9 @@ import java.util.regex.Pattern;
 
 public class TagReplacer {
 
-  private static final Pattern PREFIX_AND_IF_EMPTY_PATTERN = Pattern.compile(
-      "\\{@(?<tag>[\\w.:]+?)(\\s+(?<prefix>.*?)(\\|\\|\\|(?<ifempty>.*?))?)?}", Pattern.DOTALL);
+  private static final Pattern PREFIX_AND_IF_EMPTY_PATTERN =
+      Pattern.compile(
+          "\\{@(?<tag>[\\w.:]+?)(\\s+(?<prefix>.*?)(\\|\\|\\|(?<ifempty>.*?))?)?}", Pattern.DOTALL);
 
   private final DocRef docRef;
   private final String language;
@@ -23,7 +24,14 @@ public class TagReplacer {
   }
 
   String replaceStrings(String text) {
-    return replace(text, PREFIX_AND_IF_EMPTY_PATTERN, this::prefixAndIfEmptyReplacer);
+    String replaced = replace(text, PREFIX_AND_IF_EMPTY_PATTERN, this::prefixAndIfEmptyReplacer);
+
+    // run a second time but NOT recursive, unresolvable tags would cause endless loop
+    if (PREFIX_AND_IF_EMPTY_PATTERN.matcher(replaced).find()) {
+      return replace(replaced, PREFIX_AND_IF_EMPTY_PATTERN, this::prefixAndIfEmptyReplacer);
+    }
+
+    return replaced;
   }
 
   static String replace(String text, Pattern pattern, Function<Matcher, String> replacer) {
@@ -31,14 +39,14 @@ public class TagReplacer {
     StringBuilder output = new StringBuilder();
     Matcher matcher = pattern.matcher(text);
     while (matcher.find()) {
-      output.append(text, lastIndex, matcher.start())
-          .append(replacer.apply(matcher));
+      output.append(text, lastIndex, matcher.start()).append(replacer.apply(matcher));
 
       lastIndex = matcher.end();
     }
     if (lastIndex < text.length()) {
       output.append(text, lastIndex, text.length());
     }
+
     return output.toString();
   }
 
@@ -56,12 +64,12 @@ public class TagReplacer {
 
   private Optional<String> findTag(String tag) {
     if (Objects.equals(tag, "body")) {
-      return Optional.of(docRef.getDocText(language)
-          .replaceAll("\n", " ")
-          .trim());
+      return Optional.of(docRef.getDocText(language).replaceAll("\n", " ").trim());
+    }
+    if (Objects.equals(tag, "bodyBlock")) {
+      return Optional.of(docRef.getDocText(language));
     }
 
-    return docRef.getDocTag(tag)
-        .findFirst();
+    return docRef.getDocTag(tag).findFirst();
   }
 }

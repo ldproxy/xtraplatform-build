@@ -50,7 +50,11 @@ class MarkdownTask extends DefaultTask {
                     .forEach(typeRef -> {
                         templates.each { template ->
                             if (typeRef.getType().hasInterface(template.getTypeName())) {
-                                writeDocFile(typeRef, template.path, template.getName(typeRef), template.tables, template.vars, template.template)
+                                java.util.Optional<DocFile> defs = docs.getDocDefs(typeRef);
+                                List<DocTable> additionalTables = defs.map(df -> df.tables).orElse([]);
+                                List<DocVar> additionalVars = defs.map(df -> df.vars).orElse([]);
+
+                                writeDocFile(typeRef, template.path, template.getName(typeRef), template.tables + additionalTables, template.vars + additionalVars, template.template)
                             }
                         }
                     });
