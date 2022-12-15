@@ -187,7 +187,7 @@ class LayerPlugin implements Plugin<Project> {
             ModulePlugin.setupConfigurations(subproject)
             ModuleInfoExtension moduleInfo = subproject.extensions.create('moduleInfo', ModuleInfoExtension)
             subproject.ext.notAModule = false
-            subproject.ext.maturity = Maturity.EXPERIMENTAL.name()
+            subproject.ext.maturity = Maturity.PROPOSAL.name()
             subproject.ext.deprecated = false
 
             subproject.afterEvaluate {

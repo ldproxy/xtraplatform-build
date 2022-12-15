@@ -594,7 +594,7 @@ ${uses}
                 } else {
                     rootPath += "/"
                 }
-                def severity = project.maturity as Maturity == Maturity.PRODUCTION
+                def severity = project.maturity as Maturity == Maturity.MATURE
                         ? SarifForGithub.Severity.error
                         : project.maturity as Maturity == Maturity.CANDIDATE
                         ? SarifForGithub.Severity.warning
@@ -639,12 +639,17 @@ ${uses}
         //project.dependencies.add('spotbugsPlugins', "com.h3xstream.findsecbugs:findsecbugs-plugin:1.11.0")
 
         project.afterEvaluate {
+            LayerMaturityExtension.MaturityConfiguration cfg = project.parent.layer.cfgForMaturity(project.maturity)
+
             project.tasks.withType(JavaCompile).configureEach {
-                LayerMaturityExtension.MaturityConfiguration cfg = project.parent.layer.cfgForMaturity(project.maturity)
                 if (cfg.warningsAsErrors) {
                     options.compilerArgs.add("-Werror")
                     //TODO: Xlint, siehe https://sol.cs.hm.edu/4129/html/431-warnungendesjavacompilers.xhtml
                 }
+            }
+
+            if (cfg.ignorePmdErrors) {
+                project.pmd.ignoreFailures = true
             }
         }
     }

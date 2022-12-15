@@ -8,7 +8,7 @@ import org.gradle.api.tasks.options.OptionValues
 class ModuleCreateTask extends DefaultTask {
 
     private String name
-    private Maturity maturity = Maturity.EXPERIMENTAL;
+    private Maturity maturity = Maturity.PROPOSAL;
 
     public ModuleCreateTask() {
     }
