@@ -1,14 +1,8 @@
 package de.interactive_instruments.xtraplatform.docs;
 
 import java.util.AbstractMap.SimpleEntry;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,17 +30,38 @@ class DocRef {
   }
 
   DocRef(DocRef orig, String alias, Map<String, String> aliasDescription) {
-    this(orig.docs, orig.layer, orig.module, orig.type, orig.method, alias, aliasDescription,
+    this(
+        orig.docs,
+        orig.layer,
+        orig.module,
+        orig.type,
+        orig.method,
+        alias,
+        aliasDescription,
         orig.additionalVars);
   }
 
   private DocRef(DocRef orig, MethodDocs method) {
-    this(orig.docs, orig.layer, orig.module, orig.type, method, orig.alias, orig.aliasDescription,
+    this(
+        orig.docs,
+        orig.layer,
+        orig.module,
+        orig.type,
+        method,
+        orig.alias,
+        orig.aliasDescription,
         orig.additionalVars);
   }
 
-  private DocRef(Docs docs, LayerDocs layer, ModuleDocs module, TypeDocs type, MethodDocs method,
-      String alias, Map<String, String> aliasDescription, Map<String, String> additionalVars) {
+  private DocRef(
+      Docs docs,
+      LayerDocs layer,
+      ModuleDocs module,
+      TypeDocs type,
+      MethodDocs method,
+      String alias,
+      Map<String, String> aliasDescription,
+      Map<String, String> additionalVars) {
     this.docs = docs;
     this.layer = layer;
     this.module = module;
@@ -62,17 +77,25 @@ class DocRef {
   }
 
   Map<String, String> getVars() {
-    Map<String, String> staticVars = vars.computeIfAbsent(layer.id + module.id,
-        ignore -> Map.of(
-            "layer.name", layer.name,
-            "layer.nameSuffix",
-            layer.name.contains("-") ? layer.name.substring(layer.name.lastIndexOf("-") + 1)
-                : layer.name,
-            "module.name", module.name,
-            "module.version", module.version,
-            "module.description", module.description,
-            "module.maturity", module.maturity.name().toLowerCase()
-        ));
+    Map<String, String> staticVars =
+        vars.computeIfAbsent(
+            layer.id + module.id,
+            ignore ->
+                Map.of(
+                    "layer.name",
+                    layer.name,
+                    "layer.nameSuffix",
+                    layer.name.contains("-")
+                        ? layer.name.substring(layer.name.lastIndexOf("-") + 1)
+                        : layer.name,
+                    "module.name",
+                    module.name,
+                    "module.version",
+                    module.version,
+                    "module.description",
+                    module.description,
+                    "module.maturity",
+                    module.maturity.name().toLowerCase()));
 
     if (!additionalVars.isEmpty()) {
       Map<String, String> mergedVars = new HashMap<>(staticVars);
@@ -95,17 +118,13 @@ class DocRef {
     if (isMethod() || Objects.isNull(getType().methods)) {
       return Stream.empty();
     }
-    return getType().methods
-        .stream()
-        .map(methodDocs -> new DocRef(this, methodDocs));
+    return getType().methods.stream().map(methodDocs -> new DocRef(this, methodDocs));
   }
 
   Stream<AnnotationDocs> getAnnotations() {
     if (isMethod()) {
       return Stream.concat(
-          getOverrides().flatMap(ElementDocs::getAnnotations),
-          method.getAnnotations()
-      );
+          getOverrides().flatMap(ElementDocs::getAnnotations), method.getAnnotations());
     }
     return type.getAnnotations();
   }
@@ -121,27 +140,31 @@ class DocRef {
   }
 
   boolean hasAnnotation(String qualifiedName, Map<String, String> attributes) {
-    Optional<AnnotationDocs> annotationDocs = isMethod()
-        ? method.getAnnotation(qualifiedName)
-        .or(() -> getOverrides()
-            .flatMap(methodDocs -> methodDocs
+    Optional<AnnotationDocs> annotationDocs =
+        isMethod()
+            ? method
                 .getAnnotation(qualifiedName)
-                .stream())
-            .findFirst())
-        : type.getAnnotation(qualifiedName);
+                .or(
+                    () ->
+                        getOverrides()
+                            .flatMap(methodDocs -> methodDocs.getAnnotation(qualifiedName).stream())
+                            .findFirst())
+            : type.getAnnotation(qualifiedName);
 
     return annotationDocs
-        .filter(a -> {
-          for (Entry<String, String> entry : attributes.entrySet()) {
-            boolean matches = a.getAttribute(entry.getKey())
-                .filter(value -> Objects.equals(value, entry.getValue()))
-                .isPresent();
-            if (!matches) {
-              return false;
-            }
-          }
-          return true;
-        })
+        .filter(
+            a -> {
+              for (Entry<String, String> entry : attributes.entrySet()) {
+                boolean matches =
+                    a.getAttribute(entry.getKey())
+                        .filter(value -> Objects.equals(value, entry.getValue()))
+                        .isPresent();
+                if (!matches) {
+                  return false;
+                }
+              }
+              return true;
+            })
         .isPresent();
   }
 
@@ -156,7 +179,11 @@ class DocRef {
         .map(Optional::get);
   }
 
-  String getDocText(DocRef docRef, String language, List<DocTable> tables, List<DocVar> vars,
+  String getDocText(
+      DocRef docRef,
+      String language,
+      List<DocTable> tables,
+      List<DocVar> vars,
       Optional<String> template) {
     TypeDocs type = docRef.getType();
     if (Objects.isNull(type.doc)) {
@@ -165,22 +192,34 @@ class DocRef {
 
     String body = docRef.getDocText(language);
 
-    Map<String, String> docTables = tables.stream()
-        .flatMap(docTable -> {
-          String key = "docTable:" + docTable.name;
-          DocTableGenerator tableGenerator = tableGenerators.computeIfAbsent(type.qualifiedName,
-              ignore -> new DocTableGenerator(docRef, docs));
+    Map<String, String> docTables =
+        tables.stream()
+            .flatMap(
+                docTable -> {
+                  String key = "docTable:" + docTable.name;
+                  DocTableGenerator tableGenerator =
+                      tableGenerators.computeIfAbsent(
+                          type.qualifiedName, ignore -> new DocTableGenerator(docRef, docs));
 
-          return tableGenerator.generate(docTable, language)
-              .stream()
-              .map(table -> new SimpleEntry<>(key, table));
-        })
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                  return tableGenerator.generate(docTable, language).stream()
+                      .map(table -> new SimpleEntry<>(key, table));
+                })
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    Map<String, String> docVars = vars.stream()
-        .map(docVar -> new SimpleEntry<>("docVar:" + docVar.name,
-            DocTableGenerator.resolveColumnSteps(docs, docRef, docVar.value, language)))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    Map<String, String> docVars =
+        vars.stream()
+            .flatMap(
+                docVar -> {
+                  Optional<String> value =
+                      DocTableGenerator.resolveColumnSteps(docs, docRef, docVar.value, language);
+
+                  if (value.isPresent()) {
+                    return Stream.of(new SimpleEntry<>("docVar:" + docVar.name, value.get()));
+                  }
+
+                  return Stream.empty();
+                })
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
     Map<String, String> specialties = new LinkedHashMap<>(getVars());
     specialties.putAll(docTables);
@@ -188,9 +227,7 @@ class DocRef {
 
     TagReplacer tagReplacer = new TagReplacer(docRef, language, specialties);
 
-    String docText = template.isEmpty()
-        ? body
-        : template.get().replace(asTag(BODY), body);
+    String docText = template.isEmpty() ? body : template.get().replace(asTag(BODY), body);
 
     return tagReplacer.replaceStrings(docText);
   }
@@ -220,13 +257,10 @@ class DocRef {
   Stream<String> getDocTag(String tag) {
     if (isMethod()) {
       return Stream.concat(
-              getDocTag(method, tag),
-              getOverrides()
-                  .flatMap(override -> getDocTag(override, tag)))
+              getDocTag(method, tag), getOverrides().flatMap(override -> getDocTag(override, tag)))
           .filter(s -> !s.isBlank());
     }
-    return getDocTag(type, tag)
-        .filter(s -> !s.isBlank());
+    return getDocTag(type, tag).filter(s -> !s.isBlank());
   }
 
   Set<String> getDocLanguages() {
@@ -259,9 +293,11 @@ class DocRef {
 
     return element.doc.stream()
         .flatMap(map -> map.entrySet().stream())
-        .filter(entry -> entry.getKey().toLowerCase().startsWith(LANG_PREFIX + language)
-            || Objects.equals(entry.getKey(), LANG_ALL)
-            || Objects.equals(entry.getKey(), BODY))
+        .filter(
+            entry ->
+                entry.getKey().toLowerCase().startsWith(LANG_PREFIX + language)
+                    || Objects.equals(entry.getKey(), LANG_ALL)
+                    || Objects.equals(entry.getKey(), BODY))
         .flatMap(entry -> entry.getValue().stream())
         .collect(Collectors.joining("\n\n"));
   }

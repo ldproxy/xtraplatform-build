@@ -36,45 +36,42 @@ public class DocTableGenerator {
 
   static String generateRow(Docs docs, DocRef docRef, List<DocTable.Col> cols, String language) {
     return cols.stream()
-        .map(col -> resolveColumnSteps(docs, docRef, col.value, language))
+        .map(col -> resolveColumnSteps(docs, docRef, col.value, language).orElse(""))
         .collect(Collectors.joining(" | ", "| ", " |\n"));
   }
 
   static String generateHeader(List<DocTable.Col> cols, String language) {
     return cols.stream()
-        .map(col -> col.header
-            .stream()
-            .filter(i18n -> i18n.language.equals(language))
-            .map(i18n -> i18n.value)
-            .findFirst()
-            .orElse(col.header.get(0).value))
-        .collect(Collectors.joining(" | ", "| ", " |\n"))
-        + cols.stream()
-        .map(col -> "---")
-        .collect(Collectors.joining(" | ", "| ", " |\n"));
+            .map(
+                col ->
+                    col.header.stream()
+                        .filter(i18n -> i18n.language.equals(language))
+                        .map(i18n -> i18n.value)
+                        .findFirst()
+                        .orElse(col.header.get(0).value))
+            .collect(Collectors.joining(" | ", "| ", " |\n"))
+        + cols.stream().map(col -> "---").collect(Collectors.joining(" | ", "| ", " |\n"));
   }
 
-  static Stream<DocRef> resolveRowSteps(Docs docs, DocRef root, List<DocStep> steps, String language) {
+  static Stream<DocRef> resolveRowSteps(
+      Docs docs, DocRef root, List<DocStep> steps, String language) {
     Entry<Class<?>, Stream<?>> result = StepResolver.resolve(docs, root, steps, language);
 
     if (result.getKey() != DocRef.class) {
       throw new IllegalArgumentException();
     }
 
-    return result.getValue()
-        .map(DocRef.class::cast);
+    return result.getValue().map(DocRef.class::cast);
   }
 
-  static String resolveColumnSteps(Docs docs, DocRef root, List<DocStep> steps, String language) {
+  static Optional<String> resolveColumnSteps(
+      Docs docs, DocRef root, List<DocStep> steps, String language) {
     Entry<Class<?>, Stream<?>> result = StepResolver.resolve(docs, root, steps, language);
 
     if (result.getKey() != String.class) {
       throw new IllegalArgumentException();
     }
 
-    return result.getValue()
-        .map(String.class::cast)
-        .findFirst()
-        .orElse("");
+    return result.getValue().map(String.class::cast).findFirst();
   }
 }
