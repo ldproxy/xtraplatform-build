@@ -1,5 +1,6 @@
 package de.interactive_instruments.xtraplatform.docs;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -15,10 +16,15 @@ public class TagReplacer {
 
   private final DocRef docRef;
   private final String language;
+  private final String languageSuffix;
   private final Map<String, String> vars;
 
   public TagReplacer(DocRef docRef, String language, Map<String, String> vars) {
     this.language = language;
+    this.languageSuffix =
+        language.length() > 1
+            ? language.substring(0, 1).toUpperCase(Locale.ROOT) + language.substring(1)
+            : language;
     this.docRef = docRef;
     this.vars = vars;
   }
@@ -70,6 +76,10 @@ public class TagReplacer {
       return Optional.of(docRef.getDocText(language));
     }
 
-    return docRef.getDocTag(tag).findFirst();
+    return docRef
+        .getDocTag(tag)
+        .findFirst()
+        .or(() -> docRef.getDocTag(tag + languageSuffix).findFirst())
+        .or(() -> docRef.getDocTag(tag + "All").findFirst());
   }
 }

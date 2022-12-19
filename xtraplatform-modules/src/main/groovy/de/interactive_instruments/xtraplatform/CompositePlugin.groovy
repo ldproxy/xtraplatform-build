@@ -45,6 +45,7 @@ class CompositePlugin implements Plugin<Project> {
                 project.tasks.register('check', { dependsOn project.gradle.includedBuild(project.composite.main).task(':check') })
                 project.tasks.register('test', { dependsOn project.gradle.includedBuild(project.composite.main).task(':test') })
                 project.tasks.register('run', { dependsOn project.gradle.includedBuild(project.composite.main).task(':run') })
+                project.tasks.register('clean', { dependsOn project.gradle.includedBuild(project.composite.main).task(':clean') })
             }
         }
     }

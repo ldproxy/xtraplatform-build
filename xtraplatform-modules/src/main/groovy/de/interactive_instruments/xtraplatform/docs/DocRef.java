@@ -179,6 +179,14 @@ class DocRef {
         .map(Optional::get);
   }
 
+  Stream<TypeDocs> getOverridesTypes() {
+    if (!isMethod()) {
+      return Stream.empty();
+    }
+    List<ElementDocs> o = Objects.nonNull(type.interfaces) ? type.interfaces : List.of();
+    return o.stream().map(ed -> ed.qualifiedName).map(docs::findType).filter(Objects::nonNull);
+  }
+
   String getDocText(
       DocRef docRef,
       String language,
@@ -257,7 +265,12 @@ class DocRef {
   Stream<String> getDocTag(String tag) {
     if (isMethod()) {
       return Stream.concat(
-              getDocTag(method, tag), getOverrides().flatMap(override -> getDocTag(override, tag)))
+              Stream.concat(
+                  getDocTag(method, tag),
+                  getOverrides().flatMap(override -> getDocTag(override, tag))),
+              Stream.concat(
+                  getDocTag(type, tag),
+                  getOverridesTypes().flatMap(override -> getDocTag(override, tag))))
           .filter(s -> !s.isBlank());
     }
     return getDocTag(type, tag).filter(s -> !s.isBlank());
