@@ -33,9 +33,10 @@ class LayerPlugin implements Plugin<Project> {
         def isBranch = project.hasProperty('branch')
         def isMainBranch = isBranch && (project.getProperty('branch') == 'master' || project.getProperty('branch') == 'main')
         def isRelease = project.findProperty('release') == 'true'
+        def isDocker = project.findProperty('runInDocker') == 'true'
         project.ext {
             versionSuffix = (isBranch && !isMainBranch && !isRelease ? ('-' + project.getProperty('branch')) : '') + (!isRelease ? '-SNAPSHOT' : '')
-            platform = project.findProperty('platform') ?: project.osdetector.classifier.replace('x86_64', 'amd64').replace('aarch_64', 'arm64')
+            platform = project.findProperty('platform') ?: project.osdetector.classifier.replace('x86_64', 'amd64').replace('aarch_64', 'arm64').replace('osx', isDocker ? 'linux' : 'osx')
         }
 
         // consumed layers

@@ -185,7 +185,7 @@ class ApplicationPlugin implements Plugin<Project> {
             outputs.file dockerFile
             doLast {
                 dockerFile.text = """
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:11-jre
 MAINTAINER interactive instruments GmbH
 ARG TARGETOS
 ARG TARGETARCH
