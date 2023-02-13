@@ -29,6 +29,7 @@ class LayerPlugin implements Plugin<Project> {
         project.plugins.apply("java") // needed for platform constraints
         project.plugins.apply("maven-publish")
         project.plugins.apply('com.google.osdetector')
+        project.plugins.apply('org.cyclonedx.bom')
 
         def isBranch = project.hasProperty('branch')
         def isMainBranch = isBranch && (project.getProperty('branch') == 'master' || project.getProperty('branch') == 'main')
@@ -51,12 +52,16 @@ class LayerPlugin implements Plugin<Project> {
         //provided modules
         project.configurations.create("modules")
 
+        //sbom
+        project.configurations.create("sbom")
+
         project.configurations.runtimeElements.extendsFrom(project.configurations.modules)
         project.configurations.runtimeElements.setTransitive(false)
         project.configurations.modules.setTransitive(false)
         project.configurations.layers.setTransitive(true)
         project.configurations.layerModules.setTransitive(true)
         project.configurations.layerDocs.setTransitive(false)
+        project.configurations.sbom.setTransitive(true)
         project.configurations.layers.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
         project.configurations.layerModules.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
         project.configurations.layerDocs.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
@@ -125,6 +130,19 @@ class LayerPlugin implements Plugin<Project> {
         project.plugins.apply('build-dashboard')
 
         project.tasks.check.finalizedBy project.tasks.named("buildDashboard")
+
+        project.cyclonedxBom {
+            destination = project.file("build/generated/sources/annotationProcessor/resources/main/")
+            includeConfigs = ["sbom"]
+            projectType = "library"
+            outputName = "sbom"
+            outputFormat = "json"
+            includeBomSerialNumber = false
+        }
+
+        project.tasks.named("processResources").configure {
+            dependsOn project.tasks.named("cyclonedxBom")
+        }
     }
 
     void addFeatureModules(Project project, includedBuilds) {
@@ -180,6 +198,8 @@ class LayerPlugin implements Plugin<Project> {
         }
 
         project.subprojects { Project subproject ->
+
+            project.dependencies.add('sbom', project.dependencies.project(path: subproject.path, configuration: 'embeddedAll'))
 
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('java-test-fixtures')

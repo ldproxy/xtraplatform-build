@@ -96,12 +96,19 @@ class ModulePlugin implements Plugin<Project> {
         project.configurations.create('embeddedExport')
         project.configurations.create('embeddedFlat')
         project.configurations.create('embeddedFlatExport')
+        project.configurations.create('embeddedAll')
 
         project.configurations.provided.setTransitive(true)
         project.configurations.embedded.setTransitive(true)
         project.configurations.embeddedExport.setTransitive(true)
         project.configurations.embeddedFlat.setTransitive(false)
         project.configurations.embeddedFlatExport.setTransitive(false)
+
+        project.configurations.embeddedAll.setTransitive(true)
+        project.configurations.embeddedAll.extendsFrom(project.configurations.embedded)
+        project.configurations.embeddedAll.extendsFrom(project.configurations.embeddedExport)
+        project.configurations.embeddedAll.extendsFrom(project.configurations.embeddedFlat)
+        project.configurations.embeddedAll.extendsFrom(project.configurations.embeddedFlatExport)
 
         project.configurations.compileOnly.extendsFrom(project.configurations.provided)
         project.configurations.testImplementation.extendsFrom(project.configurations.provided)
