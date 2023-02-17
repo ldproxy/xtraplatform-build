@@ -129,7 +129,7 @@ class LayerPlugin implements Plugin<Project> {
 
         project.cyclonedxBom {
             destination = project.file("build/generated/sources/annotationProcessor/resources/main/")
-            includeConfigs = ["embeddedAll"]
+            includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
             projectType = "library"
             outputName = "sbom"
             outputFormat = "json"
