@@ -108,6 +108,8 @@ class ApplicationPlugin implements Plugin<Project> {
         addRunConfiguration(project)
 
         addDocker(project)
+
+        addSbom(project)
     }
 
     static String getVersion(Project project) {
@@ -175,6 +177,49 @@ class ApplicationPlugin implements Plugin<Project> {
         // for docker
         project.tasks.distTar.archiveVersion.set('')
         project.tasks.distZip.archiveVersion.set('')
+    }
+
+    void addSbom(Project project) {
+        project.afterEvaluate {
+            project.cyclonedxBom {
+                projectType = "application"
+                componentVersion = project.version
+            }
+        }
+
+        project.extensions.add('dependencyTrack', [apiUrl: project.findProperty('dtrackApiUrl') ?: '', apiKey: project.findProperty('dtrackApiKey') ?: ''])
+
+        project.tasks.register("createSbom", SbomTask) {
+            dependsOn project.tasks.named("cyclonedxBom")
+        }
+
+        project.tasks.register("publishSbom") {
+            dependsOn project.tasks.named("createSbom")
+            doLast {
+                println "Uploading SBOM to ${project.dependencyTrack.apiUrl}"
+                def baseUrl = new URL("${project.dependencyTrack.apiUrl}")
+                def apiKey = "${project.dependencyTrack.apiKey}"
+                def bom = project.tasks.createSbom.outputs.files.singleFile.bytes.encodeBase64().toString()
+                def queryString = """{
+                    "autoCreate": true,
+                    "projectName": "${project.name}",
+                    "projectVersion": "${project.version}",
+                    "bom": "${bom}"
+                }"""
+
+                def connection = baseUrl.openConnection()
+                connection.with {
+                    doOutput = true
+                    requestMethod = 'PUT'
+                    setRequestProperty("Content-Type", "application/json")
+                    setRequestProperty("X-API-Key", apiKey)
+                    outputStream.withWriter { writer ->
+                        writer << queryString
+                    }
+                    def response = content.text
+                }
+            }
+        }
     }
 
     void addDocker(Project project) {
