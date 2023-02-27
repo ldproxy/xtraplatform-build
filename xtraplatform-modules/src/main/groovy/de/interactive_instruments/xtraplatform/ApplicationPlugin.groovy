@@ -63,7 +63,7 @@ class ApplicationPlugin implements Plugin<Project> {
                     }
                 })
             }
-            project.subprojects.each {
+            project.configurations.modules.dependencies.each {
                 project.dependencies.add('app', it)
             }
 
