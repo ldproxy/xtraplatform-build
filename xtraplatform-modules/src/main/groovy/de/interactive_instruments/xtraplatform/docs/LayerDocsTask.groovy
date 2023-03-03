@@ -32,7 +32,11 @@ class LayerDocsTask extends DefaultTask {
     @TaskAction
     void generateDocs() {
         Map<String, ModuleDocs> modules = sourceFiles.files.collectEntries {
-            def moduleDocs = new Gson().fromJson(new File(it, XtraPlatformDoclet.MOD_DOCS_FILE_NAME).text, ModuleDocs.class)
+            def moduleDocsFile = new File(it, XtraPlatformDoclet.MOD_DOCS_FILE_NAME)
+            if (!moduleDocsFile.exists()) {
+                return [:]
+            }
+            def moduleDocs = new Gson().fromJson(moduleDocsFile.text, ModuleDocs.class)
             [(moduleDocs.id): moduleDocs]
         }
 
