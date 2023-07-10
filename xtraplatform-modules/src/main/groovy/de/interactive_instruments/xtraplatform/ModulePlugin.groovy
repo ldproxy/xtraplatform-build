@@ -453,11 +453,11 @@ ${uses}
         project.dependencies.add('testImplementation', "org.objenesis:objenesis:1.2")
         // needed by spock to mock constructors for non-interface types
 
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-templates:3.+")
+        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-templates:3.0.9")
         // needed by spock-reports
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-xml:3.+")
+        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-xml:3.0.9")
         // needed by spock-reports
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-json:3.+")
+        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-json:3.0.9")
         // needed by spock-reports
 
         project.tasks.register("coverageReportInfo") {

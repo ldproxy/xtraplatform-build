@@ -30,6 +30,10 @@ class ModuleCreateTask extends DefaultTask {
 
     @TaskAction
     void createModule() {
+        if (Objects.isNull(name) || name.isBlank()) {
+            System.out.println("Please provide a name, e.g. './gradlew createModule --name xtraplatform-example'");
+            return;
+        }
         getProject().file(name).mkdirs()
         getProject().file("${name}/build.gradle").text = "\nmaturity = '${maturity.name()}'\n"
         getProject().file("${name}/src/main/java/de/ii/${asPath(name)}/app").mkdirs()
