@@ -45,6 +45,12 @@ public class Docs {
         .collect(Collectors.toList());
   }
 
+  List<DocRef> findTypeBySuperClass(String qualifiedName) {
+    return layers.stream()
+            .flatMap(layer -> getTypes(layer, typeDocs -> typeDocs.hasSuperClass(qualifiedName)))
+            .collect(Collectors.toList());
+  }
+
   Stream<DocRef> getTypes(LayerDocs layer, Predicate<TypeDocs> predicate) {
     if (Objects.isNull(layer.modules)) {
       return Stream.of();

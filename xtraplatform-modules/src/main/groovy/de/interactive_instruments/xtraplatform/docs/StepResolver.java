@@ -1,12 +1,8 @@
 package de.interactive_instruments.xtraplatform.docs;
 
 import com.google.common.base.Splitter;
-
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -71,8 +67,13 @@ public class StepResolver {
         return Stream.of(in)
             .flatMap(
                 typeRef -> {
+                  List<DocRef> byInterface =
+                      docs.findTypeByInterface(typeRef.getType().qualifiedName);
+
                   Stream<DocRef> children =
-                      docs.findTypeByInterface(typeRef.getType().qualifiedName).stream();
+                      byInterface.isEmpty()
+                          ? docs.findTypeBySuperClass(typeRef.getType().qualifiedName).stream()
+                          : byInterface.stream();
 
                   if (typeRef.hasAnnotation(DocFilesTemplate.ANNOTATION)) {
                     DocFilesTemplate docFilesTemplate =
@@ -100,6 +101,7 @@ public class StepResolver {
       case METHODS:
         return Stream.of(in).flatMap(DocRef::getMethods).map(out::cast);
       case JSON_PROPERTIES:
+        boolean skipDocIgnore = step.params.contains("skipDocIgnore");
         return Stream.of(in)
             .flatMap(DocRef::getMethods)
             .filter(
@@ -110,8 +112,8 @@ public class StepResolver {
                             methodDocs ->
                                 Objects.nonNull(methodDocs.doc)
                                     && methodDocs.hasAnnotation(JSON_PROPERTY)
-                                    && !(methodDocs.hasAnnotation(JSON_IGNORE)
-                                        || methodDocs.hasAnnotation(DOC_IGNORE)))
+                                    && !methodDocs.hasAnnotation(JSON_IGNORE)
+                                    && (skipDocIgnore || !methodDocs.hasAnnotation(DOC_IGNORE)))
                         .isPresent())
             .flatMap(
                 typeRef -> {
@@ -249,7 +251,7 @@ public class StepResolver {
     }
   }
 
-  private static String getJsonType(String type, Docs docs) {
+  static String getJsonType(String type, Docs docs) {
     if (type.startsWith("java.util.List")
         || type.startsWith("java.util.Set")
         || type.startsWith("java.util.Collection")
@@ -274,15 +276,32 @@ public class StepResolver {
     return "object";
   }
 
+  private static final List<String> STRING_TYPES =
+      List.of("java.net.URI", "java.util.Date", "java.time.ZoneId", "io.dropwizard.util.Duration");
+
+  private static boolean isString(String[] matches) {
+    return matches.length == 1 && "string".equals(matches[0]);
+  }
+
   private static boolean hasSimpleType(String type, String... matches) {
     for (String match : matches) {
       if (type.equalsIgnoreCase(match)
           || type.equalsIgnoreCase(String.format("java.util.Optional<%s>", match))
+          || type.equalsIgnoreCase(String.format("java.util.Optional%s", match))
           || type.equalsIgnoreCase(String.format("java.lang.%s", match))
           || type.equalsIgnoreCase(String.format("java.util.Optional<java.lang.%s>", match))) {
         return true;
       }
     }
+    if (isString(matches)) {
+      for (String match : STRING_TYPES) {
+        if (type.equalsIgnoreCase(match)
+            || type.equalsIgnoreCase(String.format("java.util.Optional<%s>", match))) {
+          return true;
+        }
+      }
+    }
+
     return false;
   }
 

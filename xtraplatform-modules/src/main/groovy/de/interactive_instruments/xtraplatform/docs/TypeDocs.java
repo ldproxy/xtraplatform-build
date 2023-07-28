@@ -14,12 +14,15 @@ class TypeDocs extends ElementDocs {
   boolean hasInterface(String qualifiedName) {
     return Objects.nonNull(interfaces)
         && interfaces.stream()
-        .anyMatch(elementDocs -> Objects.equals(elementDocs.qualifiedName, qualifiedName));
+            .anyMatch(elementDocs -> Objects.equals(elementDocs.qualifiedName, qualifiedName));
+  }
+
+  boolean hasSuperClass(String qualifiedName) {
+    return Objects.nonNull(superClass) && Objects.equals(superClass.qualifiedName, qualifiedName);
   }
 
   boolean hasInterfaces() {
-    return Objects.nonNull(interfaces)
-        && !interfaces.isEmpty();
+    return Objects.nonNull(interfaces) && !interfaces.isEmpty();
   }
 
   Optional<MethodDocs> findOverride(MethodDocs child) {
@@ -27,9 +30,11 @@ class TypeDocs extends ElementDocs {
       return Optional.empty();
     }
     return methods.stream()
-        //TODO: methodDocs.getSignature
-        .filter(methodDocs -> Objects.equals(methodDocs.qualifiedName, child.qualifiedName)
-            && Objects.equals(methodDocs.parameters, child.parameters))
+        // TODO: methodDocs.getSignature
+        .filter(
+            methodDocs ->
+                Objects.equals(methodDocs.qualifiedName, child.qualifiedName)
+                    && Objects.equals(methodDocs.parameters, child.parameters))
         .findFirst();
   }
 }

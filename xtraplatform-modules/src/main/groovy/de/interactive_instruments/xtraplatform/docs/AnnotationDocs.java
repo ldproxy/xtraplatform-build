@@ -25,15 +25,23 @@ class AnnotationDocs extends ElementDocs {
   }
 
   Optional<String> getAttributeAsJson(String name) {
-    return getAttribute(name).map(attribute -> attribute
-        .replaceAll("(^|=)\\{?@[\\w.]+\\(", "$1[{")
-        .replaceAll("\\{?@[\\w.]+\\(", "{")
-        .replaceAll("\\),", "},")
-        .replaceAll("\\)}", "}]")
-        .replaceAll("\\)$", "}]")
-        .replaceAll("=([\"\\[])", ":$1")
-        .replaceAll("=\\{\"", ":[\"")
-        .replaceAll("\"}}", "\"]}")
-        .replaceAll("=(?:\\w+\\.)*(\\w+)", ":\"$1\""));
+    return getAttributeAsJson(name, true);
+  }
+
+  Optional<String> getAttributeAsJson(String name, boolean stripValueDotPrefix) {
+    return getAttribute(name)
+        .map(
+            attribute ->
+                attribute
+                    .replaceAll("(^|=)\\{?@[\\w.]+\\(", "$1[{")
+                    .replaceAll("\\{?@[\\w.]+\\(", "{")
+                    .replaceAll("\\),", "},")
+                    .replaceAll("\\)}", "}]")
+                    .replaceAll("\\)$", "}]")
+                    .replaceAll("=([\"\\[])", ":$1")
+                    .replaceAll("=\\{\"", ":[\"")
+                    .replaceAll("\"}}", "\"]}")
+                    .replaceAll(
+                        stripValueDotPrefix ? "=(?:\\w+\\.)*(\\w+)" : "=([\\w\\.]+)", ":\"$1\""));
   }
 }
