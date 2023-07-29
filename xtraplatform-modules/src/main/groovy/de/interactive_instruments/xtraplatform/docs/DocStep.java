@@ -1,6 +1,7 @@
 package de.interactive_instruments.xtraplatform.docs;
 
 import java.util.List;
+import java.util.Objects;
 
 public class DocStep {
   enum Step {
@@ -34,7 +35,7 @@ public class DocStep {
   }
 
   Step type;
-  List<String> params;
+  private List<String> params;
 
   DocStep(Step type) {
     this(type, List.of());
@@ -43,5 +44,10 @@ public class DocStep {
   DocStep(Step type, List<String> params) {
     this.type = type;
     this.params = params;
+  }
+
+  // needed because gson always sets params=null
+  List<String> params() {
+    return Objects.requireNonNullElse(params, List.of());
   }
 }

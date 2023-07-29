@@ -94,14 +94,14 @@ public class StepResolver {
             .flatMap(
                 typeRef ->
                     typeRef
-                        .getDocTag(fromTag(step.params.get(0)))
+                        .getDocTag(fromTag(step.params().get(0)))
                         .flatMap(REF_SPLITTER::splitToStream)
                         .map(docs::findTypeRef))
             .map(out::cast);
       case METHODS:
         return Stream.of(in).flatMap(DocRef::getMethods).map(out::cast);
       case JSON_PROPERTIES:
-        boolean skipDocIgnore = step.params.contains("skipDocIgnore");
+        boolean skipDocIgnore = step.params().contains("skipDocIgnore");
         return Stream.of(in)
             .flatMap(DocRef::getMethods)
             .filter(
@@ -152,7 +152,7 @@ public class StepResolver {
             .map(out::cast);
       case MARKED:
         return Stream.of(in)
-            .filter(docRef -> docRef.hasAnnotation(DOC_MARKER, Map.of("value", step.params.get(0))))
+            .filter(docRef -> docRef.hasAnnotation(DOC_MARKER, Map.of("value", step.params().get(0))))
             .map(out::cast);
       case UNMARKED:
         return Stream.of(in).filter(docRef -> !docRef.hasAnnotation(DOC_MARKER)).map(out::cast);
@@ -166,9 +166,9 @@ public class StepResolver {
     switch (step.type) {
       case TAG:
         TagReplacer tagReplacer = new TagReplacer(docRef, language, Map.of());
-        return out.cast(tagReplacer.replaceStrings(step.params.get(0)));
+        return out.cast(tagReplacer.replaceStrings(step.params().get(0)));
       case CONSTANT:
-        return out.cast(step.params.get(0));
+        return out.cast(step.params().get(0));
       case JSON_NAME:
         if (docRef.isMethod()) {
           if (docRef.hasAlias()) {
@@ -196,7 +196,7 @@ public class StepResolver {
       case SORTED:
         return in.sorted(
             Comparator.comparing(
-                docRef -> docRef.getDocTag(fromTag(step.params.get(0))).findFirst().orElse(null),
+                docRef -> docRef.getDocTag(fromTag(step.params().get(0))).findFirst().orElse(null),
                 Comparator.nullsLast(Comparator.naturalOrder())));
       default:
         throw new IllegalArgumentException();
@@ -206,7 +206,7 @@ public class StepResolver {
   private static <T> T mapString(String in, DocStep step, String language, Class<T> out) {
     switch (step.type) {
       case FILTER:
-        for (String param : step.params) {
+        for (String param : step.params()) {
           List<String> op_par = PARAM_SPLITTER.splitToList(param);
           if (Objects.equals(op_par.get(0), "ISIN")) {
             boolean matches =
@@ -223,7 +223,7 @@ public class StepResolver {
         if (in.isBlank()) {
           return out.cast(in);
         }
-        return out.cast(String.format(step.params.get(0), in));
+        return out.cast(String.format(step.params().get(0), in));
       default:
         throw new IllegalArgumentException();
     }
@@ -233,14 +233,14 @@ public class StepResolver {
     switch (step.type) {
       case COLLECT:
         Stream<String> result = in.filter(s -> !s.isBlank());
-        if (step.params.contains("DISTINCT")) {
+        if (step.params().contains("DISTINCT")) {
           result = result.distinct();
         }
-        if (step.params.contains("SORTED")) {
+        if (step.params().contains("SORTED")) {
           result = result.sorted();
         }
         String separator =
-            step.params.stream()
+            step.params().stream()
                 .filter(p -> p.startsWith("SEPARATED:"))
                 .map(p -> p.replace("SEPARATED:", ""))
                 .findFirst()
