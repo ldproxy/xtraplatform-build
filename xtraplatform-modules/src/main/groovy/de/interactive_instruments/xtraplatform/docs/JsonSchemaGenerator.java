@@ -179,57 +179,6 @@ public class JsonSchemaGenerator {
               properties.put(property.getKey(), property.getValue());
             });
 
-    // TODO: json subtypes
-    try {
-      /*if (properties.containsKey("buildingBlock")
-          && properties.get("buildingBlock") instanceof Map) {
-        required.add("buildingBlock");
-        Map<String, Object> bb = (Map<String, Object>) properties.get("buildingBlock");
-        if (bb.containsKey("description") && bb.get("description") instanceof String) {
-          String d = ((String) bb.get("description"));
-          if (d.contains("`")) {
-            List<String> values = new ArrayList<>();
-            String[] split = d.split("`");
-            if (split.length > 1) values.add(split[1]);
-            if (split.length > 3) values.add(split[3]);
-            if (values.size() == 1) {
-              bb.put("const", values.get(0));
-              if (properties.containsKey("extensionType")) {
-                ((Map<String, Object>) properties.get("extensionType")).put("const", values.get(0));
-              }
-            } else if (values.size() > 1) {
-              bb.put("enum", values);
-              if (properties.containsKey("extensionType")) {
-                ((Map<String, Object>) properties.get("extensionType")).put("enum", values);
-              }
-            }
-          }
-        }
-      }
-      if (Objects.nonNull(type.getType().superClass)
-          && type.getType()
-              .superClass
-              .qualifiedName
-              .startsWith("de.ii.ogcapi.tiles.domain.TileProvider")) {
-        if (properties.containsKey("type") && properties.get("type") instanceof Map) {
-          Map<String, Object> t = (Map<String, Object>) properties.get("type");
-          switch (type.getType().superClass.qualifiedName) {
-            case "de.ii.ogcapi.tiles.domain.TileProviderFeatures":
-              t.put("const", "FEATURES");
-              break;
-            case "de.ii.ogcapi.tiles.domain.TileProviderMbtiles":
-              t.put("const", "MBTILES");
-              break;
-            case "de.ii.ogcapi.tiles.domain.TileProviderTileServer":
-              t.put("const", "TILESERVER");
-              break;
-          }
-        }
-      }*/
-    } catch (Throwable e) {
-      e.printStackTrace();
-    }
-
     object.put("title", type.getType().getName().replace("Immutable", ""));
 
     DocRef descriptionType =
@@ -267,7 +216,29 @@ public class JsonSchemaGenerator {
         resolveColumnSteps(docs, prop, List.of(new DocStep(Step.JSON_TYPE))).orElseThrow();
 
     if (!Objects.equals(typeJson, "array")) {
-      def.put("type", typeJson);
+      if (Objects.equals(typeJson, "string")) {
+        def.put("type", List.of("string", "number", "boolean", "null"));
+      } else if (Objects.equals(typeJson, "number")) {
+        def.put(
+            "oneOf",
+            List.of(
+                Map.of("type", "number"),
+                Map.of("type", "string", "pattern", "(0|-?[1-9][0-9]*)(\\.[0-9]*)?"),
+                Map.of("type", "null")));
+      } else if (Objects.equals(typeJson, "boolean")) {
+        def.put(
+            "oneOf",
+            List.of(
+                Map.of("type", "boolean"),
+                Map.of(
+                    "type",
+                    "string",
+                    "pattern",
+                    "y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF"),
+                Map.of("type", "null")));
+      } else {
+        def.put("type", typeJson);
+      }
     }
 
     if (Objects.nonNull(prop.getAlias())
@@ -504,7 +475,7 @@ public class JsonSchemaGenerator {
                     .map(docs::findTypeRef)
                     .collect(Collectors.toList());
 
-            //TODO: use allOf/if/then instead of anyOf
+            // TODO: use allOf/if/then instead of anyOf
             nestedDefs.put(ref, generateSwitch(types, discriminators2));
           } else {
             System.out.println("WARN type for " + context + " not found: " + type);
