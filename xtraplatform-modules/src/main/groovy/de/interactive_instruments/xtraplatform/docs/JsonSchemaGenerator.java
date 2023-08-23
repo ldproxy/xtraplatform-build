@@ -216,29 +216,7 @@ public class JsonSchemaGenerator {
         resolveColumnSteps(docs, prop, List.of(new DocStep(Step.JSON_TYPE))).orElseThrow();
 
     if (!Objects.equals(typeJson, "array")) {
-      if (Objects.equals(typeJson, "string")) {
-        def.put("type", List.of("string", "number", "boolean", "null"));
-      } else if (Objects.equals(typeJson, "number")) {
-        def.put(
-            "oneOf",
-            List.of(
-                Map.of("type", "number"),
-                Map.of("type", "string", "pattern", "(0|-?[1-9][0-9]*)(\\.[0-9]*)?"),
-                Map.of("type", "null")));
-      } else if (Objects.equals(typeJson, "boolean")) {
-        def.put(
-            "oneOf",
-            List.of(
-                Map.of("type", "boolean"),
-                Map.of(
-                    "type",
-                    "string",
-                    "pattern",
-                    "y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF"),
-                Map.of("type", "null")));
-      } else {
-        def.put("type", typeJson);
-      }
+      def.putAll(getSimpleType(typeJson));
     }
 
     if (Objects.nonNull(prop.getAlias())
@@ -249,6 +227,32 @@ public class JsonSchemaGenerator {
     def.putAll(getNestedDefs(method.returnType, typeJson, typeQN + "." + method.qualifiedName));
 
     return Map.entry(name, def);
+  }
+
+  private Map<String, Object> getSimpleType(String typeJson) {
+    if (Objects.equals(typeJson, "string")) {
+        return Map.of("type", List.of("string", "number", "boolean", "null"));
+      } else if (Objects.equals(typeJson, "number")) {
+        return Map.of(
+            "oneOf",
+            List.of(
+                Map.of("type", "number"),
+                Map.of("type", "string", "pattern", "(0|-?[1-9][0-9]*)(\\.[0-9]*)?"),
+                Map.of("type", "null")));
+      } else if (Objects.equals(typeJson, "boolean")) {
+        return Map.of(
+            "oneOf",
+            List.of(
+                Map.of("type", "boolean"),
+                Map.of(
+                    "type",
+                    "string",
+                    "pattern",
+                    "y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF"),
+                Map.of("type", "null")));
+      } else {
+        return Map.of("type", typeJson);
+      }
   }
 
   private Map<String, Object> getNestedDefs(String type, String typeJson, String context) {
@@ -276,7 +280,7 @@ public class JsonSchemaGenerator {
 
       items.putAll(getNestedDefs(arrayType, arrayTypeJson, context));
       if (items.isEmpty()) {
-        items.put("type", arrayTypeJson);
+        items.putAll(getSimpleType(arrayTypeJson));
       }
       // allow single values instead of list like yaml parser
       List<Map<String, Object>> allOf = new ArrayList<>();
