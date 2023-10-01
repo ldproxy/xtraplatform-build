@@ -223,6 +223,7 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     void addDocker(Project project) {
+        def baseImage = 'eclipse-temurin:17-jre'
         File dockerFile = new File(project.buildDir, 'tmp/Dockerfile')
         File dockerContext = new File(project.buildDir, 'docker')
 
@@ -230,7 +231,7 @@ class ApplicationPlugin implements Plugin<Project> {
             outputs.file dockerFile
             doLast {
                 dockerFile.text = """
-FROM eclipse-temurin:11-jre
+FROM ${baseImage}
 MAINTAINER interactive instruments GmbH
 ARG TARGETOS
 ARG TARGETARCH
