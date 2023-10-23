@@ -239,6 +239,7 @@ ADD ${project.name}-\$TARGETOS-\$TARGETARCH.tar /
 ENTRYPOINT ["/${project.name}/bin/${project.name}"]
 EXPOSE 7080
 WORKDIR /${project.name}
+VOLUME /${project.name}/data
 ENV XTRAPLATFORM_ENV CONTAINER
 """
             }

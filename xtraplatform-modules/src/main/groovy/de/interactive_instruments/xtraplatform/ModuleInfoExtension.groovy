@@ -8,6 +8,7 @@ class ModuleInfoExtension {
     Set<String> requires = []
     Map<String, List<String>> provides = [:]
     Set<String> uses = []
+    List<String> additions = []
 
     ModuleInfoExtension() {
     }
@@ -19,5 +20,6 @@ class ModuleInfoExtension {
         this.requires = [] + other.requires
         this.provides = [:] + other.provides
         this.uses = [] + other.uses
+        this.additions = [] + other.additions
     }
 }

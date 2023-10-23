@@ -544,7 +544,7 @@ public class JsonSchemaGenerator {
         || type.startsWith("com.google.common.collect.ImmutableMap<")) {
       return type.substring(type.indexOf(",") + 1, type.length() - 1);
     } else if (type.startsWith(
-        "de.ii.xtraplatform.store.domain.entities.maptobuilder.BuildableMap<")) {
+        "de.ii.xtraplatform.entities.domain.maptobuilder.BuildableMap<")) {
       return type.substring(type.indexOf("<") + 1, type.indexOf(","));
     }
 
