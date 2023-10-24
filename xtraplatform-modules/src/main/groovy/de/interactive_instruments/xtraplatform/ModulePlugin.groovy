@@ -412,7 +412,7 @@ class ModulePlugin implements Plugin<Project> {
                     .filter({ use -> !isExcluded(use, moduleInfo.uses) })
                     .map({ use -> "\tuses ${use};" })
                     .collect(Collectors.joining("\n", "\n", ""))
-            def additions = requiresOnly ? moduleInfo.additions.stream().collect(Collectors.joining("\n", "\n", "")) : ""
+            def additions = !exportAll ? moduleInfo.additions.stream().collect(Collectors.joining("\n", "\n", "")) : ""
 
             return """
 @SuppressWarnings("module")
