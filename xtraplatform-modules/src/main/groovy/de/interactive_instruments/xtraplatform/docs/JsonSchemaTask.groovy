@@ -51,9 +51,9 @@ class JsonSchemaTask extends DefaultTask {
         Docs docs = loadDocs()
         JsonSchemaGenerator generator = new JsonSchemaGenerator(docs, gson)
 
-        Map<String, List<DocRef>> refs = docs.findTypeByInterface("de.ii.xtraplatform.store.domain.entities.PersistentEntity")
-                .findAll { it.type.getAnnotation("de.ii.xtraplatform.store.domain.entities.Entity").map { it.getAttribute("type") }.isPresent() }
-                .groupBy { it.type.getAnnotation("de.ii.xtraplatform.store.domain.entities.Entity").get().getAttribute("type").get() }
+        Map<String, List<DocRef>> refs = docs.findTypeByInterface("de.ii.xtraplatform.entities.domain.PersistentEntity")
+                .findAll { it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").map { it.getAttribute("type") }.isPresent() }
+                .groupBy { it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").get().getAttribute("type").get() }
 
         refs.each { ref ->
             println ref.key
@@ -61,7 +61,7 @@ class JsonSchemaTask extends DefaultTask {
             Map<String, List<Map<String, String>>> discriminators = new LinkedHashMap<>()
 
             List<DocRef> dataClasses = ref.value.collect {
-                def entity = it.type.getAnnotation("de.ii.xtraplatform.store.domain.entities.Entity").get()
+                def entity = it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").get()
                 String dataClass = entity.getAttribute("data").get()
                 DocRef impl = dataClass.contains(".Immutable")
                         ? docs.findTypeRef(dataClass)
