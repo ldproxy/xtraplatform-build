@@ -9,6 +9,7 @@ class ModuleCreateTask extends DefaultTask {
 
     private String name
     private Maturity maturity = Maturity.PROPOSAL;
+    private Maintenance maintenance = Maintenance.NONE;
 
     public ModuleCreateTask() {
     }
@@ -23,9 +24,19 @@ class ModuleCreateTask extends DefaultTask {
         this.maturity = maturity;
     }
 
+    @Option(option = "maintenance", description = "module maintenance")
+    void setMaturity(Maintenance maintenance) {
+        this.maintenance = maintenance;
+    }
+
     @OptionValues("maturity")
     Collection<Maturity> getSupportedMaturity() {
         return EnumSet.allOf(Maturity.class);
+    }
+
+    @OptionValues("maintenance")
+    Collection<Maintenance> getSupportedMaintenance() {
+        return EnumSet.allOf(Maintenance.class);
     }
 
     @TaskAction
@@ -35,7 +46,7 @@ class ModuleCreateTask extends DefaultTask {
             return;
         }
         getProject().file(name).mkdirs()
-        getProject().file("${name}/build.gradle").text = "\nmaturity = '${maturity.name()}'\n"
+        getProject().file("${name}/build.gradle").text = "\nmaturity = '${maturity.name()}'\nmaintenance = '${maintenance.name()}'\n"
         getProject().file("${name}/src/main/java/de/ii/${asPath(name)}/app").mkdirs()
         getProject().file("${name}/src/main/java/de/ii/${asPath(name)}/domain").mkdirs()
         getProject().file("${name}/src/test/groovy/de/ii/${asPath(name)}/app").mkdirs()

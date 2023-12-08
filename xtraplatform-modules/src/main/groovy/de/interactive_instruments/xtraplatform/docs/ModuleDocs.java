@@ -1,5 +1,6 @@
 package de.interactive_instruments.xtraplatform.docs;
 
+import de.interactive_instruments.xtraplatform.Maintenance;
 import de.interactive_instruments.xtraplatform.Maturity;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ class ModuleDocs {
   String version;
   String description;
   Maturity maturity;
+  Maintenance maintenance;
   boolean deprecated;
   Set<String> exports;
   Set<String> requires;

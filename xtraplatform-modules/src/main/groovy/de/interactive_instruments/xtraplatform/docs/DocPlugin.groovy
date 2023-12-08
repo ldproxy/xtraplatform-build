@@ -1,6 +1,7 @@
 package de.interactive_instruments.xtraplatform.docs
 
 import com.google.gson.Gson
+import de.interactive_instruments.xtraplatform.Maintenance
 import de.interactive_instruments.xtraplatform.Maturity
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -41,6 +42,7 @@ class DocPlugin implements Plugin<Project> {
                             version: subProject.version.toString(),
                             description: Objects.requireNonNullElse(subProject.description, '').toString(),
                             maturity: subProject.maturity as Maturity,
+                            maintenance: subProject.maintenance as Maintenance,
                             deprecated: subProject.deprecated,
                             exports: subProject.moduleInfo.exports.collect { it.toString() },
                             requires: subProject.moduleInfo.requires.collect { it.toString() },
