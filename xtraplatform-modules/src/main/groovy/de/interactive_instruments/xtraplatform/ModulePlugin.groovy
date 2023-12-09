@@ -1,6 +1,7 @@
 package de.interactive_instruments.xtraplatform
 
 import com.github.spotbugs.snom.SpotBugsTask
+import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
 import de.interactive_instruments.xtraplatform.pmd.SarifForGithub
 import groovy.io.FileType
 import groovy.json.JsonOutput
@@ -8,12 +9,11 @@ import groovy.json.JsonSlurper
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
-import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
 import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
@@ -31,7 +31,21 @@ class ModulePlugin implements Plugin<Project> {
         task.taskDependencies.getDependencies(task).each {
             subTask -> executeTask(subTask)
         }
-        task.actions.each { it.execute(task) }
+        if (task.path.startsWith(":xtraplatform-modules:")) {
+            println "BREAK"
+            return
+        }
+        println task.path
+        task.actions.each {
+            println "  " + it
+            if (it != null && task != null) {
+                try {
+                    it.execute(task)
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     void executeTask(TaskProvider<Task> task) {
@@ -41,10 +55,6 @@ class ModulePlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         ModuleInfoExtension moduleInfo = project.moduleInfo
-        //project.extensions.create('moduleInfo', ModuleInfoExtension)
-
-        def isCi = project.hasProperty('ci') || Objects.nonNull(System.getenv("CI"))
-        def isIntelliJ = System.getProperty("idea.active") == "true" || !isCi
 
         def includedBuilds = project.gradle.includedBuilds.collect { it.name }
         def parent = project.gradle.parent
@@ -77,14 +87,17 @@ class ModulePlugin implements Plugin<Project> {
             if (moduleInfo.enabled) {
                 moduleInfo.name = getModuleName(project.group as String, project.name)
 
-                setupEmbedding(project, moduleInfo, isIntelliJ)
+                setupEmbedding(project, moduleInfo)
 
-                setupModuleInfo(project, moduleInfo, isIntelliJ)
+                setupModuleInfo(project, moduleInfo, true)
 
-                //TODO
+                //TODO: fix TODO in line 235
                 /*if (System.getProperty("idea.sync.active") == "true") {
-                println "SYNC"
-                executeTask(project.tasks.named("embedIntellij"))
+                    println "SYNC"
+                    def task = project.tasks.findByPath("embedTpl")
+                    if (task != null) {
+                        executeTask(task)
+                    }
                 }*/
             }
         }
@@ -96,45 +109,38 @@ class ModulePlugin implements Plugin<Project> {
         project.configurations.create('embeddedExport')
         project.configurations.create('embeddedFlat')
         project.configurations.create('embeddedFlatExport')
+        project.configurations.create('embeddedImport')
 
         project.configurations.provided.setTransitive(true)
         project.configurations.embedded.setTransitive(true)
         project.configurations.embeddedExport.setTransitive(true)
         project.configurations.embeddedFlat.setTransitive(false)
         project.configurations.embeddedFlatExport.setTransitive(false)
+        project.configurations.embeddedImport.setTransitive(true)
 
         project.configurations.compileOnly.extendsFrom(project.configurations.provided)
         project.configurations.testImplementation.extendsFrom(project.configurations.provided)
         project.configurations.testFixturesImplementation.extendsFrom(project.configurations.provided)
     }
 
-    static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ) {
-        def embeddedClassesDir = isIntelliJ
-                ? new File(project.buildDir, 'classes/java/intellij')
-                : new File(project.buildDir, 'classes/java/main')
-        def embeddedClassesDirOther = isIntelliJ
-                ? new File(project.buildDir, 'classes/java/main')
-                : new File(project.buildDir, 'classes/java/intellij')
-        def embeddedResourcesDir = isIntelliJ
-                ? new File(project.buildDir, 'generated/sources/annotationProcessor/resources/intellij')
-                : new File(project.buildDir, 'generated/sources/annotationProcessor/resources/main')
-        def embeddedResourcesDirOther = isIntelliJ
-                ? new File(project.buildDir, 'generated/sources/annotationProcessor/resources/main')
-                : new File(project.buildDir, 'generated/sources/annotationProcessor/resources/intellij')
-        File generatedSourcesDir = isIntelliJ
-                ? new File(project.buildDir, 'generated/sources/annotationProcessor/java/intellij')
-                : new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
+    static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo) {
+        List<Dependency> deps = []
+        deps.addAll(project.configurations.embedded.allDependencies.collect { "EMB " + it.group + "::" + it.name })
+        deps.addAll(project.configurations.embeddedExport.allDependencies.collect { "EXP " + it.group + "::" + it.name })
+        deps.addAll(project.configurations.embeddedFlat.allDependencies.collect { "EMB FLAT " + it.group + "::" + it.name })
+        deps.addAll(project.configurations.embeddedFlatExport.allDependencies.collect { "EXP FLAT " + it.group + "::" + it.name })
 
-        project.tasks.register('embedClean', Delete) {
-            inputs.property('isIntelliJ', isIntelliJ)
-            outputs.upToDateWhen { true }
-            delete embeddedClassesDirOther
-            delete embeddedResourcesDirOther
+        if (deps.isEmpty()) {
+            return
+        } else {
+            println "${moduleInfo.name} " + deps
         }
 
+        def embeddedClassesDir = new File(project.buildDir, 'classes/java/tpl')
+        def embeddedResourcesDir = new File(project.buildDir, 'generated/sources/annotationProcessor/resources/tpl')
+        File generatedSourcesDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/tpl')
+
         project.tasks.register('embedClasses', Copy) {
-            inputs.property('isIntelliJ', isIntelliJ)
-            dependsOn project.tasks.named('embedClean')
             from {
                 project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
             }
@@ -154,7 +160,6 @@ class ModulePlugin implements Plugin<Project> {
         }
 
         project.tasks.register('embedResources', Copy) {
-            inputs.property('isIntelliJ', isIntelliJ)
             from {
                 project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
             }
@@ -175,7 +180,6 @@ class ModulePlugin implements Plugin<Project> {
         }
 
         project.tasks.register('embedServices') {
-            inputs.property('isIntelliJ', isIntelliJ)
             inputs.files(project.configurations.embedded)
             inputs.files(project.configurations.embeddedExport)
             inputs.files(project.configurations.embeddedFlat)
@@ -201,92 +205,75 @@ class ModulePlugin implements Plugin<Project> {
             }
         }
 
-        if (isIntelliJ) {
-            ModuleInfoExtension moduleInfoIntelliJ = new ModuleInfoExtension(moduleInfo);
-            moduleInfoIntelliJ.name = "${moduleInfo.name}.intellij"
-            moduleInfo.requires += "transitive ${moduleInfoIntelliJ.name}"
+        ModuleInfoExtension moduleInfoTpl = new ModuleInfoExtension(moduleInfo);
+        moduleInfoTpl.name = "${moduleInfo.name}.tpl"
+        moduleInfo.requires += "transitive ${moduleInfoTpl.name}"
 
-            project.configurations.provided.dependencies.each {
-                // exclude boms
-                // TODO: setForce is deprecated, so the implementation of enforcePlatform might change and break this
-                if (it instanceof DefaultExternalModuleDependency && ((DefaultExternalModuleDependency) it).isForce()) {
-                    return
-                }
-                moduleInfoIntelliJ.requires.add(getModuleName(it.group, it.name))
-            }
-
-            project.sourceSets {
-                intellij {
-                    java {
-                        srcDirs(generatedSourcesDir)
-                    }
-                    resources {
-                        srcDirs(embeddedResourcesDir)
-                    }
-                }
-            }
-
-            project.configurations.intellijCompileOnly.extendsFrom(project.configurations.provided)
-            project.configurations.intellijCompileOnly.extendsFrom(project.configurations.compileOnly)
-            project.tasks.compileIntellijJava.inputs.dir(generatedSourcesDir)
-
-            ClassGenerator.generateClassTask(project, 'moduleInfoIntellij', '', 'module-info', {
-                inputs.property('moduleInfo.name', moduleInfoIntelliJ.name)
-                inputs.property('moduleInfo.exports', moduleInfoIntelliJ.exports)
-                inputs.property('moduleInfo.requires', moduleInfoIntelliJ.requires)
-                inputs.property('moduleInfo.provides', moduleInfoIntelliJ.provides)
-                inputs.property('moduleInfo.uses', moduleInfoIntelliJ.uses)
-                outputs.file(new File(generatedSourcesDir, 'module-info.java'))
-                dependsOn project.tasks.named('embedClasses')
-                dependsOn project.tasks.named('embedResources')
-                dependsOn project.tasks.named('embedServices')
-                finalizedBy project.tasks.named('compileIntellijJava')
-            }, generateModuleInfo(project, moduleInfoIntelliJ, false, true), generatedSourcesDir)
-
-            project.tasks.register('embedIntellij', Jar) {
-                onlyIf { embeddedClassesDir.exists() && embeddedClassesDir.directory && !(embeddedClassesDir.list() as List).empty }
-                dependsOn project.tasks.named('moduleInfoIntellij')
-                dependsOn project.tasks.named('embedResources')
-                dependsOn project.tasks.named('embedServices')
-                dependsOn project.tasks.named('compileIntellijJava')
-                finalizedBy project.tasks.named('moduleInfo')
-                archiveAppendix.set("intellij")
-                from embeddedClassesDir
-                from embeddedResourcesDir
-
-                destinationDirectory = new File(project.buildDir, 'tmp')
-            }
-            project.tasks.named('embedClasses') {
-                finalizedBy project.tasks.named('embedIntellij')
-            }
-            project.dependencies.add('api', project.tasks.named('embedIntellij').map { it.outputs.files })
-            project.artifacts {
-                archives project.tasks.named('embedIntellij').map { it.outputs.files.singleFile }
-            }
-
-            project.tasks.named('processIntellijResources') {
-                dependsOn project.tasks.named('embedResources')
-                dependsOn project.tasks.named('embedServices')
-            }
-        } else {
-            project.sourceSets.main.output.dir(embeddedResourcesDir)
+        project.configurations.embeddedImport.dependencies.each {
+            moduleInfoTpl.requires.add(getModuleName(it.group, it.name) + ".tpl")
+        }
+        def runtime = getModuleName("de.interactive_instruments", "xtraplatform-runtime")
+        if (moduleInfo.name != runtime) {
+            moduleInfoTpl.requires.add(runtime + ".tpl")
         }
 
-        project.tasks.named('compileJava') {
+        project.sourceSets {
+            tpl {
+                java {
+                    srcDirs(generatedSourcesDir)
+                }
+                resources {
+                    srcDirs(embeddedResourcesDir)
+                }
+            }
+        }
+
+        ///TODO: should only need tpl deps, not everything
+        project.configurations.tplCompileOnly.extendsFrom(project.configurations.provided)
+        project.configurations.tplCompileOnly.extendsFrom(project.configurations.compileOnly)
+        project.tasks.compileTplJava.inputs.dir(generatedSourcesDir)
+
+        ClassGenerator.generateClassTask(project, 'moduleInfoTpl', '', 'module-info', {
+            inputs.property('moduleInfo.name', moduleInfoTpl.name)
+            inputs.property('moduleInfo.exports', moduleInfoTpl.exports)
+            //inputs.property('moduleInfo.requires', moduleInfoTpl.requires)
+            inputs.property('moduleInfo.provides', moduleInfoTpl.provides)
+            inputs.property('moduleInfo.uses', moduleInfoTpl.uses)
+            outputs.file(new File(generatedSourcesDir, 'module-info.java'))
             dependsOn project.tasks.named('embedClasses')
+            dependsOn project.tasks.named('embedResources')
+            dependsOn project.tasks.named('embedServices')
+            finalizedBy project.tasks.named('compileTplJava')
+        }, generateModuleInfo(project, moduleInfoTpl, false, true), generatedSourcesDir)
+
+        project.tasks.register('embedTpl', Jar) {
+            onlyIf { embeddedClassesDir.exists() && embeddedClassesDir.directory && !(embeddedClassesDir.list() as List).empty }
+            dependsOn project.tasks.named('moduleInfoTpl')
+            dependsOn project.tasks.named('embedResources')
+            dependsOn project.tasks.named('embedServices')
+            dependsOn project.tasks.named('compileTplJava')
+            finalizedBy project.tasks.named('moduleInfo')
+            archiveAppendix.set("tpl")
+            from embeddedClassesDir
+            from embeddedResourcesDir
+
+            destinationDirectory = new File(project.buildDir, 'tmp')
+        }
+        project.tasks.named('embedClasses') {
+            finalizedBy project.tasks.named('embedTpl')
+        }
+        project.dependencies.add('api', project.tasks.named('embedTpl').map { it.outputs.files })
+        project.artifacts {
+            archives project.tasks.named('embedTpl').map { it.outputs.files.singleFile }
         }
 
-        project.tasks.named('processResources') {
+        project.tasks.named('processTplResources') {
             dependsOn project.tasks.named('embedResources')
             dependsOn project.tasks.named('embedServices')
         }
-
-        project.tasks.named('jar') {
-            inputs.property('isIntelliJ', isIntelliJ)
-        }
     }
 
-    static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean isIntelliJ, boolean isApp = false) {
+    static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly, boolean isApp = false) {
         if (!isApp) {
             moduleInfo.requires.add("de.ii.xtraplatform.build")
 
@@ -334,9 +321,8 @@ class ModulePlugin implements Plugin<Project> {
             inputs.property('moduleInfo.requires', moduleInfo.requires)
             inputs.property('moduleInfo.provides', moduleInfo.provides)
             inputs.property('moduleInfo.uses', moduleInfo.uses)
-            inputs.property('isIntelliJ', isIntelliJ)
             outputs.file(new File(generatedSrcDir, 'module-info.java'))
-        }, generateModuleInfo(project, moduleInfo, isIntelliJ, false, isApp), generatedSrcDir)
+        }, generateModuleInfo(project, moduleInfo, requiresOnly, false, isApp), generatedSrcDir)
 
         //TODO: is not recognized by dagger-auto
         /*if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
