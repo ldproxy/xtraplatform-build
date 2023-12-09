@@ -42,7 +42,7 @@ class DocPlugin implements Plugin<Project> {
                             version: subProject.version.toString(),
                             description: Objects.requireNonNullElse(subProject.description, '').toString(),
                             maturity: subProject.maturity as Maturity,
-                            maintenance: subProject.maintenance as Maintenance,
+                            maintenance: subProject.hasProperty("maintenance") ? subProject.maintenance as Maintenance : Maintenance.NONE,
                             deprecated: subProject.deprecated,
                             exports: subProject.moduleInfo.exports.collect { it.toString() },
                             requires: subProject.moduleInfo.requires.collect { it.toString() },

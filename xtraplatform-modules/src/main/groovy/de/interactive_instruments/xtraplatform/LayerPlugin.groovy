@@ -243,11 +243,13 @@ class LayerPlugin implements Plugin<Project> {
                     throw new IllegalArgumentException("Invalid maturity '${subproject.maturity}' (minimum required for this layer: ${project.layer.minimumModuleMaturity})")
                 }
 
-                def maintenance
-                try {
-                    maintenance = subproject.maintenance as Maintenance
-                } catch (Throwable e) {
-                    throw new IllegalArgumentException("Invalid maintenance '${subproject.maintenance}' (valid values: ${Maintenance.values()})")
+                if (subproject.hasProperty("maintenance")) {
+                    def maintenance
+                    try {
+                        maintenance = subproject.maintenance as Maintenance
+                    } catch (Throwable e) {
+                        throw new IllegalArgumentException("Invalid maintenance '${subproject.maintenance}' (valid values: ${Maintenance.values()})")
+                    }
                 }
             }
 
