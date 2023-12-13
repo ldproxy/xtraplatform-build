@@ -117,7 +117,7 @@ class LayerPlugin implements Plugin<Project> {
             doLast {
                 println "\nLayer ${project.name} ${project.version}"
                 project.subprojects.each {
-                    println "+---- ${it.name} ${it.maturity}${it.deprecated ? " DEPRECATED" : ""}"
+                    printf("+---- %-40s %-10s %-5s %s%n", it.name, it.maturity,  it.maintenance, it.deprecated ? " DEPRECATED" : "");
                 }
             }
         }
@@ -203,6 +203,7 @@ class LayerPlugin implements Plugin<Project> {
             ModuleInfoExtension moduleInfo = subproject.extensions.create('moduleInfo', ModuleInfoExtension)
             subproject.ext.notAModule = false
             subproject.ext.maturity = Maturity.PROPOSAL.name()
+            subproject.ext.maintenance = Maintenance.LOW.name()
             subproject.ext.deprecated = false
 
             subproject.afterEvaluate {
@@ -259,7 +260,12 @@ class LayerPlugin implements Plugin<Project> {
                 // add all modules from all layers with all transitive dependencies to provided
                 project.configurations.layerModules.resolvedConfiguration.firstLevelModuleDependencies.each({
                     it.children.each { module ->
-                        subproject.dependencies.add('provided', module.name)
+                        if (module.moduleName == XTRAPLATFORM_RUNTIME) {
+                            subproject.dependencies.add('provided', module.name)
+                        }
+                        if (module.moduleName == XTRAPLATFORM_BASE) {
+                            subproject.dependencies.add('provided', module.name)
+                        }
                     }
                 })
 
