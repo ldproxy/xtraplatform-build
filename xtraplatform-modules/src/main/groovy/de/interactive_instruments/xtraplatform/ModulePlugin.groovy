@@ -263,9 +263,10 @@ class ModulePlugin implements Plugin<Project> {
             finalizedBy project.tasks.named('embedTpl')
         }
         project.dependencies.add('api', project.tasks.named('embedTpl').map { it.outputs.files })
-        project.artifacts {
-            archives project.tasks.named('embedTpl').map { it.outputs.files.singleFile }
+        def tplArtifact = project.artifacts.add('archives', project.tasks.named('embedTpl').map { it.outputs.files.singleFile }) {
+            classifier 'tpl'
         }
+        project.publishing.publications['default'].artifact tplArtifact
 
         project.tasks.named('processTplResources') {
             dependsOn project.tasks.named('embedResources')
