@@ -275,7 +275,6 @@ class ModulePlugin implements Plugin<Project> {
                 dependencyNode.appendNode('artifactId', project.name)
                 dependencyNode.appendNode('version', project.version)
                 dependencyNode.appendNode('classifier', "tpl")
-                dependencyNode.appendNode('scope', 'runtime')
             }
         }
 
