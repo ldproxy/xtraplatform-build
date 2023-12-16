@@ -199,6 +199,10 @@ class LayerPlugin implements Plugin<Project> {
             subproject.plugins.apply('java-test-fixtures')
             subproject.plugins.apply('maven-publish')
 
+            subproject.tasks.withType(GenerateModuleMetadata) {
+                enabled = false
+            }
+
             ModulePlugin.setupConfigurations(subproject)
             ModuleInfoExtension moduleInfo = subproject.extensions.create('moduleInfo', ModuleInfoExtension)
             subproject.ext.notAModule = false
