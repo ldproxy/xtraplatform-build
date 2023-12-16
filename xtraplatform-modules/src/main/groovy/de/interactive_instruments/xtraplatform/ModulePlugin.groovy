@@ -560,7 +560,7 @@ ${additions}
 
     static void setupCodeQuality(Project project, boolean isParentIncluded) {
         project.plugins.apply('pmd')
-        project.plugins.apply('com.github.spotbugs')
+        //project.plugins.apply('com.github.spotbugs')
 
         project.pmd {
             toolVersion = '6.44.0'
@@ -573,14 +573,14 @@ ${additions}
             }
         }
 
-        project.spotbugs {
+        /*project.spotbugs {
             toolVersion = '4.6.0'
             showStackTraces = project.maturity as Maturity >= Maturity.CANDIDATE
             showProgress = true //project.maturity as Maturity >= Maturity.CANDIDATE
             ignoreFailures = project.maturity as Maturity <= Maturity.CANDIDATE
             onlyAnalyze = ['de.ii.-']
             //extraArgs = ['-choosePlugins', '+com.h3xstream.findsecbugs']
-        }
+        }*/
 
         project.tasks.withType(Pmd).configureEach { pmd ->
             pmd.dependsOn project.parent.tasks.named("pmdInit")
@@ -588,9 +588,9 @@ ${additions}
             pmd.actions.clear()
             pmd.doFirst {
                 validate(rulesMinimumPriority.get());
-                PmdInvokerSarif.invoke(pmd);
+                //PmdInvokerSarif.invoke(pmd);
             }
-            pmd.doLast {
+            /*pmd.doLast {
                 def json = new File(pmd.reports.html.outputLocation.asFile.get().absolutePath.replace(".html", ".json"))
                 def rootPath = project.rootDir.absolutePath
                 if (isParentIncluded) {
@@ -608,10 +608,10 @@ ${additions}
                 if (json.exists()) {
                     SarifForGithub.prepare(json, rootPath, project.name, pmd.name.toLowerCase().replace("pmd", ""), severity)
                 }
-            }
+            }*/
         }
 
-        project.tasks.withType(SpotBugsTask).configureEach { spotbugs ->
+        /*project.tasks.withType(SpotBugsTask).configureEach { spotbugs ->
             // workaround for spotbugsIntellij
             if (spotbugs.classDirs == null) {
                 spotbugs.classDirs = project.files()
@@ -638,7 +638,7 @@ ${additions}
                     json.text = sarifText
                 }
             }
-        }
+        }*/
         //TODO: The following classes needed for analysis were missing: apply
         //project.dependencies.add('spotbugsPlugins', "com.h3xstream.findsecbugs:findsecbugs-plugin:1.11.0")
 
