@@ -63,6 +63,7 @@ class ModulePlugin implements Plugin<Project> {
             includedBuilds += parent.includedBuilds.collect { it.name }
             parent = parent.gradle.parent
         }
+        includedBuilds = includedBuilds.collect { it == LayerPlugin.XTRAPLATFORM ? LayerPlugin.XTRAPLATFORM_CORE : it}
 
         // apply layer boms
         //project.parent.configurations.layers.incoming.beforeResolve {
@@ -133,9 +134,9 @@ class ModulePlugin implements Plugin<Project> {
 
         if (deps.isEmpty()) {
             return
-        } else {
+        }/* else {
             println "${moduleInfo.name} " + deps
-        }
+        }*/
 
         def embeddedClassesDir = new File(project.buildDir, 'classes/java/tpl')
         def embeddedResourcesDir = new File(project.buildDir, 'generated/sources/annotationProcessor/resources/tpl')

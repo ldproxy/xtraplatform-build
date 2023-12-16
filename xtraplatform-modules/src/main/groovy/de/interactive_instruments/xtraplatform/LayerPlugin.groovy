@@ -20,6 +20,7 @@ class LayerPlugin implements Plugin<Project> {
     static def LOGGER = LoggerFactory.getLogger(LayerPlugin.class)
 
 
+    public static String XTRAPLATFORM = "xtraplatform"
     public static String XTRAPLATFORM_CORE = "xtraplatform-core"
     public static String XTRAPLATFORM_RUNTIME = "xtraplatform-runtime"
     public static String XTRAPLATFORM_BASE = "xtraplatform-base"
@@ -85,6 +86,7 @@ class LayerPlugin implements Plugin<Project> {
             includedBuilds += parent.includedBuilds.collect { it.name }
             parent = parent.gradle.parent
         }
+        includedBuilds = includedBuilds.collect { it == XTRAPLATFORM ? XTRAPLATFORM_CORE : it}
 
         addFeatureModules(project, includedBuilds)
 
