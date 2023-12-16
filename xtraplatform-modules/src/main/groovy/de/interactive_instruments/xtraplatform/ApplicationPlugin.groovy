@@ -33,7 +33,7 @@ class ApplicationPlugin implements Plugin<Project> {
         project.configurations.create("app")
         project.configurations.implementation.extendsFrom(project.configurations.app)
 
-        def includedBuilds = getIncludedBuilds(project)
+        def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
 
         project.afterEvaluate {
             def baseFound = false
@@ -367,7 +367,7 @@ ENV XTRAPLATFORM_ENV CONTAINER
     }
 
     List<Set<ResolvedDependency>> getModules(Project project) {
-        def includedBuilds = getIncludedBuilds(project)
+        def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
         def deps = project.configurations.layers.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName)}) + project.configurations.layerModules.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> feature.moduleName.endsWith("-modules")})
         def features = sortByDependencyGraph(deps)
         def bundles = features.collect({ it.children.findAll({ bundle -> !(bundle in features) }) })
@@ -435,15 +435,5 @@ ENV XTRAPLATFORM_ENV CONTAINER
             pattern += ch.replaceAll("([^a-zA-Z0-9 ])", '\\\\$1') + '\\s*'
         }
         return Pattern.compile(pattern)
-    }
-
-    Collection<String> getIncludedBuilds(Project project) {
-        def includedBuilds = project.gradle.includedBuilds.collect {it.name}
-        def parent = project.gradle.parent
-        while (parent != null) {
-            includedBuilds += parent.includedBuilds.collect {it.name}
-            parent = parent.gradle.parent
-        }
-        return includedBuilds
     }
 }

@@ -57,13 +57,7 @@ class ModulePlugin implements Plugin<Project> {
     void apply(Project project) {
         ModuleInfoExtension moduleInfo = project.moduleInfo
 
-        def includedBuilds = project.gradle.includedBuilds.collect { it.name }
-        def parent = project.gradle.parent
-        while (parent != null) {
-            includedBuilds += parent.includedBuilds.collect { it.name }
-            parent = parent.gradle.parent
-        }
-        includedBuilds = includedBuilds.collect { it == LayerPlugin.XTRAPLATFORM ? LayerPlugin.XTRAPLATFORM_CORE : it}
+        def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
 
         // apply layer boms
         //project.parent.configurations.layers.incoming.beforeResolve {

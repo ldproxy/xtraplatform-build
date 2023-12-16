@@ -21,6 +21,7 @@ class LayerPlugin implements Plugin<Project> {
 
 
     public static String XTRAPLATFORM = "xtraplatform"
+    public static String XTRAPLATFORM_BUILD = "xtraplatform-build"
     public static String XTRAPLATFORM_CORE = "xtraplatform-core"
     public static String XTRAPLATFORM_RUNTIME = "xtraplatform-runtime"
     public static String XTRAPLATFORM_BASE = "xtraplatform-base"
@@ -80,13 +81,7 @@ class LayerPlugin implements Plugin<Project> {
         }
 
 
-        def includedBuilds = project.gradle.includedBuilds.collect { it.name }
-        def parent = project.gradle.parent
-        while (parent != null) {
-            includedBuilds += parent.includedBuilds.collect { it.name }
-            parent = parent.gradle.parent
-        }
-        includedBuilds = includedBuilds.collect { it == XTRAPLATFORM ? XTRAPLATFORM_CORE : it}
+        def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
 
         addFeatureModules(project, includedBuilds)
 
