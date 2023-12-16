@@ -15,18 +15,24 @@ class DocPlugin implements Plugin<Project> {
         def docsTask = project.task("layerDocs", type: LayerDocsTask) {
             group = 'Documentation'
             description = 'Generates layer docs'
+            onlyIf { System.getProperty("taskIsRun") != "true" }
         }
 
         project.sourceSets.main.resources.srcDir(new File(project.buildDir, "generated/sources/annotationProcessor/resources/main"))
         //project.sourceSets.main.output.dir(new File(project.buildDir, "generated/sources/annotationProcessor/resources/main"))
 
+        project.tasks.named("processResources").configure {
+            dependsOn docsTask
+        }
+
         project.subprojects { subProject ->
             def modTask = subProject.task("moduleDocs", type: Javadoc) {
-                dependsOn subProject.tasks.named('jar')
+                onlyIf { System.getProperty("taskIsRun") != "true" }
+                dependsOn subProject.tasks.named('compileJava')
                 group = 'Documentation'
                 description = 'Generates module docs'
                 source = subProject.sourceSets.main.allJava.filter { it.name != 'module-info.java' }
-                classpath = subProject.sourceSets.main.compileClasspath + subProject.files(new File(subProject.buildDir, 'classes/java/main'))
+                classpath = subProject.sourceSets.main.compileClasspath //+ subProject.files(new File(subProject.buildDir, 'classes/java/main'))
                 modularity.inferModulePath = false
                 destinationDir = new File(subProject.buildDir, 'tmp/module-docs')
                 options.with {
@@ -53,9 +59,6 @@ class DocPlugin implements Plugin<Project> {
                 docsTask.sources outputs.files
             }
             docsTask.dependsOn modTask
-            project.tasks.named("processResources").configure {
-                dependsOn docsTask
-            }
         }
     }
 }

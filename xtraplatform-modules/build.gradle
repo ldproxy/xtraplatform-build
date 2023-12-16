@@ -21,12 +21,10 @@ java {
 dependencies {
     implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.1.7'
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.6'
-    implementation "com.github.ben-manes:gradle-versions-plugin:0.36.0"
-    implementation "se.patrikerdes:gradle-use-latest-versions-plugin:0.2.15"
     implementation 'com.google.code.gson:gson:2.9.0'
     implementation 'com.google.guava:guava:31.0.1-jre'
     implementation 'com.google.gradle:osdetector-gradle-plugin:1.7.0'
-    implementation 'org.cyclonedx:cyclonedx-gradle-plugin:1.7.4'
+    implementation 'org.cyclonedx:cyclonedx-gradle-plugin:1.8.1'
 }
 
 gradlePlugin {

@@ -135,6 +135,13 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
+        project.gradle.taskGraph.whenReady { graph ->
+            def tasks = graph.allTasks.collect {it.name}
+            if (tasks.contains("run") || tasks.contains("dockerRun")) {
+                System.setProperty("taskIsRun", "true")
+            }
+        }
+
         project.tasks.run.with {
             dependsOn project.tasks.installDist
             dependsOn project.tasks.initData

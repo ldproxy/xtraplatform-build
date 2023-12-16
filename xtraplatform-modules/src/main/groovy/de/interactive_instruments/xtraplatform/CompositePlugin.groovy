@@ -79,7 +79,7 @@ class CompositePlugin implements Plugin<Project> {
 
     static Set<String> getIncludedBuildNames(Project project) {
         def inc = getIncludedBuilds(project).collect { it.name == LayerPlugin.XTRAPLATFORM ? LayerPlugin.XTRAPLATFORM_CORE : it.name }
-        println "INC " + inc
+        //println "INC " + inc
 
         return inc as Set
     }

@@ -204,6 +204,7 @@ class ModulePlugin implements Plugin<Project> {
         ModuleInfoExtension moduleInfoTpl = new ModuleInfoExtension(moduleInfo);
         moduleInfoTpl.name = "${moduleInfo.name}.tpl"
         moduleInfoTpl.exports = moduleInfoTpl.exports.findAll {!it.startsWith("de.ii") }
+        moduleInfo.exports = moduleInfo.exports.findAll {it.startsWith("de.ii") }
         moduleInfo.requires += "transitive ${moduleInfoTpl.name}"
 
         project.configurations.embeddedImport.dependencies.each {
