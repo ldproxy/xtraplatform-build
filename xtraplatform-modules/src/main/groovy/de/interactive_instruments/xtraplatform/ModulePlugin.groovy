@@ -13,6 +13,7 @@ import org.gradle.api.artifacts.Dependency
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
@@ -87,9 +88,9 @@ class ModulePlugin implements Plugin<Project> {
             if (moduleInfo.enabled) {
                 moduleInfo.name = getModuleName(project.group as String, project.name)
 
-                setupEmbedding(project, moduleInfo)
-
                 setupModuleInfo(project, moduleInfo, true)
+
+                setupEmbedding(project, moduleInfo)
 
                 //TODO: fix TODO in line 235
                 /*if (System.getProperty("idea.sync.active") == "true") {
@@ -207,6 +208,7 @@ class ModulePlugin implements Plugin<Project> {
 
         ModuleInfoExtension moduleInfoTpl = new ModuleInfoExtension(moduleInfo);
         moduleInfoTpl.name = "${moduleInfo.name}.tpl"
+        moduleInfoTpl.exports = []
         moduleInfo.requires += "transitive ${moduleInfoTpl.name}"
 
         project.configurations.embeddedImport.dependencies.each {
@@ -227,9 +229,6 @@ class ModulePlugin implements Plugin<Project> {
                 }
             }
         }
-
-        ///TODO: should only need tpl deps, not everything
-        project.configurations.tplCompileOnly.extendsFrom(project.configurations.provided)
         project.configurations.tplCompileOnly.extendsFrom(project.configurations.compileOnly)
         project.tasks.compileTplJava.inputs.dir(generatedSourcesDir)
 
@@ -263,18 +262,28 @@ class ModulePlugin implements Plugin<Project> {
             finalizedBy project.tasks.named('embedTpl')
         }
         project.dependencies.add('api', project.tasks.named('embedTpl').map { it.outputs.files })
-        def tplArtifact = project.artifacts.add('archives', project.tasks.named('embedTpl').map { it.outputs.files.singleFile }) {
-            classifier 'tpl'
+        def tplArtifact = project.artifacts.add('archives', project.tasks.named('embedTpl').map { it.outputs.files.singleFile })
+
+        project.publishing.publications {
+            tpl(MavenPublication) {
+                artifact tplArtifact
+
+                artifactId "${project.name}-tpl"
+                groupId project.group
+                version project.version
+
+                pom {
+                    packaging = "jar"
+                }
+            }
         }
         project.publishing.publications['default'].with {
-            artifact tplArtifact
             pom.withXml {
                 def dependenciesNode = asNode().get('dependencies')[0]
                 def dependencyNode = dependenciesNode.appendNode('dependency')
                 dependencyNode.appendNode('groupId', project.group)
-                dependencyNode.appendNode('artifactId', project.name)
+                dependencyNode.appendNode('artifactId', "${project.name}-tpl")
                 dependencyNode.appendNode('version', project.version)
-                dependencyNode.appendNode('classifier', "tpl")
             }
         }
 
