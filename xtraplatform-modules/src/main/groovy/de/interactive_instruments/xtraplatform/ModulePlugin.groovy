@@ -10,6 +10,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.attributes.Category
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
@@ -310,10 +311,13 @@ class ModulePlugin implements Plugin<Project> {
             }
             project.configurations.provided.dependencies.each {
                 // exclude boms
-                // TODO: setForce is deprecated, so the implementation of enforcePlatform might change and break this
-                if (it instanceof DefaultExternalModuleDependency && ((DefaultExternalModuleDependency) it).isForce()) {
-                    return
+                if (it instanceof DefaultExternalModuleDependency) {
+                    def cat = ((DefaultExternalModuleDependency) it).attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
+                    if (cat != null && cat.name == Category.ENFORCED_PLATFORM) {
+                        return
+                    }
                 }
+
                 moduleInfo.requires.add(getModuleName(it.group, it.name))
             }
         } else {
