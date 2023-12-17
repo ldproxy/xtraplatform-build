@@ -1,12 +1,13 @@
-pipeline:
+steps:
 
   load-cache:
     image: drillster/drone-volume-cache
     volumes: [/var/lib/docker/tmp:/cache]
-    restore: true
-    mount:
-      - .gradle/caches
-      - .gradle/wrapper
+    settings:
+      restore: true
+      mount:
+        - .gradle/caches
+        - .gradle/wrapper
 
   build:
     image: openjdk:11-slim
@@ -46,8 +47,9 @@ pipeline:
   save-cache:
     image: drillster/drone-volume-cache
     volumes: [/var/lib/docker/tmp:/cache]
-    rebuild: true
-    mount:
-      - .gradle/caches
-      - .gradle/wrapper
+    settings:
+      rebuild: true
+      mount:
+        - .gradle/caches
+        - .gradle/wrapper
 
