@@ -18,6 +18,7 @@ class ModuleDocs {
   Maturity maturity;
   Maintenance maintenance;
   boolean deprecated;
+  boolean docIgnore;
   Set<String> exports;
   Set<String> requires;
   Map<String, TypeDocs> api;
