@@ -94,8 +94,9 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }*/
 
-        project.dependencies.add('compileOnly', "com.google.dagger:dagger:2.+", { transitive = false })
-        project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.+")
+        //TODO: get version from xtraplatform (or the other way around)
+        project.dependencies.add('compileOnly', "com.google.dagger:dagger:2.49", { transitive = false })
+        project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.49")
 
         project.tasks.named('compileJava') {
             options.javaModuleVersion = project.provider { project.version }
