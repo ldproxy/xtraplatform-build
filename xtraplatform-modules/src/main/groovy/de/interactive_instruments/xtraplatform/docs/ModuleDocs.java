@@ -1,5 +1,6 @@
 package de.interactive_instruments.xtraplatform.docs;
 
+import de.interactive_instruments.xtraplatform.Badge;
 import de.interactive_instruments.xtraplatform.Maintenance;
 import de.interactive_instruments.xtraplatform.Maturity;
 import java.util.List;
@@ -15,6 +16,7 @@ class ModuleDocs {
   String name;
   String version;
   String description;
+  String descriptionDe;
   Maturity maturity;
   Maintenance maintenance;
   boolean deprecated;

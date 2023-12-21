@@ -207,6 +207,7 @@ class LayerPlugin implements Plugin<Project> {
             subproject.ext.maintenance = Maintenance.LOW.name()
             subproject.ext.deprecated = false
             subproject.ext.docIgnore = false
+            subproject.ext.descriptionDe = null
 
             subproject.afterEvaluate {
                 if (moduleInfo.enabled) {

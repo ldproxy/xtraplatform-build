@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 public @interface DocStep {
 
   enum Step {
+    MODULES,
     IMPLEMENTATIONS,
     TAG_REFS,
     METHODS,

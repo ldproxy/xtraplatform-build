@@ -61,7 +61,9 @@ public class TagReplacer {
     String prefix = Optional.ofNullable(matcher.group("prefix")).orElse("");
     String ifempty = Optional.ofNullable(matcher.group("ifempty")).orElse(matcher.group());
 
-    return Optional.ofNullable(docRef.getVars().get(tag))
+    return Optional.ofNullable(docRef.getVars().get(tag + languageSuffix))
+        .or(() -> Optional.ofNullable(docRef.getVars().get(tag)))
+        .or(() -> Optional.ofNullable(vars.get(tag + languageSuffix)))
         .or(() -> Optional.ofNullable(vars.get(tag)))
         .or(() -> findTag(tag))
         .map(text -> prefix + text)

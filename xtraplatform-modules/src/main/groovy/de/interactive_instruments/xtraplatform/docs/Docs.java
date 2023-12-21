@@ -47,8 +47,8 @@ public class Docs {
 
   List<DocRef> findTypeBySuperClass(String qualifiedName) {
     return layers.stream()
-            .flatMap(layer -> getTypes(layer, typeDocs -> typeDocs.hasSuperClass(qualifiedName)))
-            .collect(Collectors.toList());
+        .flatMap(layer -> getTypes(layer, typeDocs -> typeDocs.hasSuperClass(qualifiedName)))
+        .collect(Collectors.toList());
   }
 
   Stream<DocRef> getTypes(LayerDocs layer, Predicate<TypeDocs> predicate) {
@@ -71,6 +71,10 @@ public class Docs {
                         module ->
                             module.api.values().stream()
                                 .map(type -> new DocRef(this, layer, module, type))));
+  }
+
+  Stream<LayerDocs> streamLayers() {
+    return layers.stream();
   }
 
   List<DocFile> getDocFiles() {

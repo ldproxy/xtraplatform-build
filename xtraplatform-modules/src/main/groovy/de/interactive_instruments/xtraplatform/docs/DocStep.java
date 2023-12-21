@@ -5,6 +5,7 @@ import java.util.Objects;
 
 public class DocStep {
   enum Step {
+    MODULES(DocRef.class, DocRef.class, false, true),
     IMPLEMENTATIONS(DocRef.class, DocRef.class, false, true),
     TAG_REFS(DocRef.class, DocRef.class, false, true),
     METHODS(DocRef.class, DocRef.class, false, true),

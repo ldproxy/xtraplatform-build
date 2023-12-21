@@ -1,7 +1,7 @@
 package de.interactive_instruments.xtraplatform.docs;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -90,12 +90,22 @@ class DocRef {
                         : layer.name,
                     "module.name",
                     module.name,
-                    "module.version",
-                    module.version,
+                    // "module.version",
+                    // module.version,
                     "module.description",
                     module.description,
+                    Objects.nonNull(module.descriptionDe) ? "module.descriptionDe" : "module.dummy",
+                    Objects.requireNonNullElse(module.descriptionDe, ""),
                     "module.maturity",
-                    module.maturity.name().toLowerCase()));
+                    module.maturity.name().toLowerCase(),
+                    "module.maturityBadge",
+                    module.maturity.toBadge().name().toLowerCase(),
+                    "module.maintenance",
+                    module.maintenance.name().toLowerCase(),
+                    "module.maintenanceBadge",
+                    module.maintenance.toBadge().name().toLowerCase(),
+                    "module.deprecated",
+                    Boolean.toString(module.deprecated)));
 
     if (!additionalVars.isEmpty()) {
       Map<String, String> mergedVars = new HashMap<>(staticVars);
@@ -289,7 +299,7 @@ class DocRef {
   }
 
   static Stream<String> getDocTag(ElementDocs element, String name) {
-    if (Objects.isNull(element.doc)) {
+    if (Objects.isNull(element) || Objects.isNull(element.doc)) {
       return Stream.of();
     }
 

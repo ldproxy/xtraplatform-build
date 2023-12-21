@@ -63,6 +63,14 @@ public class StepResolver {
 
   private static <T> Stream<T> flatMapType(Docs docs, DocRef in, DocStep step, Class<T> out) {
     switch (step.type) {
+      case MODULES:
+        return docs.streamLayers()
+            .flatMap(
+                layerDocs ->
+                    layerDocs.modules.values().stream()
+                        .filter(moduleDocs -> !moduleDocs.docIgnore)
+                        .map(moduleDocs -> new DocRef(docs, layerDocs, moduleDocs, null)))
+            .map(out::cast);
       case IMPLEMENTATIONS:
         return Stream.of(in)
             .flatMap(
@@ -152,7 +160,8 @@ public class StepResolver {
             .map(out::cast);
       case MARKED:
         return Stream.of(in)
-            .filter(docRef -> docRef.hasAnnotation(DOC_MARKER, Map.of("value", step.params().get(0))))
+            .filter(
+                docRef -> docRef.hasAnnotation(DOC_MARKER, Map.of("value", step.params().get(0))))
             .map(out::cast);
       case UNMARKED:
         return Stream.of(in).filter(docRef -> !docRef.hasAnnotation(DOC_MARKER)).map(out::cast);
