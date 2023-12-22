@@ -116,6 +116,10 @@ class DocRef {
     return staticVars;
   }
 
+  boolean isType() {
+    return Objects.nonNull(type);
+  }
+
   boolean isMethod() {
     return Objects.nonNull(method);
   }
@@ -283,7 +287,11 @@ class DocRef {
                   getOverridesTypes().flatMap(override -> getDocTag(override, tag))))
           .filter(s -> !s.isBlank());
     }
-    return getDocTag(type, tag).filter(s -> !s.isBlank());
+    if (isType()) {
+      return getDocTag(type, tag).filter(s -> !s.isBlank());
+    }
+
+    return Stream.of(getVars().getOrDefault(tag, "")).filter(s -> !s.isBlank());
   }
 
   Set<String> getDocLanguages() {
