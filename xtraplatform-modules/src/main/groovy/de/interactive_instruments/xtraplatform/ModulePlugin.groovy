@@ -436,11 +436,9 @@ ${additions}
     //TODO: configurable versions
     static void setupAnnotationProcessors(Project project) {
         if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
-            //project.dependencies.add('compileOnly', "com.google.dagger:dagger:2.+", { transitive = false })
-            //project.dependencies.add('compileOnly', "io.github.azahnen:dagger-auto:1.0.0-SNAPSHOT")
             //TODO: get version from xtraplatform (or the other way around)
             project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.49")
-            project.dependencies.add('annotationProcessor', "io.github.azahnen:dagger-auto-compiler:0.9.0")
+            project.dependencies.add('annotationProcessor', "io.github.azahnen:dagger-auto-compiler:0.9.1")
 
             //project.dependencies.add('compileOnly', "org.immutables:value:2.8.8:annotations")
             //project.dependencies.add('compileOnly', "org.immutables:encode:2.8.8")
