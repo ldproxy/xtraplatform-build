@@ -16,4 +16,8 @@ public enum Maintenance {
         return Badge.WARNING;
     }
   }
+
+  public boolean isLowerThan(Maintenance other) {
+    return this.ordinal() < other.ordinal();
+  }
 }

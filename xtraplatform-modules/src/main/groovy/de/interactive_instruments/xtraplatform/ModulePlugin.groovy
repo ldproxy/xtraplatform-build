@@ -668,4 +668,16 @@ ${additions}
     public static String getModuleName(String group, String name) {
         return group.replace("interactive_instruments", "ii") + "." + name.replaceAll("-", ".")
     }
+
+    public static String getModuleName(String simpleName) {
+        return "de.ii." + simpleName.replaceAll("-", ".")
+    }
+
+    public static String getModuleNameShort(String moduleName) {
+        return moduleName.replace("de.ii.", "").replaceAll("\\.", "-")
+    }
+
+    public static String getModuleLevel(Maturity maturity, Maintenance maintenance) {
+        return maturity.toString() + "_" + maintenance.toString()
+    }
 }

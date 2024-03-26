@@ -16,4 +16,8 @@ public enum Maturity {
         return Badge.WARNING;
     }
   }
+
+  public boolean isLowerThan(Maturity other) {
+    return this.ordinal() < other.ordinal();
+  }
 }

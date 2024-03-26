@@ -208,6 +208,7 @@ class LayerPlugin implements Plugin<Project> {
             subproject.ext.deprecated = false
             subproject.ext.docIgnore = false
             subproject.ext.descriptionDe = null
+            subproject.ext.replacementFor = null
 
             subproject.afterEvaluate {
                 if (moduleInfo.enabled) {
@@ -247,12 +248,18 @@ class LayerPlugin implements Plugin<Project> {
                     throw new IllegalArgumentException("Invalid maturity '${subproject.maturity}' (minimum required for this layer: ${project.layer.minimumModuleMaturity})")
                 }
 
-                if (subproject.hasProperty("maintenance")) {
-                    def maintenance
-                    try {
-                        maintenance = subproject.maintenance as Maintenance
-                    } catch (Throwable e) {
-                        throw new IllegalArgumentException("Invalid maintenance '${subproject.maintenance}' (valid values: ${Maintenance.values()})")
+                def maintenance
+                try {
+                    maintenance = subproject.maintenance as Maintenance
+                } catch (Throwable e) {
+                    throw new IllegalArgumentException("Invalid maintenance '${subproject.maintenance}' (valid values: ${Maintenance.values()})")
+                }
+
+                subproject.jar.manifest {
+                    attributes("Maturity": maturity.toString(),
+                            "Maintenance": maintenance.toString())
+                    if (Objects.nonNull(subproject.replacementFor)) {
+                        attributes("Replacement-For": subproject.replacementFor)
                     }
                 }
             }

@@ -11,7 +11,9 @@ import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Exec
 import org.gradle.internal.os.OperatingSystem
 
+import java.util.jar.Manifest
 import java.util.regex.Pattern
+import java.util.stream.Collectors
 
 /**
  * @author zahnen
@@ -26,7 +28,7 @@ class ApplicationPlugin implements Plugin<Project> {
         ModuleInfoExtension moduleInfo = project.extensions.create('moduleInfo', ModuleInfoExtension)
 
         //suppress java 9+ illegal access warnings for felix, jackson afterburner, geotools/hsqldb, mustache
-        project.application.applicationDefaultJvmArgs  += ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED', '--add-opens', 'java.base/java.util=ALL-UNNAMED']
+        project.application.applicationDefaultJvmArgs += ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED', '--add-opens', 'java.base/java.util=ALL-UNNAMED']
 
         project.configurations.create("featureDevOnly")
         project.configurations.featureDevOnly.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
@@ -137,7 +139,7 @@ class ApplicationPlugin implements Plugin<Project> {
         }
 
         project.gradle.taskGraph.whenReady { graph ->
-            def tasks = graph.allTasks.collect {it.name}
+            def tasks = graph.allTasks.collect { it.name }
             if (tasks.contains("run") || tasks.contains("dockerRun")) {
                 System.setProperty("taskIsRun", "true")
             }
@@ -146,7 +148,7 @@ class ApplicationPlugin implements Plugin<Project> {
         project.tasks.run.with {
             dependsOn project.tasks.installDist
             dependsOn project.tasks.initData
-            onlyIf {project.ext.useNativeRun}
+            onlyIf { project.ext.useNativeRun }
             workingDir = project.tasks.installDist.destinationDir
             debug = project.findProperty('debug') ?: false
             args project.findProperty('data') ?: dataDir.absolutePath
@@ -300,15 +302,32 @@ ENV XTRAPLATFORM_ENV CONTAINER
             inputs.files project.configurations.layerModules
             inputs.files project.configurations.featureDevOnly
             inputs.files project.configurations.modules
-            inputs.property("name", {appExtension.name2})
-            inputs.property("version", {appExtension.version2})
-            inputs.property("baseConfigs", {appExtension.additionalBaseConfigs})
+            inputs.property("name", { appExtension.name2 })
+            inputs.property("version", { appExtension.version2 })
+            inputs.property("baseConfigs", { appExtension.additionalBaseConfigs })
             outputs.dir(generatedSourceDir)
 
             doLast {
 
                 def modules = createModules(project, [LayerPlugin.XTRAPLATFORM_RUNTIME])
+                def skipped = getSkippedModules(modules)
                 def baseConfigs = createBaseConfigList(appExtension.additionalBaseConfigs)
+
+                def graphs = modules.keySet().collect {
+                    """
+                        @Singleton
+                        @Component(modules={${modules.get(it)}})
+                        interface AppComponent_${it} extends App {
+                            @Component.Builder
+                            interface Builder extends App.Builder {
+                            }
+                        }
+                    """
+                }.join("\n")
+
+                def skips = "static Map<String, List<String>> skipped = new LinkedHashMap<>();\nstatic {\n" + skipped.keySet().collect {
+                    "skipped.put(\"${it}\", ${skipped.get(it).isEmpty() ? 'List.of()' : skipped.get(it).stream().collect(Collectors.joining("\", \"", "List.of(\"", "\")"))});\n"
+                }.join("\n") + "\n}\n"
 
                 def mainClass = """
                     package de.ii.xtraplatform.application;
@@ -320,20 +339,19 @@ ENV XTRAPLATFORM_ENV CONTAINER
                     import com.google.common.collect.ImmutableMap;
                     import com.google.common.io.ByteSource;
                     import com.google.common.io.Resources;
+                    import java.lang.reflect.Method;
                     import java.lang.Runtime;
                     import java.util.AbstractMap.SimpleEntry;
+                    import java.util.LinkedHashMap;
                     import java.util.Map;
+                    import java.util.List;
                     import javax.inject.Singleton;
         
                     public class Launcher {
 
-                        @Singleton
-                        @Component(modules={${modules}})
-                        interface AppComponent extends App {
-                            @Component.Builder
-                            interface Builder extends App.Builder {
-                            }
-                        }
+                        ${graphs}
+
+                        ${skips}
 
                         public static void main(String[] args) throws Exception {                            
                             AppLauncher launcher = new AppLauncher("${appExtension.name2}", "${appExtension.version2}");
@@ -341,13 +359,20 @@ ENV XTRAPLATFORM_ENV CONTAINER
                                 .map(cfgPath -> new SimpleEntry<>(cfgPath, Resources.asByteSource(Resources.getResource(Launcher.class, cfgPath))))
                                 .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
                                 
-                            launcher.init(args, baseConfigs);
+                            String graph = launcher.init(args, baseConfigs);
                             
-                            App app = DaggerLauncher_AppComponent.builder()
-                                .appContext(launcher)
-                                .build();                            
+                            App app;
+                            try {
+                              Class<?> daggerGraph = Class.forName("de.ii.xtraplatform.application.DaggerLauncher_AppComponent_" + graph);
+                              Method getBuilder = daggerGraph.getMethod("builder");
+                              App.Builder builder = (App.Builder) getBuilder.invoke(null);
+                              app = builder.appContext(launcher).build();
+                            } catch (Throwable e) {
+                              e.printStackTrace();
+                              throw new IllegalStateException("Dagger graph not found: " + graph);
+                            }                    
                             
-                            launcher.start(app);
+                            launcher.start(app, skipped.get(graph));
                             
                             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                                 Thread.currentThread().setName("shutdown");
@@ -376,7 +401,7 @@ ENV XTRAPLATFORM_ENV CONTAINER
 
     List<Set<ResolvedDependency>> getModules(Project project) {
         def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
-        def deps = project.configurations.layers.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName)}) + project.configurations.layerModules.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> feature.moduleName.endsWith("-modules")})
+        def deps = project.configurations.layers.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName) }) + project.configurations.layerModules.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> feature.moduleName.endsWith("-modules") })
         def features = sortByDependencyGraph(deps)
         def bundles = features.collect({ it.children.findAll({ bundle -> !(bundle in features) }) })
 
@@ -385,21 +410,62 @@ ENV XTRAPLATFORM_ENV CONTAINER
         return bundles
     }
 
-    String createModules(Project project, List<String> excludeNames = []) {
-        def bundles = getModules(project)
+    Map<String, String> createModules(Project project, List<String> excludeNames = []) {
+        def modules = getModules(project)
+        Map<String, String> moduleSets = [:]
 
-        def modules = []
-        bundles.eachWithIndex { feature, index ->
+        for (Maturity minMaturity : Maturity.values()) {
+            for (Maintenance minMaintenance : Maintenance.values()) {
+                def moduleNames = []
+                modules.eachWithIndex { module, index ->
+                    def mods = module
+                            .collectMany({ ResolvedDependency it -> it.moduleArtifacts })
+                            .findAll({ ResolvedArtifact it -> !(it.name in excludeNames) })
+                            .collect({ ResolvedArtifact it ->
+                                Manifest manifest = readManifest(project, it.file)
 
-            def mods = feature.collectMany({ bundle ->
-                bundle.moduleArtifacts
-            }).findAll({ !(it.name in excludeNames) }).collect({ ResolvedArtifact it ->
-                ModulePlugin.getModuleName(it.moduleVersion.id.group, it.moduleVersion.id.name) + ".domain.AutoBindings.class"
-            })
-            modules.addAll(mods)
+                                return [
+                                        "name"          : ModulePlugin.getModuleName(it.moduleVersion.id.group, it.moduleVersion.id.name),
+                                        "shortName"     : it.moduleVersion.id.name,
+                                        "maturity"      : manifest.getMainAttributes().getValue("Maturity"),
+                                        "maintenance"   : manifest.getMainAttributes().getValue("Maintenance"),
+                                        "replacementFor": manifest.getMainAttributes().getValue("Replacement-For")
+                                ]
+                            })
+                            .findAll({ Map<String, String> mod ->
+                                return !Maturity.valueOf(mod.maturity).isLowerThan(minMaturity)
+                                        && !Maintenance.valueOf(mod.maintenance).isLowerThan(minMaintenance)
+                            })
+
+
+                    def modNames = mods
+                            .findAll({ Map<String, String> mod ->
+                                return Objects.isNull(mod.replacementFor) || !mods.any { it.shortName == mod.replacementFor }
+                            })
+                            .collect({ Map<String, String> mod -> mod.name + ".domain.AutoBindings.class" })
+
+                    moduleNames.addAll(modNames)
+                }
+
+                moduleSets.put(ModulePlugin.getModuleLevel(minMaturity, minMaintenance), moduleNames.join(", "))
+            }
         }
 
-        return modules.join(", ")
+        return moduleSets
+    }
+
+    Map<String, List<String>> getSkippedModules(Map<String, String> modules) {
+        return modules.keySet().stream()
+                .map { String level ->
+                    Set<String> skipped = (modules.get("PROPOSAL_NONE").split(", ") as Set).minus(modules.get(level).split(", ") as Set)
+
+                    Map.entry(level, skipped.stream()
+                            .map { ModulePlugin.getModuleNameShort(it.replace(".domain.AutoBindings.class", "")) }
+                            .filter { !it.isBlank() }
+                            .sorted()
+                            .collect(Collectors.toList()))
+                }
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     }
 
     Set<ResolvedDependency> sortByDependencyGraph(Set<ResolvedDependency> features) {
@@ -435,6 +501,14 @@ ENV XTRAPLATFORM_ENV CONTAINER
                 .matching({ it.include('**/META-INF/MANIFEST.MF') })
                 .files
                 .any({ manifest -> pattern.matcher(manifest.text).find() })
+    }
+
+    Manifest readManifest(Project project, File jar) {
+        File manifest = project
+                .zipTree(jar)
+                .matching({ it.include('**/META-INF/MANIFEST.MF') })
+                .singleFile
+        return new Manifest(new FileInputStream(manifest))
     }
 
     Pattern stringToRegex(String value) {
