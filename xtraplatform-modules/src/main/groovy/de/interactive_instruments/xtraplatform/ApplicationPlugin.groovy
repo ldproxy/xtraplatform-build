@@ -163,7 +163,7 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     static boolean isSupportedOs() {
-        return OperatingSystem.current().isLinux()
+        return OperatingSystem.current().isLinux() || OperatingSystem.current().isMacOsX()
     }
 
     void addDistribution(Project project) {
