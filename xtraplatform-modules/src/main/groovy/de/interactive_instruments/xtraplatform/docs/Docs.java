@@ -1,6 +1,8 @@
 package de.interactive_instruments.xtraplatform.docs;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -10,9 +12,13 @@ import java.util.stream.Stream;
 public class Docs {
 
   private final List<LayerDocs> layers;
+  private final Map<String, DocTableGenerator> tableGenerators;
+  private final Map<String, Map<String, String>> vars;
 
   Docs(List<LayerDocs> layers) {
     this.layers = layers;
+    this.tableGenerators = new HashMap<>();
+    this.vars = new HashMap<>();
   }
 
   TypeDocs findType(String qualifiedName) {
@@ -103,5 +109,41 @@ public class Docs {
     }
 
     return Optional.empty();
+  }
+
+  DocTableGenerator getTableGenerator(DocRef typeRef) {
+    return tableGenerators.computeIfAbsent(
+        typeRef.getType().qualifiedName, ignore -> new DocTableGenerator(typeRef, this));
+  }
+
+  Map<String, String> getVars(LayerDocs layer, ModuleDocs module) {
+    return vars.computeIfAbsent(
+        layer.id + module.id,
+        ignore ->
+            Map.of(
+                "layer.name",
+                layer.name,
+                "layer.nameSuffix",
+                layer.name.contains("-")
+                    ? layer.name.substring(layer.name.lastIndexOf("-") + 1)
+                    : layer.name,
+                "module.name",
+                module.name,
+                // "module.version",
+                // module.version,
+                "module.description",
+                module.description,
+                Objects.nonNull(module.descriptionDe) ? "module.descriptionDe" : "module.dummy",
+                Objects.requireNonNullElse(module.descriptionDe, ""),
+                "module.maturity",
+                module.maturity.name().toLowerCase(),
+                "module.maturityBadge",
+                module.maturity.toBadge().name().toLowerCase(),
+                "module.maintenance",
+                module.maintenance.name().toLowerCase(),
+                "module.maintenanceBadge",
+                module.maintenance.toBadge().name().toLowerCase(),
+                "module.deprecated",
+                Boolean.toString(module.deprecated)));
   }
 }

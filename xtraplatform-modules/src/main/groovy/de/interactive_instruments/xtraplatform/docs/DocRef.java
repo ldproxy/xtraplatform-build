@@ -11,10 +11,7 @@ class DocRef {
   static final String LANG_PREFIX = "lang";
   static final String LANG_ALL = "langAll";
   static final String BODY = "body";
-
   static final String OVERRIDES_TAG = "_overrides_";
-  static Map<String, DocTableGenerator> tableGenerators = new HashMap<>();
-  static Map<String, Map<String, String>> vars = new HashMap<>();
 
   private final Docs docs;
   private final LayerDocs layer;
@@ -77,35 +74,7 @@ class DocRef {
   }
 
   Map<String, String> getVars() {
-    Map<String, String> staticVars =
-        vars.computeIfAbsent(
-            layer.id + module.id,
-            ignore ->
-                Map.of(
-                    "layer.name",
-                    layer.name,
-                    "layer.nameSuffix",
-                    layer.name.contains("-")
-                        ? layer.name.substring(layer.name.lastIndexOf("-") + 1)
-                        : layer.name,
-                    "module.name",
-                    module.name,
-                    // "module.version",
-                    // module.version,
-                    "module.description",
-                    module.description,
-                    Objects.nonNull(module.descriptionDe) ? "module.descriptionDe" : "module.dummy",
-                    Objects.requireNonNullElse(module.descriptionDe, ""),
-                    "module.maturity",
-                    module.maturity.name().toLowerCase(),
-                    "module.maturityBadge",
-                    module.maturity.toBadge().name().toLowerCase(),
-                    "module.maintenance",
-                    module.maintenance.name().toLowerCase(),
-                    "module.maintenanceBadge",
-                    module.maintenance.toBadge().name().toLowerCase(),
-                    "module.deprecated",
-                    Boolean.toString(module.deprecated)));
+    Map<String, String> staticVars = docs.getVars(layer, module);
 
     if (!additionalVars.isEmpty()) {
       Map<String, String> mergedVars = new HashMap<>(staticVars);
@@ -219,9 +188,7 @@ class DocRef {
             .flatMap(
                 docTable -> {
                   String key = "docTable:" + docTable.name;
-                  DocTableGenerator tableGenerator =
-                      tableGenerators.computeIfAbsent(
-                          type.qualifiedName, ignore -> new DocTableGenerator(docRef, docs));
+                  DocTableGenerator tableGenerator = docs.getTableGenerator(docRef);
 
                   return tableGenerator.generate(docTable, language).stream()
                       .map(table -> new SimpleEntry<>(key, table));

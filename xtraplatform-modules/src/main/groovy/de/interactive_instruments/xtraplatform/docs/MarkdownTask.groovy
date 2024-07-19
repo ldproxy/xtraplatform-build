@@ -7,15 +7,15 @@ import org.gradle.api.tasks.*
 
 @CacheableTask
 class MarkdownTask extends DefaultTask {
-    private FileCollection sourceFiles = project.files(project.configurations.layerDocs.resolvedConfiguration.firstLevelModuleDependencies.collectMany { it.moduleArtifacts }.collect { it.file }) + project.files(project.tasks.jar);
+
     private File outputDir = new File(project.buildDir, "tmp/markdown")
     private String docsName
 
     @SkipWhenEmpty
     @InputFiles
-    @PathSensitive(PathSensitivity.NONE)
+    @PathSensitive(PathSensitivity.RELATIVE)
     FileCollection getSourceFiles() {
-        return this.sourceFiles;
+        return project.files(project.configurations.layerDocs.resolvedConfiguration.firstLevelModuleDependencies.collectMany { it.moduleArtifacts }.collect { it.file }) + project.files(project.tasks.jar)
     }
 
     @Input
@@ -23,9 +23,9 @@ class MarkdownTask extends DefaultTask {
         return docsName
     }
 
-    void sources(FileCollection sourceFiles) {
+    /*void sources(FileCollection sourceFiles) {
         this.sourceFiles = this.sourceFiles + sourceFiles;
-    }
+    }*/
 
     void docsName(String docsName) {
         this.docsName = docsName;
