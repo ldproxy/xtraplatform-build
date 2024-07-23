@@ -97,7 +97,7 @@ class DocFilesTemplate {
       name = name.substring(0, name.length() - stripSuffix.get().length());
     }
 
-    String prefix = docRef.getDocTag("sortPriority").findFirst().orElse("");
+    String prefix = docRef.getDocTag("sortPriority").findFirst().map(prio -> prio + "-").orElse("");
 
     name = prefix + CaseFormat.UPPER_CAMEL.to(caseFormat, name) + ".md";
 
