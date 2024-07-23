@@ -3,7 +3,6 @@ package de.interactive_instruments.xtraplatform.docs;
 import com.google.common.base.CaseFormat;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
@@ -98,7 +97,9 @@ class DocFilesTemplate {
       name = name.substring(0, name.length() - stripSuffix.get().length());
     }
 
-    name = CaseFormat.UPPER_CAMEL.to(caseFormat, name) + ".md";
+    String prefix = docRef.getDocTag("sortPriority").findFirst().orElse("");
+
+    name = prefix + CaseFormat.UPPER_CAMEL.to(caseFormat, name) + ".md";
 
     return name;
   }
