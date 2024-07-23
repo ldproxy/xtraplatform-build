@@ -79,9 +79,10 @@ public class StepResolver {
                       docs.findTypeByInterface(typeRef.getType().qualifiedName);
 
                   Stream<DocRef> children =
-                      byInterface.isEmpty()
-                          ? docs.findTypeBySuperClass(typeRef.getType().qualifiedName).stream()
-                          : byInterface.stream();
+                      (byInterface.isEmpty()
+                              ? docs.findTypeBySuperClass(typeRef.getType().qualifiedName).stream()
+                              : byInterface.stream())
+                          .filter(docRef -> !docRef.getDocLanguages().isEmpty());
 
                   if (typeRef.hasAnnotation(DocFilesTemplate.ANNOTATION)) {
                     DocFilesTemplate docFilesTemplate =
