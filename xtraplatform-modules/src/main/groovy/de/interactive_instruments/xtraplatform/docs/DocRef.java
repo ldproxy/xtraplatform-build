@@ -261,6 +261,10 @@ class DocRef {
     return Stream.of(getVars().getOrDefault(tag, "")).filter(s -> !s.isBlank());
   }
 
+  boolean hasDocs() {
+    return !Objects.isNull(getType().doc) && !getType().doc.isEmpty();
+  }
+
   Set<String> getDocLanguages() {
     if (Objects.isNull(getType().doc)) {
       return Set.of();

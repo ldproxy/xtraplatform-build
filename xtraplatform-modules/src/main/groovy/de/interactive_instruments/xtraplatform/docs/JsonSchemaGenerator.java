@@ -270,7 +270,7 @@ public class JsonSchemaGenerator {
         }
 
         def.put("additionalProperties", entries);
-      } else {
+      } else if (!type.contains("java.lang.Object")) {
         getRefForType(type, context).ifPresent(ref -> def.put("$ref", ref));
       }
     } else if (Objects.equals(typeJson, "array")) {
