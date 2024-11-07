@@ -231,28 +231,28 @@ public class JsonSchemaGenerator {
 
   private Map<String, Object> getSimpleType(String typeJson) {
     if (Objects.equals(typeJson, "string")) {
-        return Map.of("type", List.of("string", "number", "boolean", "null"));
-      } else if (Objects.equals(typeJson, "number")) {
-        return Map.of(
-            "oneOf",
-            List.of(
-                Map.of("type", "number"),
-                Map.of("type", "string", "pattern", "(0|-?[1-9][0-9]*)(\\.[0-9]*)?"),
-                Map.of("type", "null")));
-      } else if (Objects.equals(typeJson, "boolean")) {
-        return Map.of(
-            "oneOf",
-            List.of(
-                Map.of("type", "boolean"),
-                Map.of(
-                    "type",
-                    "string",
-                    "pattern",
-                    "y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF"),
-                Map.of("type", "null")));
-      } else {
-        return Map.of("type", typeJson);
-      }
+      return Map.of("type", List.of("string", "number", "boolean", "null"));
+    } else if (Objects.equals(typeJson, "number")) {
+      return Map.of(
+          "oneOf",
+          List.of(
+              Map.of("type", "number"),
+              Map.of("type", "string", "pattern", "(0|-?[1-9][0-9]*)(\\.[0-9]*)?"),
+              Map.of("type", "null")));
+    } else if (Objects.equals(typeJson, "boolean")) {
+      return Map.of(
+          "oneOf",
+          List.of(
+              Map.of("type", "boolean"),
+              Map.of(
+                  "type",
+                  "string",
+                  "pattern",
+                  "y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF"),
+              Map.of("type", "null")));
+    } else {
+      return Map.of("type", typeJson);
+    }
   }
 
   private Map<String, Object> getNestedDefs(String type, String typeJson, String context) {
@@ -543,8 +543,9 @@ public class JsonSchemaGenerator {
     if (type.startsWith("java.util.Map<")
         || type.startsWith("com.google.common.collect.ImmutableMap<")) {
       return type.substring(type.indexOf(",") + 1, type.length() - 1);
-    } else if (type.startsWith(
-        "de.ii.xtraplatform.entities.domain.maptobuilder.BuildableMap<")) {
+    } else if (type.startsWith("java.util.Optional<java.util.Map<")) {
+      return type.substring(type.indexOf(",") + 1, type.indexOf(">"));
+    } else if (type.startsWith("de.ii.xtraplatform.entities.domain.maptobuilder.BuildableMap<")) {
       return type.substring(type.indexOf("<") + 1, type.indexOf(","));
     }
 
