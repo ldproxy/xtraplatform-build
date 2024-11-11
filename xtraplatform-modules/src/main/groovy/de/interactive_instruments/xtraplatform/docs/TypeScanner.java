@@ -2,15 +2,26 @@ package de.interactive_instruments.xtraplatform.docs;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.util.DocTrees;
-
-import javax.lang.model.element.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementScanner9;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /** A scanner to display the structure of a series of elements and their documentation comments. */
 class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
@@ -112,15 +123,14 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
               .collect(Collectors.toList());
       m.annotations = scanAnnotations(e);
       m.doc = scanDocComment(e, typeDocs.qualifiedName + "::" + m.qualifiedName);
-      // TODO: always add for JsonProperty?
-      if (
-      /*m.doc.stream().flatMap(d -> d.keySet().stream()).allMatch(k -> k.equals("return"))
-      &&*/ m.hasAnnotation(StepResolver.JSON_PROPERTY)
-      /*&& typeDocs.hasInterfaces()*/ ) {
-        List<String> parentDocs =
-            findParentDocs(e, ((TypeElement) e.getEnclosingElement()).getInterfaces());
-        m.doc.add(Map.of("_overrides_", parentDocs));
-      }
+
+      List<String> parentDocs =
+          findParentDocs(
+              e,
+              ((TypeElement) e.getEnclosingElement()).getInterfaces(),
+              Optional.ofNullable(((TypeElement) e.getEnclosingElement()).getSuperclass()));
+      m.doc.add(Map.of("_overrides_", parentDocs));
+
       // TODO: exceptions, returnType
       m.returnType = e.getReturnType().toString();
 
@@ -135,27 +145,55 @@ class TypeScanner extends ElementScanner9<List<ElementDocs>, Integer> {
     return DEFAULT_VALUE;
   }
 
-  private List<String> findParentDocs(ExecutableElement e, List<? extends TypeMirror> interfaces) {
+  private List<String> findParentDocs(
+      ExecutableElement e, List<? extends TypeMirror> interfaces, Optional<TypeMirror> superclass) {
     List<String> p = new ArrayList<>();
     for (TypeMirror typeMirror : interfaces) {
-      p.addAll(findParentDocs(e, ((TypeElement) typeUtils.asElement(typeMirror)).getInterfaces()));
+      p.addAll(
+          findParentDocs(
+              e,
+              ((TypeElement) typeUtils.asElement(typeMirror)).getInterfaces(),
+              Optional.empty()));
     }
     for (TypeMirror typeMirror : interfaces) {
       p.addAll(findParentDocs(e, (TypeElement) typeUtils.asElement(typeMirror)));
     }
-    return p;
+    superclass
+        .flatMap(typeMirror -> Optional.ofNullable((TypeElement) typeUtils.asElement(typeMirror)))
+        .ifPresent(
+            superType -> {
+              p.addAll(findParentDocs(e, superType));
+            });
+    return p.stream().filter(qn -> qn.startsWith("de.ii.")).collect(Collectors.toList());
   }
 
   private List<String> findParentDocs(ExecutableElement e, TypeElement parent) {
     List<String> p = new ArrayList<>();
     for (Element element : parent.getEnclosedElements()) {
-      if (element instanceof ExecutableElement
-          && element.getSimpleName().equals(e.getSimpleName())
-          && ((ExecutableElement) element).getParameters().equals(e.getParameters())) {
+      if (element instanceof ExecutableElement && methodEquals(e, (ExecutableElement) element)) {
         p.add(parent.getQualifiedName().toString());
       }
     }
     return p;
+  }
+
+  private static boolean methodEquals(ExecutableElement e1, ExecutableElement e2) {
+    if (!Objects.equals(e1.getSimpleName(), e2.getSimpleName())
+        || e1.getParameters().size() != e2.getParameters().size()) {
+      return false;
+    }
+    for (int i = 0; i < e1.getParameters().size(); i++) {
+      if (!Objects.equals(
+              e1.getParameters().get(i).getSimpleName().toString(),
+              e2.getParameters().get(i).getSimpleName().toString())
+          || !Objects.equals(
+              e1.getParameters().get(i).asType().toString(),
+              e2.getParameters().get(i).asType().toString())) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private TypeDocs getCurrentTypeDocs() {

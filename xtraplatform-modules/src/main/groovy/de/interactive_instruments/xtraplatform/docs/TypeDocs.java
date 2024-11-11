@@ -31,10 +31,26 @@ class TypeDocs extends ElementDocs {
     }
     return methods.stream()
         // TODO: methodDocs.getSignature
-        .filter(
-            methodDocs ->
-                Objects.equals(methodDocs.qualifiedName, child.qualifiedName)
-                    && Objects.equals(methodDocs.parameters, child.parameters))
+        .filter(methodDocs -> methodEquals(methodDocs, child))
         .findFirst();
+  }
+
+  private static boolean methodEquals(MethodDocs e1, MethodDocs e2) {
+    List<VariableDocs> parameters1 = Objects.requireNonNullElse(e1.parameters, List.of());
+    List<VariableDocs> parameters2 = Objects.requireNonNullElse(e2.parameters, List.of());
+
+    if (!Objects.equals(e1.qualifiedName, e2.qualifiedName)
+        || parameters1.size() != parameters2.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < parameters1.size(); i++) {
+      if (!Objects.equals(parameters1.get(i).qualifiedName, parameters2.get(i).qualifiedName)
+          || !Objects.equals(parameters1.get(i).type, parameters2.get(i).type)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

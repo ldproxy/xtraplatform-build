@@ -120,8 +120,8 @@ public class StepResolver {
                         .filter(
                             methodDocs ->
                                 Objects.nonNull(methodDocs.doc)
-                                    && methodDocs.hasAnnotation(JSON_PROPERTY)
-                                    && !methodDocs.hasAnnotation(JSON_IGNORE)
+                                    && typeRef.hasAnnotation(JSON_PROPERTY)
+                                    && !typeRef.hasAnnotation(JSON_IGNORE)
                                     && (skipDocIgnore || !methodDocs.hasAnnotation(DOC_IGNORE)))
                         .isPresent())
             .flatMap(

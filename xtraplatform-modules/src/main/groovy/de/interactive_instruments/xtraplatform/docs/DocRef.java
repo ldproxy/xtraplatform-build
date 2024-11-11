@@ -118,6 +118,7 @@ class DocRef {
       if (!result) {
         return getOverrides().anyMatch(methodDocs -> methodDocs.hasAnnotation(qualifiedName));
       }
+      return true;
     }
     return type.hasAnnotation(qualifiedName);
   }
