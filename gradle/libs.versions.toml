@@ -4,10 +4,16 @@ spock-reports = "2.4.0-groovy-4.0"
 groovy = "4.0.6"
 byte-buddy = "1.10.9"
 objenesis = "1.2"
+dagger = "2.49"
+dagger-auto = "0.9.1"
+immutables = "2.8.8"
 
 [libraries]
 spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
 spock-reports = { module = "com.athaydes:spock-reports", version.ref = "spock-reports" }
+dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
+dagger-auto-compiler = { module = "io.github.azahnen:dagger-auto-compiler", version.ref = "dagger-auto" }
+value = { module = "org.immutables:value", version.ref = "immutables" }
 
 # needed by spock
 groovy = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
@@ -15,11 +21,12 @@ byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
 objenesis = { module = "org.objenesis:objenesis", version.ref = "objenesis" }
 
 # needed by spock-reports
-groovy-templates = { module = "org.codehaus.groovy:groovy-templates", version.ref = "groovy" }
-groovy-xml = { module = "org.codehaus.groovy:groovy-xml", version.ref = "groovy" }
-groovy-json = { module = "org.codehaus.groovy:groovy-json", version.ref = "groovy" }
+groovy-templates = { module = "org.apache.groovy:groovy-templates", version.ref = "groovy" }
+groovy-xml = { module = "org.apache.groovy:groovy-xml", version.ref = "groovy" }
+groovy-json = { module = "org.apache.groovy:groovy-json", version.ref = "groovy" }
 
 [bundles]
 transitive = ["spock-core", "groovy", "groovy-templates", "groovy-xml", "groovy-json", "byte-buddy", "objenesis"]
 nontransitive = ["spock-reports"]
 fixtures = ["spock-core"]
+annotations = ["dagger-compiler", "dagger-auto-compiler", "value"]

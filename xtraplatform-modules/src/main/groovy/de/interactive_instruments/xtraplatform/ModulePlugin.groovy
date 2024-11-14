@@ -11,6 +11,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.ExternalModuleDependencyBundle
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.attributes.Category
 import org.gradle.api.file.DuplicatesStrategy
@@ -439,16 +440,13 @@ ${additions}
     static void setupAnnotationProcessors(Project project) {
         if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
             //TODO: get version from xtraplatform (or the other way around)
-            project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.49")
-            project.dependencies.add('annotationProcessor', "io.github.azahnen:dagger-auto-compiler:0.9.1")
-            project.dependencies.add('annotationProcessor', "org.immutables:value:2.8.8")
+            findBundle(project, 'annotations').each {
+                project.dependencies.add('annotationProcessor', it)
+            }
         }
     }
 
-    static void setupUnitTests(Project project) {
-        project.plugins.apply('groovy')
-        project.plugins.apply('jacoco')
-
+    static ExternalModuleDependencyBundle findBundle(Project project, String name) {
         def catalog = project.rootProject
                 .extensions
                 .getByType(VersionCatalogsExtension.class)
@@ -458,31 +456,26 @@ ${additions}
             throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
         }
 
-        def transitive = catalog.get().findBundle("transitive")
+        def bundle = catalog.get().findBundle(name)
 
-        if (transitive.isEmpty()) {
-            throw new UnknownDomainObjectException("Bundle 'transitive' not found in catalog 'xtraplatform'")
+        if (bundle.isEmpty()) {
+            throw new UnknownDomainObjectException("Bundle '${bundle}' not found in catalog 'xtraplatform'")
         }
 
-        def nontransitive = catalog.get().findBundle("nontransitive")
+        return bundle.get().get()
+    }
 
-        if (nontransitive.isEmpty()) {
-            throw new UnknownDomainObjectException("Bundle 'nontransitive' not found in catalog 'xtraplatform'")
-        }
+    static void setupUnitTests(Project project) {
+        project.plugins.apply('groovy')
+        project.plugins.apply('jacoco')
 
-        def fixtures = catalog.get().findBundle("fixtures")
-
-        if (fixtures.isEmpty()) {
-            throw new UnknownDomainObjectException("Bundle 'fixtures' not found in catalog 'xtraplatform'")
-        }
-
-        transitive.get().get().each {
+        findBundle(project, 'transitive').each {
             project.dependencies.add('testImplementation', it)
         }
-        nontransitive.get().get().each {
+        findBundle(project, 'nontransitive').each {
             project.dependencies.add('testImplementation', it, { transitive = false })
         }
-        fixtures.get().get().each {
+        findBundle(project, 'fixtures').each {
             project.dependencies.add('testFixturesImplementation', it)
         }
 
