@@ -83,13 +83,18 @@ catalog {
             version(it, "${libz.findVersion(it).get().displayName}")
         }
         libz.getPluginAliases().each {
-            plugin(it, "${libz.findPlugin(it).get().get().pluginId}").version("${libz.findPlugin(it).get().get().version}")
+            plugin(it, "${libz.findPlugin(it).get().get().pluginId}").versionRef("${it}")
         }
         libz.getLibraryAliases().each {
-            library(it, "${libz.findLibrary(it).get().get()}")
+            def versionRef = libz.getVersionAliases().find {alias -> it == alias } ?: libz.getVersionAliases().find {alias -> it.startsWith(alias) }
+            library(it, "${libz.findLibrary(it).get().get().group}", "${libz.findLibrary(it).get().get().name}").versionRef(versionRef)
         }
         libz.getBundleAliases().each {
-            bundle(it, libz.findBundle(it).get().get().collect { it.name })
+            def libRefs = libz.findBundle(it).get().get().collect {dep ->
+                def name = dep.name.replaceAll("-", ".")
+                libz.getLibraryAliases().find {alias -> name == alias } ?: libz.getVersionAliases().find {alias -> name.startsWith(alias) } ?: libz.getVersionAliases().find {alias -> dep.group.endsWith(alias) }
+            }
+            bundle(it, libRefs)
         }
     }
 }
