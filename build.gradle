@@ -70,6 +70,10 @@ gradlePlugin {
             id = 'de.interactive_instruments.xtraplatform-composite'
             implementationClass = 'de.interactive_instruments.xtraplatform.CompositePlugin'
         }
+        settingsPlugin {
+            id = 'de.interactive_instruments.xtraplatform-settings'
+            implementationClass = 'de.interactive_instruments.xtraplatform.SettingsPlugin'
+        }
     }
 }
 
