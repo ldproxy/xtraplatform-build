@@ -461,12 +461,6 @@ ${additions}
             throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
         }
 
-        def spock = catalog.get().findLibrary("spock")
-
-        if (spock.isEmpty()) {
-            throw new UnknownDomainObjectException("Library 'spock' not found in catalog 'xtraplatform'")
-        }
-
         def transitive = catalog.get().findBundle("transitive")
 
         if (transitive.isEmpty()) {
@@ -488,25 +482,7 @@ ${additions}
         project.dependencies.add('testImplementation', transitive.get().get())
         project.dependencies.add('testImplementation', nontransitive.get().get())
         project.dependencies.add('testFixturesImplementation', fixtures.get().get())
-/*
-        println "SPOCK version: ${spock.get().get()}"
-
-        project.dependencies.add('testImplementation', spock.get().get())
-        project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
-        project.dependencies.add('testImplementation', "com.athaydes:spock-reports:2.3.0-groovy-3.0", { transitive = false })
-
-        project.dependencies.add('testImplementation', "net.bytebuddy:byte-buddy:1.10.9")
-        // needed by spock to mock non-interface types
-        project.dependencies.add('testImplementation', "org.objenesis:objenesis:1.2")
-        // needed by spock to mock constructors for non-interface types
-
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-templates:3.0.9")
-        // needed by spock-reports
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-xml:3.0.9")
-        // needed by spock-reports
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-json:3.0.9")
-        // needed by spock-reports
-*/
+        
         project.tasks.register("coverageReportInfo") {
             doLast {
                 println "\nJacoco report: file://${project.buildDir}/reports/jacoco/test/html/index.html"
