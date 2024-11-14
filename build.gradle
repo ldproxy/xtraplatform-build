@@ -46,6 +46,7 @@ dependencies {
     implementation 'com.google.guava:guava:31.0.1-jre'
     implementation 'com.google.gradle:osdetector-gradle-plugin:1.7.0'
     implementation 'org.cyclonedx:cyclonedx-gradle-plugin:1.8.1'
+    implementation "org.danilopianini:gradle-pre-commit-git-hooks:2.0.13"
 }
 
 gradlePlugin {

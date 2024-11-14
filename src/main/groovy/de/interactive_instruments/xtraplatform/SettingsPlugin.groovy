@@ -13,8 +13,9 @@ class SettingsPlugin implements Plugin<Settings> {
     @Override
     void apply(Settings settings) {
 
+        settings.plugins.apply('org.danilopianini.gradle-pre-commit-git-hooks')
+
         def version = getVersion(settings)
-        println "XtraPlatform version: $version"
 
         settings.with {
             dependencyResolutionManagement {
@@ -31,6 +32,13 @@ class SettingsPlugin implements Plugin<Settings> {
                         from("de.interactive_instruments:xtraplatform-catalog:${version}")
                     }
                 }
+            }
+
+            extensions.gitHooks.with {
+                preCommit { ctx ->
+                    ctx.tasks('check', [].toArray(), true)
+                }
+                createHooks(false)
             }
         }
     }
