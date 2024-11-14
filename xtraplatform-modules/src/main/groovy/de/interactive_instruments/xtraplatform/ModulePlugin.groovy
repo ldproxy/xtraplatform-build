@@ -462,13 +462,13 @@ ${additions}
             throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
         }
 
-        def spockVersion = catalog.get().findVersion("spock")
+        def spock = catalog.get().findLibrary("spock")
 
-        if (spockVersion.isEmpty()) {
-            throw new UnknownDomainObjectException("Version for 'spock' not found in catalog 'xtraplatform'")
+        if (spock.isEmpty()) {
+            throw new UnknownDomainObjectException("Library 'spock' not found in catalog 'xtraplatform'")
         }
 
-        println "SPOCK version: ${spockVersion.get().displayName}"
+        println "SPOCK version: ${spockVersion.get().get()}"
 
         project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
         project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
