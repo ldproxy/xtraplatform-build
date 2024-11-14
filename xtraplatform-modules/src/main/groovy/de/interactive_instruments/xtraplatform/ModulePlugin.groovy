@@ -448,7 +448,6 @@ ${additions}
         }
     }
 
-    //TODO: configurable versions
     static void setupUnitTests(Project project) {
         project.plugins.apply('groovy')
         project.plugins.apply('jacoco')
@@ -468,6 +467,28 @@ ${additions}
             throw new UnknownDomainObjectException("Library 'spock' not found in catalog 'xtraplatform'")
         }
 
+        def transitive = catalog.get().findBundle("transitive")
+
+        if (transitive.isEmpty()) {
+            throw new UnknownDomainObjectException("Bundle 'transitive' not found in catalog 'xtraplatform'")
+        }
+
+        def nontransitive = catalog.get().findBundle("nontransitive")
+
+        if (nontransitive.isEmpty()) {
+            throw new UnknownDomainObjectException("Bundle 'nontransitive' not found in catalog 'xtraplatform'")
+        }
+
+        def fixtures = catalog.get().findBundle("fixtures")
+
+        if (fixtures.isEmpty()) {
+            throw new UnknownDomainObjectException("Bundle 'fixtures' not found in catalog 'xtraplatform'")
+        }
+
+        project.dependencies.add('testImplementation', transitive.get().get())
+        project.dependencies.add('testImplementation', nontransitive.get().get())
+        project.dependencies.add('testFixturesImplementation', fixtures.get().get())
+/*
         println "SPOCK version: ${spock.get().get()}"
 
         project.dependencies.add('testImplementation', spock.get().get())
@@ -485,7 +506,7 @@ ${additions}
         // needed by spock-reports
         project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-json:3.0.9")
         // needed by spock-reports
-
+*/
         project.tasks.register("coverageReportInfo") {
             doLast {
                 println "\nJacoco report: file://${project.buildDir}/reports/jacoco/test/html/index.html"
