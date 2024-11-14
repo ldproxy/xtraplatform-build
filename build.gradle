@@ -19,6 +19,12 @@ def libz = rootProject.extensions
 
 catalog {
     versionCatalog {
+        libz.getVersionAliases().each {
+            version(it, "${libz.findVersion(it).get().displayName}")
+        }
+        libz.getPluginAliases().each {
+            plugin(it, "${libz.findPlugin(it).get().get().pluginId}").version("${libz.findPlugin(it).get().get().version}")
+        }
         libz.getLibraryAliases().each {
             library(it, "${libz.findLibrary(it).get().get()}")
         }
