@@ -12,6 +12,8 @@ import org.jetbrains.gradle.ext.ActionDelegationConfig
 import org.jetbrains.gradle.ext.JUnit
 import org.slf4j.LoggerFactory
 
+import java.util.regex.Pattern
+
 /**
  * @author zahnen
  */
@@ -135,6 +137,56 @@ class LayerPlugin implements Plugin<Project> {
 
         project.tasks.named("processResources").configure {
             dependsOn project.tasks.named("cyclonedxBom")
+        }
+
+        applyFormatting(project)
+    }
+
+    static void applyFormatting(Project project) {
+        project.subprojects { Project subproject ->
+            subproject.plugins.apply('com.diffplug.spotless')
+            subproject.with {
+                spotless {
+                    // optional: limit format enforcement to just the files changed by this feature branch
+                    //ratchetFrom 'origin/master'
+
+                    /*format 'misc', {
+        // define the files to apply `misc` to
+        target '*.gradle', '*.md', '.gitignore'
+
+        // define the steps to apply to those files
+        trimTrailingWhitespace()
+        indentWithSpaces() // or spaces. Takes an integer argument if you don't like 4
+        endWithNewline()
+      }*/
+
+                    java {
+                        //target '**/ConfigurationReader.java'
+                        targetExclude '**/build/generated/**/*'
+
+                        googleJavaFormat('1.18.1')
+
+                        bumpThisNumberIfACustomStepChanges(2)
+                        custom("errorOnWildcard", {
+                            def matcher = Pattern.compile("^(.*?)\\.\\*;\$", Pattern.MULTILINE).matcher(it)
+                            if (matcher.find()) {
+                                throw new WildcardError(matcher.group())
+                            }
+                            return it
+                        })
+
+                        // make sure every file has the following copyright header.
+                        licenseHeader '''/*
+ * Copyright $YEAR interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+'''
+                    }
+                }
+            }
         }
     }
 
@@ -318,10 +370,10 @@ class LayerPlugin implements Plugin<Project> {
                     suppressedValidationErrors.add('enforced-platform')
                 }
 
-                subproject.dependencies.add('compileOnly', [group: 'de.interactive_instruments', name: 'xtraplatform-modules', version: ApplicationPlugin.getVersion(project)], {
+                subproject.dependencies.add('compileOnly', [group: 'de.interactive_instruments', name: 'xtraplatform-build', version: ApplicationPlugin.getVersion(project)], {
                     transitive = false
                     capabilities {
-                        requireCapability("de.interactive_instruments:xtraplatform-modules-annotations")
+                        requireCapability("de.interactive_instruments:xtraplatform-build-annotations")
                     }
                 })
             }

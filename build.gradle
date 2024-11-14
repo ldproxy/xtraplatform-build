@@ -1,47 +1,123 @@
 plugins {
-    id "com.github.ben-manes.versions" version "0.36.0"
-    id 'se.patrikerdes.use-latest-versions' version '0.2.15'
+    id 'java-gradle-plugin'
+    id 'groovy'
+    id 'version-catalog'
+    id 'maven-publish'
 }
 
+def isBranch = project.hasProperty('branch')
+def isMainBranch = isBranch && (project.getProperty('branch') == 'master' || project.getProperty('branch') == 'main')
+def isRelease = project.findProperty('release') == 'true'
 ext {
-    versionSuffix = project.findProperty('snapshot') == 'true' ? '-SNAPSHOT' : ''
+    versionSuffix = (isBranch && !isMainBranch && !isRelease ? ('-' + project.getProperty('branch')) : '') + (!isRelease ? '-SNAPSHOT' : '')
 }
 
-dependencyUpdates {
-    gradleReleaseChannel = "current"
-}
+group = 'de.interactive_instruments'
 
-subprojects { subproject ->
-    apply plugin: 'java-gradle-plugin'
-    apply plugin: 'groovy'
-    apply plugin: 'maven-publish'
-    apply plugin: 'com.github.ben-manes.versions'
-    apply plugin: 'se.patrikerdes.use-latest-versions'
+version = '5.4.0' + versionSuffix
 
-    group = 'de.interactive_instruments'
-
-    version = '5.3.0' + versionSuffix
-
-    sourceCompatibility = JavaVersion.VERSION_11
-
-    repositories {
-        mavenCentral()
+repositories {
+    mavenCentral()
+    maven {
+        url "https://plugins.gradle.org/m2/"
     }
+}
 
-    subproject.tasks.check.finalizedBy rootProject.tasks.dependencyUpdates
-
-    publishing {
-        repositories {
-            maven {
-                def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
-                def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
-
-                url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-                credentials {
-                    username project.findProperty('deployUser') ?: ''
-                    password project.findProperty('deployPassword') ?: ''
-                }
-            }
+sourceSets {
+    annotations {
+        java {
+            srcDir 'src/annotations/java'
         }
     }
 }
+
+java {
+    registerFeature('annotations') {
+        usingSourceSet(sourceSets.annotations)
+    }
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+
+dependencies {
+    implementation pluginLibs.bundles.all
+}
+
+gradlePlugin {
+    plugins {
+        layerPlugin {
+            id = 'de.interactive_instruments.xtraplatform-layer'
+            implementationClass = 'de.interactive_instruments.xtraplatform.LayerPlugin'
+        }
+        applicationPlugin {
+            id = 'de.interactive_instruments.xtraplatform-application'
+            implementationClass = 'de.interactive_instruments.xtraplatform.ApplicationPlugin'
+        }
+        modulePlugin {
+            id = 'de.interactive_instruments.xtraplatform-module'
+            implementationClass = 'de.interactive_instruments.xtraplatform.ModulePlugin'
+        }
+        docPlugin {
+            id = 'de.interactive_instruments.xtraplatform-doc'
+            implementationClass = 'de.interactive_instruments.xtraplatform.docs.DocPlugin'
+        }
+        compositePlugin {
+            id = 'de.interactive_instruments.xtraplatform-composite'
+            implementationClass = 'de.interactive_instruments.xtraplatform.CompositePlugin'
+        }
+        settingsPlugin {
+            id = 'de.interactive_instruments.xtraplatform-settings'
+            implementationClass = 'de.interactive_instruments.xtraplatform.SettingsPlugin'
+        }
+    }
+}
+
+
+def libz = rootProject.extensions
+        .getByType(VersionCatalogsExtension).named("libs")
+
+catalog {
+    versionCatalog {
+        libz.getVersionAliases().each {
+            version(it, "${libz.findVersion(it).get().displayName}")
+        }
+        libz.getPluginAliases().each {
+            plugin(it, "${libz.findPlugin(it).get().get().pluginId}").versionRef("${it}")
+        }
+        libz.getLibraryAliases().each {
+            def versionAliases = libz.getVersionAliases().sort {a, b -> b.length() <=> a.length()}
+            def versionRef = versionAliases.find {alias -> it == alias } ?: versionAliases.find {alias -> it.startsWith(alias) }
+            library(it, "${libz.findLibrary(it).get().get().group}", "${libz.findLibrary(it).get().get().name}").versionRef(versionRef)
+        }
+        libz.getBundleAliases().each {
+            def libAliases = libz.getLibraryAliases().sort {a, b -> b.length() <=> a.length()}
+            def libRefs = libz.findBundle(it).get().get().collect {dep ->
+                def name = dep.name.replaceAll("-", ".")
+                libAliases.find {alias -> name == alias } ?: libAliases.find {alias -> name.startsWith(alias) } ?: libAliases.find {alias -> dep.group.endsWith(alias) }
+            }
+            bundle(it, libRefs)
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
+            def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+
+            url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username project.findProperty('deployUser') ?: ''
+                password project.findProperty('deployPassword') ?: ''
+            }
+        }
+    }
+    publications {
+        catalog(MavenPublication) {
+            artifactId = 'xtraplatform-catalog'
+            from components.versionCatalog
+        }
+    }
+}
+

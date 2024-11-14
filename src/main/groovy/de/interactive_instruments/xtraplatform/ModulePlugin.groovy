@@ -1,16 +1,15 @@
 package de.interactive_instruments.xtraplatform
 
-import com.github.spotbugs.snom.SpotBugsTask
-import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
-import de.interactive_instruments.xtraplatform.pmd.SarifForGithub
+
 import groovy.io.FileType
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.Dependency
-import org.gradle.api.attributes.Category
+import org.gradle.api.artifacts.ExternalModuleDependencyBundle
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.artifacts.VersionConstraint
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
@@ -33,7 +32,7 @@ class ModulePlugin implements Plugin<Project> {
         task.taskDependencies.getDependencies(task).each {
             subTask -> executeTask(subTask)
         }
-        if (task.path.startsWith(":xtraplatform-modules:")) {
+        if (task.path.startsWith(":xtraplatform-build:")) {
             println "BREAK"
             return
         }
@@ -437,35 +436,25 @@ ${additions}
     static void setupAnnotationProcessors(Project project) {
         if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
             //TODO: get version from xtraplatform (or the other way around)
-            project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.49")
-            project.dependencies.add('annotationProcessor', "io.github.azahnen:dagger-auto-compiler:0.9.1")
-
-            //project.dependencies.add('compileOnly', "org.immutables:value:2.8.8:annotations")
-            //project.dependencies.add('compileOnly', "org.immutables:encode:2.8.8")
-            project.dependencies.add('annotationProcessor', "org.immutables:value:2.8.8")
+            findCatalogBundle(project, 'annotations').each {
+                project.dependencies.add('annotationProcessor', it)
+            }
         }
     }
 
-    //TODO: configurable versions
     static void setupUnitTests(Project project) {
         project.plugins.apply('groovy')
         project.plugins.apply('jacoco')
 
-        project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
-        project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
-        project.dependencies.add('testImplementation', "com.athaydes:spock-reports:2.3.0-groovy-3.0", { transitive = false })
-
-        project.dependencies.add('testImplementation', "net.bytebuddy:byte-buddy:1.10.9")
-        // needed by spock to mock non-interface types
-        project.dependencies.add('testImplementation', "org.objenesis:objenesis:1.2")
-        // needed by spock to mock constructors for non-interface types
-
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-templates:3.0.9")
-        // needed by spock-reports
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-xml:3.0.9")
-        // needed by spock-reports
-        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-json:3.0.9")
-        // needed by spock-reports
+        findCatalogBundle(project, 'transitive').each {
+            project.dependencies.add('testImplementation', it)
+        }
+        findCatalogBundle(project, 'nontransitive').each {
+            project.dependencies.add('testImplementation', it, { transitive = false })
+        }
+        findCatalogBundle(project, 'fixtures').each {
+            project.dependencies.add('testFixturesImplementation', it)
+        }
 
         project.tasks.register("coverageReportInfo") {
             doLast {
@@ -566,7 +555,7 @@ ${additions}
         //project.plugins.apply('com.github.spotbugs')
 
         project.pmd {
-            toolVersion = '6.44.0'
+            toolVersion = findCatalogVersion(project, 'pmd').displayName
             consoleOutput = project.maturity as Maturity >= Maturity.CANDIDATE
             ignoreFailures = project.maturity as Maturity <= Maturity.CANDIDATE
             ruleSets = []
@@ -659,6 +648,44 @@ ${additions}
                 project.pmd.ignoreFailures = true
             }
         }
+    }
+
+    static ExternalModuleDependencyBundle findCatalogBundle(Project project, String name) {
+        def catalog = project.rootProject
+                .extensions
+                .getByType(VersionCatalogsExtension.class)
+                .find("xtraplatform")
+
+        if (catalog.isEmpty()) {
+            throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
+        }
+
+        def bundle = catalog.get().findBundle(name)
+
+        if (bundle.isEmpty()) {
+            throw new UnknownDomainObjectException("Bundle '${name}' not found in catalog 'xtraplatform'")
+        }
+
+        return bundle.get().get()
+    }
+
+    static VersionConstraint findCatalogVersion(Project project, String name) {
+        def catalog = project.rootProject
+                .extensions
+                .getByType(VersionCatalogsExtension.class)
+                .find("xtraplatform")
+
+        if (catalog.isEmpty()) {
+            throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
+        }
+
+        def version = catalog.get().findVersion(name)
+
+        if (version.isEmpty()) {
+            throw new UnknownDomainObjectException("Version '${name}' not found in catalog 'xtraplatform'")
+        }
+
+        return version.get()
     }
 
     static boolean isExcluded(String item, Collection<String> items) {
