@@ -1,5 +1,8 @@
 depends_on:
-  - renovate
+  - check
+
+when:
+  event: [push, tag]
 
 steps:
   load-cache:
@@ -17,7 +20,7 @@ steps:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew build -Pbranch=$CI_COMMIT_BRANCH
     when:
-      event: [push]
+      event: push
 
   build-release:
     image: openjdk:11-slim
