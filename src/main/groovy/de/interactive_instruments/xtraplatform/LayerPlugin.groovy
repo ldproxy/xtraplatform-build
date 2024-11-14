@@ -30,6 +30,14 @@ class LayerPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        project.gradle.settingsEvaluated { settings ->
+            project.buildscript {
+                dependencies {
+                    classpath "de.interactive_instruments:xtraplatform-build:${SettingsPlugin.getVersion(settings)}"
+                }
+            }
+        }
+
         project.plugins.apply("java") // needed for platform constraints
         project.plugins.apply("maven-publish")
         project.plugins.apply('com.google.osdetector')
