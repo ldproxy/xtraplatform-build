@@ -86,13 +86,15 @@ catalog {
             plugin(it, "${libz.findPlugin(it).get().get().pluginId}").versionRef("${it}")
         }
         libz.getLibraryAliases().each {
-            def versionRef = libz.getVersionAliases().find {alias -> it == alias } ?: libz.getVersionAliases().find {alias -> it.startsWith(alias) }
+            def versionAliases = libz.getVersionAliases().sort {a, b -> b.length() <=> a.length()}
+            def versionRef = versionAliases.find {alias -> it == alias } ?: versionAliases.find {alias -> it.startsWith(alias) }
             library(it, "${libz.findLibrary(it).get().get().group}", "${libz.findLibrary(it).get().get().name}").versionRef(versionRef)
         }
         libz.getBundleAliases().each {
+            def libAliases = libz.getLibraryAliases().sort {a, b -> b.length() <=> a.length()}
             def libRefs = libz.findBundle(it).get().get().collect {dep ->
                 def name = dep.name.replaceAll("-", ".")
-                libz.getLibraryAliases().find {alias -> name == alias } ?: libz.getVersionAliases().find {alias -> name.startsWith(alias) } ?: libz.getVersionAliases().find {alias -> dep.group.endsWith(alias) }
+                libAliases.find {alias -> name == alias } ?: libAliases.find {alias -> name.startsWith(alias) } ?: libAliases.find {alias -> dep.group.endsWith(alias) }
             }
             bundle(it, libRefs)
         }
