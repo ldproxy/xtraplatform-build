@@ -32,7 +32,7 @@ class ModulePlugin implements Plugin<Project> {
         task.taskDependencies.getDependencies(task).each {
             subTask -> executeTask(subTask)
         }
-        if (task.path.startsWith(":xtraplatform-modules:")) {
+        if (task.path.startsWith(":xtraplatform-build:")) {
             println "BREAK"
             return
         }

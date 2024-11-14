@@ -1,4 +1,6 @@
 plugins {
+    id 'java-gradle-plugin'
+    id 'groovy'
     id 'version-catalog'
     id 'maven-publish'
 }
@@ -13,6 +15,64 @@ ext {
 group = 'de.interactive_instruments'
 
 version = '5.4.0' + versionSuffix
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://plugins.gradle.org/m2/"
+    }
+}
+
+sourceSets {
+    annotations {
+        java {
+            srcDir 'src/annotations/java'
+        }
+    }
+}
+
+java {
+    registerFeature('annotations') {
+        usingSourceSet(sourceSets.annotations)
+    }
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+
+dependencies {
+    implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.1.7'
+    implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.6'
+    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'com.google.guava:guava:31.0.1-jre'
+    implementation 'com.google.gradle:osdetector-gradle-plugin:1.7.0'
+    implementation 'org.cyclonedx:cyclonedx-gradle-plugin:1.8.1'
+}
+
+gradlePlugin {
+    plugins {
+        layerPlugin {
+            id = 'de.interactive_instruments.xtraplatform-layer'
+            implementationClass = 'de.interactive_instruments.xtraplatform.LayerPlugin'
+        }
+        applicationPlugin {
+            id = 'de.interactive_instruments.xtraplatform-application'
+            implementationClass = 'de.interactive_instruments.xtraplatform.ApplicationPlugin'
+        }
+        modulePlugin {
+            id = 'de.interactive_instruments.xtraplatform-module'
+            implementationClass = 'de.interactive_instruments.xtraplatform.ModulePlugin'
+        }
+        docPlugin {
+            id = 'de.interactive_instruments.xtraplatform-doc'
+            implementationClass = 'de.interactive_instruments.xtraplatform.docs.DocPlugin'
+        }
+        compositePlugin {
+            id = 'de.interactive_instruments.xtraplatform-composite'
+            implementationClass = 'de.interactive_instruments.xtraplatform.CompositePlugin'
+        }
+    }
+}
+
 
 def libz = rootProject.extensions
         .getByType(VersionCatalogsExtension).named("libs")
@@ -48,39 +108,9 @@ publishing {
         }
     }
     publications {
-        maven(MavenPublication) {
+        catalog(MavenPublication) {
             from components.versionCatalog
         }
     }
 }
 
-subprojects { subproject ->
-    apply plugin: 'java-gradle-plugin'
-    apply plugin: 'groovy'
-    apply plugin: 'maven-publish'
-
-    group = 'de.interactive_instruments'
-
-    version = '5.4.0' + versionSuffix
-
-    sourceCompatibility = JavaVersion.VERSION_11
-
-    repositories {
-        mavenCentral()
-    }
-
-    publishing {
-        repositories {
-            maven {
-                def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
-                def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
-
-                url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-                credentials {
-                    username project.findProperty('deployUser') ?: ''
-                    password project.findProperty('deployPassword') ?: ''
-                }
-            }
-        }
-    }
-}
