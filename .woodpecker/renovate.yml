@@ -3,14 +3,16 @@ when:
   branch: [ refactor, renovate-* ]
 
 steps:
-  clone:
+  clone-xtraplatform:
     image: woodpeckerci/plugin-git
     settings:
-      remote: https://github.com/interactive-instruments/xtraplatform.git
+      remote: https://github.com/ldproxy/xtraplatform.git
       branch: master
-      path: $CI_WORKSPACE/../xtraplatform
+      path: ../xtraplatform
+      ref: refs/heads/master
+      sha: ''
 
-  test:
+  test-xtraplatform:
     image: openjdk:11-slim
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
