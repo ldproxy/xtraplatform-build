@@ -1,0 +1,7 @@
+[versions]
+spock = "2.1-groovy-3.0"
+
+[libraries]
+spock = { module = "org.spockframework:spock-core", version.ref = "spock" }
+bytebuddy = { module = "net.bytebuddy:byte-buddy", version = "1.10.9" }
+

@@ -470,7 +470,7 @@ ${additions}
 
         println "SPOCK version: ${spock.get().get()}"
 
-        project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
+        project.dependencies.add('testImplementation', spock.get().get())
         project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
         project.dependencies.add('testImplementation', "com.athaydes:spock-reports:2.3.0-groovy-3.0", { transitive = false })
 
