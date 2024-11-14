@@ -9,6 +9,7 @@ import groovy.json.JsonSlurper
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.attributes.Category
@@ -452,14 +453,22 @@ ${additions}
         project.plugins.apply('groovy')
         project.plugins.apply('jacoco')
 
-        def spockVersion = project.rootProject
+        def catalog = project.rootProject
                 .extensions
                 .getByType(VersionCatalogsExtension.class)
-                .named("testing")
-                .findVersion("spock")
-                .get()
-                .displayName
-        println "SPOCK version: ${spockVersion}"
+                .find("xtraplatform")
+
+        if (catalog.isEmpty()) {
+            throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
+        }
+
+        def spockVersion = catalog.get().findVersion("spock")
+
+        if (spockVersion.isEmpty()) {
+            throw new UnknownDomainObjectException("Version for 'spock' not found in catalog 'xtraplatform'")
+        }
+
+        println "SPOCK version: ${spockVersion.get().displayName}"
 
         project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
         project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
