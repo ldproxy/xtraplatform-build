@@ -18,8 +18,11 @@ class SettingsPlugin implements Plugin<Settings> {
         def version = getVersion(settings)
 
 settings.gradle.beforeProject { project ->
+    if (project.rootProject != project) {
+        return
+    }
     println "Settings evaluated: " + version
-    project.rootProject.buildscript.with {
+    project.buildscript.with {
         dependencies {
             classpath "de.interactive_instruments:xtraplatform-build:${version}"
         }
