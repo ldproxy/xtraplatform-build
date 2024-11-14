@@ -31,7 +31,8 @@ class LayerPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         project.gradle.settingsEvaluated { settings ->
-            project.buildscript {
+            println "Settings evaluated: " + SettingsPlugin.getVersion(settings)
+            project.buildscript.with {
                 dependencies {
                     classpath "de.interactive_instruments:xtraplatform-build:${SettingsPlugin.getVersion(settings)}"
                 }
