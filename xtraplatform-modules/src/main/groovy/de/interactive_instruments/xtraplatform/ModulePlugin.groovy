@@ -9,6 +9,7 @@ import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependencyBundle
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.artifacts.VersionConstraint
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
@@ -554,7 +555,7 @@ ${additions}
         //project.plugins.apply('com.github.spotbugs')
 
         project.pmd {
-            toolVersion = '6.44.0'
+            toolVersion = findCatalogVersion(project, 'pmd').displayName
             consoleOutput = project.maturity as Maturity >= Maturity.CANDIDATE
             ignoreFailures = project.maturity as Maturity <= Maturity.CANDIDATE
             ruleSets = []
@@ -666,6 +667,25 @@ ${additions}
         }
 
         return bundle.get().get()
+    }
+
+    static VersionConstraint findCatalogVersion(Project project, String name) {
+        def catalog = project.rootProject
+                .extensions
+                .getByType(VersionCatalogsExtension.class)
+                .find("xtraplatform")
+
+        if (catalog.isEmpty()) {
+            throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
+        }
+
+        def version = catalog.get().findVersion(name)
+
+        if (version.isEmpty()) {
+            throw new UnknownDomainObjectException("Version '${name}' not found in catalog 'xtraplatform'")
+        }
+
+        return version.get()
     }
 
     static boolean isExcluded(String item, Collection<String> items) {

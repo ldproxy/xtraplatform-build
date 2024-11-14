@@ -7,6 +7,7 @@ objenesis = "1.2"
 dagger = "2.49"
 dagger-auto = "0.9.1"
 immutables = "2.8.8"
+pmd = "6.48.0"
 
 [libraries]
 spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
@@ -14,9 +15,10 @@ spock-reports = { module = "com.athaydes:spock-reports", version.ref = "spock-re
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 dagger-auto-compiler = { module = "io.github.azahnen:dagger-auto-compiler", version.ref = "dagger-auto" }
 value = { module = "org.immutables:value", version.ref = "immutables" }
+pmd = { module = "net.sourceforge.pmd:pmd", version.ref = "pmd" }
 
 # needed by spock
-groovy = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
+groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
 byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
 objenesis = { module = "org.objenesis:objenesis", version.ref = "objenesis" }
 
