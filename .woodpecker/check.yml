@@ -1,6 +1,5 @@
 when:
   event: [ push ]
-  branch: [ renovate-* ]
 
 steps:
   clone-xtraplatform:
@@ -11,6 +10,8 @@ steps:
       path: ../xtraplatform
       ref: refs/heads/master
       sha: ''
+    when:
+      branch: [ renovate-* ]
 
   test-xtraplatform:
     image: openjdk:11-slim
@@ -18,3 +19,5 @@ steps:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - cd ../xtraplatform
       - ./gradlew check -Pbuild-plugins=true
+    when:
+      branch: [ renovate-* ]

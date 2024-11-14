@@ -1,6 +1,5 @@
-#TODO: build does not even show up when enabled
-#depends_on:
-#  - renovate
+depends_on:
+  - check
 
 when:
   event: [push, tag]
