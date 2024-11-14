@@ -2,16 +2,16 @@
 spock = "2.2-groovy-4.0"
 spock-reports = "2.4.0-groovy-4.0"
 groovy = "4.0.6"
-bytebuddy = "1.10.9"
+byte-buddy = "1.10.9"
 objenesis = "1.2"
 
 [libraries]
-spock = { module = "org.spockframework:spock-core", version.ref = "spock" }
+spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
 spock-reports = { module = "com.athaydes:spock-reports", version.ref = "spock-reports" }
 
 # needed by spock
 groovy = { module = "org.codehaus.groovy:groovy", version.ref = "groovy" }
-bytebuddy = { module = "net.bytebuddy:byte-buddy", version.ref = "bytebuddy" }
+byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
 objenesis = { module = "org.objenesis:objenesis", version.ref = "objenesis" }
 
 # needed by spock-reports
@@ -20,6 +20,6 @@ groovy-xml = { module = "org.codehaus.groovy:groovy-xml", version.ref = "groovy"
 groovy-json = { module = "org.codehaus.groovy:groovy-json", version.ref = "groovy" }
 
 [bundles]
-transitive = ["spock", "groovy", "groovy-templates", "groovy-xml", "groovy-json", "bytebuddy", "objenesis"]
+transitive = ["spock-core", "groovy", "groovy-templates", "groovy-xml", "groovy-json", "byte-buddy", "objenesis"]
 nontransitive = ["spock-reports"]
-fixtures = ["spock"]
+fixtures = ["spock-core"]

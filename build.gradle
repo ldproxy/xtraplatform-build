@@ -22,6 +22,9 @@ catalog {
         libz.getLibraryAliases().each {
             library(it, "${libz.findLibrary(it).get().get()}")
         }
+        libz.getBundleAliases().each {
+            bundle(it, libz.findBundle(it).get().get().collect { it.name })
+        }
     }
 }
 
