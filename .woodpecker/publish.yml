@@ -1,5 +1,7 @@
-steps:
+depends_on:
+  - renovate
 
+steps:
   load-cache:
     image: drillster/drone-volume-cache
     volumes: [/var/lib/docker/tmp:/cache]
