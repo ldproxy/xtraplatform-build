@@ -441,9 +441,6 @@ ${additions}
             //TODO: get version from xtraplatform (or the other way around)
             project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.49")
             project.dependencies.add('annotationProcessor', "io.github.azahnen:dagger-auto-compiler:0.9.1")
-
-            //project.dependencies.add('compileOnly', "org.immutables:value:2.8.8:annotations")
-            //project.dependencies.add('compileOnly', "org.immutables:encode:2.8.8")
             project.dependencies.add('annotationProcessor', "org.immutables:value:2.8.8")
         }
     }
@@ -479,10 +476,16 @@ ${additions}
             throw new UnknownDomainObjectException("Bundle 'fixtures' not found in catalog 'xtraplatform'")
         }
 
-        project.dependencies.add('testImplementation', transitive.get().get())
-        project.dependencies.add('testImplementation', nontransitive.get().get())
-        project.dependencies.add('testFixturesImplementation', fixtures.get().get())
-        
+        transitive.get().get().each {
+            project.dependencies.add('testImplementation', it)
+        }
+        nontransitive.get().get().each {
+            project.dependencies.add('testImplementation', it, { transitive = false })
+        }
+        fixtures.get().get().each {
+            project.dependencies.add('testFixturesImplementation', it)
+        }
+
         project.tasks.register("coverageReportInfo") {
             doLast {
                 println "\nJacoco report: file://${project.buildDir}/reports/jacoco/test/html/index.html"
