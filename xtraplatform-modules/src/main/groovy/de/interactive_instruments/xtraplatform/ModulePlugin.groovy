@@ -10,6 +10,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.attributes.Category
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
@@ -450,6 +451,15 @@ ${additions}
     static void setupUnitTests(Project project) {
         project.plugins.apply('groovy')
         project.plugins.apply('jacoco')
+
+        def spockVersion = project.rootProject
+                .extensions
+                .getByType(VersionCatalogsExtension.class)
+                .named("testing")
+                .findVersion("spock")
+                .get()
+                .displayName
+        println "SPOCK version: ${spockVersion}"
 
         project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
         project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
