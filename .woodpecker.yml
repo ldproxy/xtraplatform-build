@@ -13,7 +13,7 @@ steps:
     image: openjdk:11-slim
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
-      - ./gradlew build -Psnapshot=true
+      - ./gradlew build -Pbranch=$CI_COMMIT_BRANCH
     when:
       event: [push]
 
@@ -21,7 +21,7 @@ steps:
     image: openjdk:11-slim
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
-      - ./gradlew build
+      - ./gradlew build -Prelease=true
     when:
       event: tag
 
@@ -29,17 +29,16 @@ steps:
     image: openjdk:11-slim
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
-      - ./gradlew publish -Psnapshot=true -PdeployUser=$DEPLOY_USER -PdeployPassword=$DEPLOY_PASSWORD
+      - ./gradlew publish -Pbranch=$CI_COMMIT_BRANCH -PdeployUser=$DEPLOY_USER -PdeployPassword=$DEPLOY_PASSWORD
     secrets: [ deploy_user, deploy_password]
     when:
       event: push
-      branch: main
 
   publish-release:
     image: openjdk:11-slim
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
-      - ./gradlew publish -PdeployUser=$DEPLOY_USER -PdeployPassword=$DEPLOY_PASSWORD
+      - ./gradlew publish -Prelease=true -PdeployUser=$DEPLOY_USER -PdeployPassword=$DEPLOY_PASSWORD
     secrets: [ deploy_user, deploy_password]
     when:
       event: tag

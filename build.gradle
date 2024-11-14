@@ -3,8 +3,11 @@ plugins {
     id 'maven-publish'
 }
 
+def isBranch = project.hasProperty('branch')
+def isMainBranch = isBranch && (project.getProperty('branch') == 'master' || project.getProperty('branch') == 'main')
+def isRelease = project.findProperty('release') == 'true'
 ext {
-    versionSuffix = project.findProperty('snapshot') == 'true' ? '-SNAPSHOT' : ''
+    versionSuffix = (isBranch && !isMainBranch && !isRelease ? ('-' + project.getProperty('branch')) : '') + (!isRelease ? '-SNAPSHOT' : '')
 }
 
 group = 'de.interactive_instruments'
