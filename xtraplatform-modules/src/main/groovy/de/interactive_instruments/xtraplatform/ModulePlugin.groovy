@@ -1,11 +1,7 @@
 package de.interactive_instruments.xtraplatform
 
-import com.github.spotbugs.snom.SpotBugsTask
-import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
-import de.interactive_instruments.xtraplatform.pmd.SarifForGithub
+
 import groovy.io.FileType
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -13,7 +9,6 @@ import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependencyBundle
 import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.api.attributes.Category
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
@@ -440,42 +435,23 @@ ${additions}
     static void setupAnnotationProcessors(Project project) {
         if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
             //TODO: get version from xtraplatform (or the other way around)
-            findBundle(project, 'annotations').each {
+            findCatalogBundle(project, 'annotations').each {
                 project.dependencies.add('annotationProcessor', it)
             }
         }
-    }
-
-    static ExternalModuleDependencyBundle findBundle(Project project, String name) {
-        def catalog = project.rootProject
-                .extensions
-                .getByType(VersionCatalogsExtension.class)
-                .find("xtraplatform")
-
-        if (catalog.isEmpty()) {
-            throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
-        }
-
-        def bundle = catalog.get().findBundle(name)
-
-        if (bundle.isEmpty()) {
-            throw new UnknownDomainObjectException("Bundle '${bundle}' not found in catalog 'xtraplatform'")
-        }
-
-        return bundle.get().get()
     }
 
     static void setupUnitTests(Project project) {
         project.plugins.apply('groovy')
         project.plugins.apply('jacoco')
 
-        findBundle(project, 'transitive').each {
+        findCatalogBundle(project, 'transitive').each {
             project.dependencies.add('testImplementation', it)
         }
-        findBundle(project, 'nontransitive').each {
+        findCatalogBundle(project, 'nontransitive').each {
             project.dependencies.add('testImplementation', it, { transitive = false })
         }
-        findBundle(project, 'fixtures').each {
+        findCatalogBundle(project, 'fixtures').each {
             project.dependencies.add('testFixturesImplementation', it)
         }
 
@@ -671,6 +647,25 @@ ${additions}
                 project.pmd.ignoreFailures = true
             }
         }
+    }
+
+    static ExternalModuleDependencyBundle findCatalogBundle(Project project, String name) {
+        def catalog = project.rootProject
+                .extensions
+                .getByType(VersionCatalogsExtension.class)
+                .find("xtraplatform")
+
+        if (catalog.isEmpty()) {
+            throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
+        }
+
+        def bundle = catalog.get().findBundle(name)
+
+        if (bundle.isEmpty()) {
+            throw new UnknownDomainObjectException("Bundle '${name}' not found in catalog 'xtraplatform'")
+        }
+
+        return bundle.get().get()
     }
 
     static boolean isExcluded(String item, Collection<String> items) {
