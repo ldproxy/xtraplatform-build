@@ -18,6 +18,26 @@ class SettingsPlugin implements Plugin<Settings> {
         def version = getVersion(settings)
 
         settings.with {
+            pluginManagement {
+                repositories {
+                    maven {
+                        url "https://dl.interactive-instruments.de/repository/maven-releases/"
+                    }
+                    maven {
+                        url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+                    }
+                    gradlePluginPortal()
+                }
+
+                plugins {
+                    id "de.interactive_instruments.xtraplatform-layer" version "${version}"
+                    id "de.interactive_instruments.xtraplatform-application" version "${version}"
+                    id "de.interactive_instruments.xtraplatform-module" version "${version}"
+                    id "de.interactive_instruments.xtraplatform-doc" version "${version}"
+                    id "de.interactive_instruments.xtraplatform-composite" version "${version}"
+                }
+            }
+
             dependencyResolutionManagement {
                 repositories {
                     maven {
