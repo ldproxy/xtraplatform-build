@@ -468,7 +468,7 @@ ${additions}
             throw new UnknownDomainObjectException("Library 'spock' not found in catalog 'xtraplatform'")
         }
 
-        println "SPOCK version: ${spockVersion.get().get()}"
+        println "SPOCK version: ${spock.get().get()}"
 
         project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
         project.dependencies.add('testFixturesImplementation', "org.spockframework:spock-core:2.1-groovy-3.0")
