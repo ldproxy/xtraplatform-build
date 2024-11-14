@@ -1,34 +1,56 @@
 plugins {
-    id "com.github.ben-manes.versions" version "0.36.0"
-    id 'se.patrikerdes.use-latest-versions' version '0.2.15'
+    id 'version-catalog'
 }
 
 ext {
     versionSuffix = project.findProperty('snapshot') == 'true' ? '-SNAPSHOT' : ''
 }
 
-dependencyUpdates {
-    gradleReleaseChannel = "current"
+group = 'de.interactive_instruments'
+
+version = '5.4.0' + versionSuffix
+
+catalog {
+    // declare the aliases, bundles and versions in this block
+    versionCatalog {
+        library('spock', 'org.spockframework:spock-core:2.1-groovy-3.0')
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
+            def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+
+            url version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username project.findProperty('deployUser') ?: ''
+                password project.findProperty('deployPassword') ?: ''
+            }
+        }
+    }
+    publications {
+        maven(MavenPublication) {
+            from components.versionCatalog
+        }
+    }
 }
 
 subprojects { subproject ->
     apply plugin: 'java-gradle-plugin'
     apply plugin: 'groovy'
     apply plugin: 'maven-publish'
-    apply plugin: 'com.github.ben-manes.versions'
-    apply plugin: 'se.patrikerdes.use-latest-versions'
 
     group = 'de.interactive_instruments'
 
-    version = '5.3.0' + versionSuffix
+    version = '5.4.0' + versionSuffix
 
     sourceCompatibility = JavaVersion.VERSION_11
 
     repositories {
         mavenCentral()
     }
-
-    subproject.tasks.check.finalizedBy rootProject.tasks.dependencyUpdates
 
     publishing {
         repositories {
