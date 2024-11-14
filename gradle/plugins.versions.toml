@@ -1,0 +1,33 @@
+[versions]
+idea = "1.1.7"
+spotbugs = "5.0.6"
+gson = "2.9.0"
+guava = "31.0.1-jre"
+osdetector = "1.7.0"
+cyclonedx = "1.8.1"
+git-hooks = "2.0.13"
+spotless = "6.25.0"
+
+
+[libraries]
+idea = { module = "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext", version.ref = "idea" }
+spotbugs = { module = "com.github.spotbugs.snom:spotbugs-gradle-plugin", version.ref = "spotbugs" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+osdetector = { module = "com.google.gradle:osdetector-gradle-plugin", version.ref = "osdetector" }
+cyclonedx = { module = "org.cyclonedx:cyclonedx-gradle-plugin", version.ref = "cyclonedx" }
+git-hooks = { module = "org.danilopianini:gradle-pre-commit-git-hooks", version.ref = "git-hooks" }
+spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
+
+
+[bundles]
+all = [
+  "idea",
+  "spotbugs",
+  "gson",
+  "guava",
+  "osdetector",
+  "cyclonedx",
+  "git-hooks",
+  "spotless"
+]

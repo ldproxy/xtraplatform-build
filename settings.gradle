@@ -1,1 +1,9 @@
 rootProject.name = 'xtraplatform-build'
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        pluginLibs {
+            from(files("gradle/plugins.versions.toml"))
+        }
+    }
+}

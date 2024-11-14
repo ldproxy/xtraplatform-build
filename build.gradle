@@ -40,14 +40,7 @@ java {
 sourceCompatibility = JavaVersion.VERSION_11
 
 dependencies {
-    implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.1.7'
-    implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.6'
-    implementation 'com.google.code.gson:gson:2.9.0'
-    implementation 'com.google.guava:guava:31.0.1-jre'
-    implementation 'com.google.gradle:osdetector-gradle-plugin:1.7.0'
-    implementation 'org.cyclonedx:cyclonedx-gradle-plugin:1.8.1'
-    implementation "org.danilopianini:gradle-pre-commit-git-hooks:2.0.13"
-    implementation 'com.diffplug.spotless:spotless-plugin-gradle:6.25.0'
+    implementation pluginLibs.bundles.all
 }
 
 gradlePlugin {
