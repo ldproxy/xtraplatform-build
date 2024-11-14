@@ -1,6 +1,6 @@
 when:
   event: [ push ]
-  branch: [ refactor, renovate-* ]
+  branch: [ renovate-* ]
 
 steps:
   clone-xtraplatform:
