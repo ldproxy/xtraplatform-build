@@ -1,5 +1,5 @@
-depends_on:
-  - renovate
+#depends_on:
+#  - renovate
 
 steps:
   load-cache:
