@@ -16,13 +16,6 @@ group = 'de.interactive_instruments'
 
 version = '5.4.0' + versionSuffix
 
-repositories {
-    mavenCentral()
-    maven {
-        url "https://plugins.gradle.org/m2/"
-    }
-}
-
 sourceSets {
     annotations {
         java {
