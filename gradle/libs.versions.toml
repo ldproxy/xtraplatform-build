@@ -8,10 +8,6 @@ dagger = "2.49"
 dagger-auto = "0.9.1"
 immutables = "2.8.8"
 pmd = "6.48.0"
-git-hooks = "1.1.18"
-
-[plugins]
-git-hooks = { id = "org.danilopianini.gradle-pre-commit-git-hooks", version.ref = "git-hooks" }
 
 [libraries]
 spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }

@@ -1,5 +1,32 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["ldproxy/renovate-config:xtraplatform"],
-  "packageRules": []
+  "packageRules": [
+    {
+      "groupName": "testing",
+      "matchPackageNames": ["/spock/", "/groovy/", "/byte-buddy/", "/objenesis/"]
+    },
+    {
+      "groupName": "annotations",
+      "matchPackageNames": ["/dagger/", "/immutables/"]
+    },
+    {
+      "groupName": "quality",
+      "matchPackageNames": ["/pmd/"]
+    },
+    {
+      "groupName": "plugins",
+      "matchFileNames": ["gradle/plugins.versions.toml"]
+    },
+    {
+      "groupName": "plugins-internal",
+      "matchFileNames": ["gradle/plugins.versions.toml"],
+      "matchPackageNames": ["/gson/", "/guava/", "/osdetector/"],
+      "labels": ["build-dependencies"]
+    },
+    {
+      "matchPackageNames": ["com.google.dagger:dagger-compiler"],
+      "allowedVersions": "< 2.50"
+    }
+  ]
 }
