@@ -1,10 +1,10 @@
 [versions]
-idea = "1.1.7"
-spotbugs = "5.0.6"
+idea = "1.1.9"
+spotbugs = "5.2.5"
 gson = "2.9.0"
 guava = "31.0.1-jre"
 osdetector = "1.7.0"
-cyclonedx = "1.8.1"
+cyclonedx = "1.10.0"
 git-hooks = "2.0.13"
 spotless = "6.25.0"
 
