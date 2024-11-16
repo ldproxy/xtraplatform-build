@@ -1,5 +1,3 @@
-when:
-  event: [ push, tag ]
 
 steps:
   clone-xtraplatform:
@@ -11,6 +9,7 @@ steps:
       ref: refs/heads/master
       sha: ''
     when:
+      event: [ push ]
       branch: [ renovate-* ]
 
   test-xtraplatform:
@@ -20,4 +19,5 @@ steps:
       - cd ../xtraplatform
       - ./gradlew check -Pbuild-plugins=true
     when:
+      event: [ push ]
       branch: [ renovate-* ]
