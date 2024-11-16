@@ -1,7 +1,11 @@
 package de.interactive_instruments.xtraplatform
 
-
+import com.github.spotbugs.snom.SpotBugsTask
+import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
+import de.interactive_instruments.xtraplatform.pmd.SarifForGithub
 import groovy.io.FileType
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -10,6 +14,7 @@ import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependencyBundle
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.artifacts.VersionConstraint
+import org.gradle.api.attributes.Category
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
