@@ -54,6 +54,7 @@ class SettingsPlugin implements Plugin<Settings> {
             dependencyResolutionManagement {
                 repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
                 repositories {
+                    mavenCentral()
                     maven {
                         url "https://dl.interactive-instruments.de/repository/maven-releases/"
                     }
