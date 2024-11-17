@@ -4,6 +4,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.initialization.Settings
+import org.gradle.api.initialization.resolve.RepositoriesMode
 
 /**
  * @author zahnen
@@ -51,6 +52,7 @@ class SettingsPlugin implements Plugin<Settings> {
             }
 
             dependencyResolutionManagement {
+                repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
                 repositories {
                     maven {
                         url "https://dl.interactive-instruments.de/repository/maven-releases/"
@@ -58,6 +60,9 @@ class SettingsPlugin implements Plugin<Settings> {
                     maven {
                         url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
                     }
+                    /*maven {
+                        url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                    }*/
                 }
                 versionCatalogs {
                     xtraplatform {

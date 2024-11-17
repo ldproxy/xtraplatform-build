@@ -69,20 +69,6 @@ class LayerPlugin implements Plugin<Project> {
         project.configurations.layerModules.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
         project.configurations.layerDocs.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
 
-        project.repositories {
-            mavenCentral()
-            maven {
-                url "https://dl.interactive-instruments.de/repository/maven-releases/"
-            }
-            maven {
-                url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
-            }
-            maven {
-                url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-            }
-        }
-
-
         def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
 
         addFeatureModules(project, includedBuilds)
@@ -270,19 +256,6 @@ class LayerPlugin implements Plugin<Project> {
 
             // stay java 11 compatible
             subproject.setSourceCompatibility(JavaVersion.VERSION_11)
-
-            subproject.repositories {
-                mavenCentral()
-                maven {
-                    url "https://dl.interactive-instruments.de/repository/maven-releases/"
-                }
-                maven {
-                    url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
-                }
-                maven {
-                    url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                }
-            }
 
             subproject.afterEvaluate {
                 if (subproject.version != null && subproject.version != 'unspecified') {
