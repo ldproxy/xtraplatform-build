@@ -33,13 +33,14 @@ class SettingsPlugin implements Plugin<Settings> {
         settings.with {
             pluginManagement {
                 repositories {
+                    gradlePluginPortal()
+                    mavenCentral()
                     maven {
                         url "https://dl.interactive-instruments.de/repository/maven-releases/"
                     }
                     maven {
                         url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
                     }
-                    gradlePluginPortal()
                 }
 
                 plugins {

@@ -2,13 +2,19 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["ldproxy/renovate-config:xtraplatform"],
   "packageRules": [
+     {
+      "description": "Automerge non-major updates",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
     {
       "groupName": "testing",
       "matchPackageNames": ["/spock/", "/groovy/", "/byte-buddy/", "/objenesis/"]
     },
     {
       "groupName": "annotations",
-      "matchPackageNames": ["/dagger/", "/immutables/"]
+      "matchPackageNames": ["/dagger/", "/immutables/"],
+      "automerge": false
     },
     {
       "groupName": "quality",
