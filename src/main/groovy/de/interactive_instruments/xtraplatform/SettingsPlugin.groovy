@@ -65,6 +65,20 @@ class SettingsPlugin implements Plugin<Settings> {
                     /*maven {
                         url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
                     }*/
+                    // Declare the Node.js download repository needed by plugin com.github.node-gradle.node
+                    ivy {
+                        name = "Node.js"
+                        setUrl("https://nodejs.org/dist/")
+                        patternLayout {
+                            artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]")
+                        }
+                        metadataSources {
+                            artifact()
+                        }
+                        content {
+                            includeModule("org.nodejs", "node")
+                        }
+                    }
                 }
                 versionCatalogs {
                     xtraplatform {
