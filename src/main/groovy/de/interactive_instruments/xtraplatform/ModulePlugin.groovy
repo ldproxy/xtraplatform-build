@@ -444,6 +444,10 @@ ${additions}
             findCatalogBundle(project, 'annotations').each {
                 project.dependencies.add('annotationProcessor', it)
             }
+
+            project.tasks.named('compileJava') {
+                options.compilerArgs.add("-Aimmutables.gradle.incremental")
+            }
         }
     }
 

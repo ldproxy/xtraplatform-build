@@ -37,7 +37,7 @@ class DocPlugin implements Plugin<Project> {
                 destinationDir = new File(subProject.buildDir, 'tmp/module-docs')
                 options.with {
                     doclet = XtraPlatformDoclet.class.name
-                    docletpath = project.buildscript.configurations.classpath.resolvedConfiguration.files as List
+                    docletpath = project.buildscript.configurations.classpath.incoming.files as List
                     memberLevel = JavadocMemberLevel.PUBLIC
                     //outputLevel = JavadocOutputLevel.VERBOSE
                 }

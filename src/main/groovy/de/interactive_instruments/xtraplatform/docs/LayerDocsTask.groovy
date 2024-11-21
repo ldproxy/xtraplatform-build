@@ -11,7 +11,7 @@ class LayerDocsTask extends DefaultTask {
     static final String LAYER_DOCS_FILE_NAME = "layer-docs.json";
 
     private FileCollection sourceFiles = project.files();
-    private File outputDir = new File(project.buildDir, "generated/sources/annotationProcessor/resources/main")
+    private File outputDir = new File(project.buildDir, "generated/sources/annotationProcessor/resources/docs")
 
     @SkipWhenEmpty
     @InputFiles

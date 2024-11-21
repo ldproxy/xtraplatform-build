@@ -254,8 +254,10 @@ class LayerPlugin implements Plugin<Project> {
                 }
             }
 
-            // stay java 11 compatible
-            subproject.setSourceCompatibility(JavaVersion.VERSION_11)
+            subproject.java {
+                // stay java 11 compatible
+                sourceCompatibility = JavaVersion.VERSION_11
+            }
 
             subproject.afterEvaluate {
                 if (subproject.version != null && subproject.version != 'unspecified') {
