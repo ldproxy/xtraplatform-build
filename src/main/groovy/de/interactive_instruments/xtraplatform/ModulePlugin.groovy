@@ -234,6 +234,7 @@ class ModulePlugin implements Plugin<Project> {
         project.tasks.compileTplJava.inputs.dir(generatedSourcesDir)
 
         ClassGenerator.generateClassTask(project, 'moduleInfoTpl', '', 'module-info', {
+            outputs.cacheIf { true }
             inputs.property('moduleInfo.name', moduleInfoTpl.name)
             inputs.property('moduleInfo.exports', moduleInfoTpl.exports)
             //inputs.property('moduleInfo.requires', moduleInfoTpl.requires)
