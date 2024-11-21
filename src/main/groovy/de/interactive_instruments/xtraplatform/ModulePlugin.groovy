@@ -335,7 +335,7 @@ class ModulePlugin implements Plugin<Project> {
             }
         }
 
-        File generatedSrcDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
+        File generatedSrcDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/mod')
         project.sourceSets.main.java { srcDir generatedSrcDir }
         //project.tasks.compileJava.inputs.dir(generatedSrcDir)
 
