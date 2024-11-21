@@ -337,7 +337,7 @@ class ModulePlugin implements Plugin<Project> {
 
         File generatedSrcDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')
         project.sourceSets.main.java { srcDir generatedSrcDir }
-        project.tasks.compileJava.inputs.dir(generatedSrcDir)
+        //project.tasks.compileJava.inputs.dir(generatedSrcDir)
 
         ClassGenerator.generateClassTask(project, 'moduleInfo', '', 'module-info', {
             inputs.property('moduleInfo.name', moduleInfo.name)

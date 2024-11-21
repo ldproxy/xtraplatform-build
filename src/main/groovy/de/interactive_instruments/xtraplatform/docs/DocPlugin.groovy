@@ -18,7 +18,7 @@ class DocPlugin implements Plugin<Project> {
             onlyIf { System.getProperty("taskIsRun") != "true" }
         }
 
-        project.sourceSets.main.resources.srcDir(new File(project.buildDir, "generated/sources/annotationProcessor/resources/main"))
+        project.sourceSets.main.resources.srcDir(new File(project.buildDir, "generated/sources/annotationProcessor/resources/docs"))
         //project.sourceSets.main.output.dir(new File(project.buildDir, "generated/sources/annotationProcessor/resources/main"))
 
         project.tasks.named("processResources").configure {
