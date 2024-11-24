@@ -187,7 +187,7 @@ class ModulePlugin implements Plugin<Project> {
         }
 
 
-        project.sourceSets.main.java.output.dir(project.tasks.compileJavaTpl)
+        project.sourceSets.main.output.dir(project.tasks.compileJavaTpl)
 
         project.tasks.register('jarTpl', ShadowJar) {
             dependsOn(project.tasks.named('compileJavaTpl'))
