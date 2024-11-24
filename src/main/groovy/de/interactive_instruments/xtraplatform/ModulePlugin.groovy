@@ -389,7 +389,7 @@ ${additions}
             //TODO: get version from xtraplatform (or the other way around)
             findCatalogBundle(project, 'annotations').each {
                 project.dependencies.add('annotationProcessor', it)
-                project.logger.quiet("Adding dependency to annotationProcessor: {}", it)
+                //project.logger.quiet("Adding dependency to annotationProcessor: {}", it)
             }
 
             project.tasks.named('compileJava') {
@@ -611,10 +611,6 @@ ${additions}
                 .extensions
                 .getByType(VersionCatalogsExtension.class)
                 .find("xtraplatform")
-
-        project.logger.quiet("Catalogs: {}", project.rootProject
-                .extensions
-                .getByType(VersionCatalogsExtension.class).collect {it.name + it.versionAliases})
 
         if (catalog.isEmpty()) {
             throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")

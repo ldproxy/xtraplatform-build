@@ -5,7 +5,7 @@ groovy = "4.0.24"
 byte-buddy = "1.15.10"
 objenesis = "1.4"
 dagger = "2.49"
-dagger-auto = "0.9.2-SNAPSHOT"
+dagger-auto = "1.0.0-SNAPSHOT"
 immutables = "2.10.1"
 pmd = "6.55.0"
 
