@@ -387,7 +387,7 @@ ${additions}
     static void setupAnnotationProcessors(Project project) {
         if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
             //TODO: get version from xtraplatform (or the other way around)
-            findCatalogBundle(project, 'annotation.processors').each {
+            findCatalogBundle(project, 'annotation-processors').each {
                 project.dependencies.add('annotationProcessor', it)
                 //project.logger.quiet("Adding dependency to annotationProcessor: {}", it)
             }
