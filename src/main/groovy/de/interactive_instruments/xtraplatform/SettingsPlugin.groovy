@@ -5,11 +5,14 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.initialization.Settings
 import org.gradle.api.initialization.resolve.RepositoriesMode
+import org.gradle.api.logging.Logging
 
 /**
  * @author zahnen
  */
 class SettingsPlugin implements Plugin<Settings> {
+
+    private static final LOGGER = Logging.getLogger(SettingsPlugin.class)
 
     @Override
     void apply(Settings settings) {
@@ -17,7 +20,7 @@ class SettingsPlugin implements Plugin<Settings> {
         settings.plugins.apply('org.danilopianini.gradle-pre-commit-git-hooks')
 
         def version = getVersion(settings)
-        System.out.println("Applying SettingsPlugin ${version}")
+        LOGGER.info("Applying SettingsPlugin ${version}")
 
         settings.gradle.beforeProject { project ->
             if (project.rootProject != project) {
