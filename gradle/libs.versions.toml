@@ -37,4 +37,4 @@ transitive = ["spock-core", "groovy", "groovy-templates", "groovy-xml", "groovy-
 nontransitive = ["spock-reports"]
 fixtures = ["spock-core"]
 annotation-processors = ["dagger", "dagger-compiler", "dagger-auto", "dagger-auto-compiler", "immutables-value"]
-annotations = ["dagger", "dagger-auto", "immutables-value", "immutables-encode"]
+annotations = ["dagger", "dagger-auto", "immutables-encode"]
