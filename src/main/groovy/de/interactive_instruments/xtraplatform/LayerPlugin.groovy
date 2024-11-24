@@ -30,6 +30,10 @@ class LayerPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        if (project.logger.isInfoEnabled()) {
+            project.logger.info("Applying LayerPlugin {} to {}", ApplicationPlugin.getVersion(project), project.name)
+        }
+
         project.plugins.apply("java") // needed for platform constraints
         project.plugins.apply("maven-publish")
         project.plugins.apply('com.google.osdetector')
@@ -80,6 +84,12 @@ class LayerPlugin implements Plugin<Project> {
         project.plugins.apply(de.interactive_instruments.xtraplatform.docs.DocPlugin.class)
         project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
 
+        project.tasks.register('initTpl') {
+            doLast {
+                println "INIT ${project.name} ${project.version}"
+            }
+        }
+
         project.with {
             idea.project.settings {
                 runConfigurations {
@@ -92,6 +102,9 @@ class LayerPlugin implements Plugin<Project> {
                     testRunner = ActionDelegationConfig.TestRunner.PLATFORM
                 }
                 //withModuleXml(project.sourceSets.main) { println it }
+                taskTriggers {
+                    afterSync tasks.getByName("initTpl")
+                }
             }
         }
 

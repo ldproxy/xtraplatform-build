@@ -4,20 +4,19 @@ import org.gradle.api.Project
 
 class ClassGenerator {
 
+    static void generateClassesTask(Project project, String taskName, Closure taskConfiguration, Map<File,Closure<GString>> filesSupplier) {
 
-    static void generateClassTask(Project project, String taskName, String packageName, String className, Closure taskConfiguration, Closure sourceCodeSupplier, File generatedSourceDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/main')) {
+        def newTask = project.tasks.register(taskName, taskConfiguration)
 
-        def newTask = project.task(taskName)
-
-        newTask.with taskConfiguration
-
-        newTask.doLast {
-            def sourceCode = sourceCodeSupplier()
-
-            File packageDir = new File(generatedSourceDir, packageName.replaceAll("\\.", "/"))
-            packageDir.mkdirs()
-
-            new File(packageDir, "${className}.java").write(sourceCode)
+        newTask.configure {
+            doLast {
+                filesSupplier.each {
+                    //println "Generating class ${it.key} for ${project.name} in ${generatedSourceDir}"
+                    File file =  it.key
+                    file.parentFile.mkdirs()
+                    file.write(it.value.call())
+                }
+            }
         }
 
         project.tasks.compileJava.with {

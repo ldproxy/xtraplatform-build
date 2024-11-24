@@ -17,6 +17,7 @@ class SettingsPlugin implements Plugin<Settings> {
         settings.plugins.apply('org.danilopianini.gradle-pre-commit-git-hooks')
 
         def version = getVersion(settings)
+        System.out.println("Applying SettingsPlugin ${version}")
 
         settings.gradle.beforeProject { project ->
             if (project.rootProject != project) {

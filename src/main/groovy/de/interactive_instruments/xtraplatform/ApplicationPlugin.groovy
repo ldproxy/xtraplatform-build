@@ -21,6 +21,10 @@ import java.util.stream.Collectors
 class ApplicationPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
+        if (project.logger.isInfoEnabled()) {
+            project.logger.info("Applying ApplicationPlugin {} to {}", ApplicationPlugin.getVersion(project), project.name)
+        }
+
         project.plugins.apply(LayerPlugin.class)
         project.plugins.apply("application")
 
@@ -97,8 +101,8 @@ class ApplicationPlugin implements Plugin<Project> {
         }*/
 
         //TODO: get version from xtraplatform (or the other way around)
-        project.dependencies.add('compileOnly', "com.google.dagger:dagger:2.49", { transitive = false })
-        project.dependencies.add('annotationProcessor', "com.google.dagger:dagger-compiler:2.49")
+        project.dependencies.add('compileOnly', ModulePlugin.findCatalogLibrary(project, "dagger"), { transitive = false })
+        project.dependencies.add('annotationProcessor', ModulePlugin.findCatalogLibrary(project, "dagger-compiler"))
 
         project.tasks.named('compileJava') {
             options.javaModuleVersion = project.provider { project.version }

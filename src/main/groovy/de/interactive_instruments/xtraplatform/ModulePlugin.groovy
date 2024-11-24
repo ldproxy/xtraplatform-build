@@ -1,5 +1,6 @@
 package de.interactive_instruments.xtraplatform
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.spotbugs.snom.SpotBugsTask
 import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
 import de.interactive_instruments.xtraplatform.pmd.SarifForGithub
@@ -12,6 +13,7 @@ import org.gradle.api.Task
 import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependencyBundle
+import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.artifacts.VersionConstraint
 import org.gradle.api.attributes.Category
@@ -29,37 +31,17 @@ import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.stream.Collectors
+import java.util.stream.Stream
 import java.util.stream.StreamSupport
 
 class ModulePlugin implements Plugin<Project> {
 
-    void executeTask(Task task) {
-        task.taskDependencies.getDependencies(task).each {
-            subTask -> executeTask(subTask)
-        }
-        if (task.path.startsWith(":xtraplatform-build:")) {
-            println "BREAK"
-            return
-        }
-        println task.path
-        task.actions.each {
-            println "  " + it
-            if (it != null && task != null) {
-                try {
-                    it.execute(task)
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    void executeTask(TaskProvider<Task> task) {
-        task.configure({ executeTask(it) })
-    }
-
     @Override
     void apply(Project project) {
+        if (project.logger.isInfoEnabled()) {
+            project.logger.info("Applying ModulePlugin {} to {}", ApplicationPlugin.getVersion(project), project.name)
+        }
+
         ModuleInfoExtension moduleInfo = project.moduleInfo
 
         def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
@@ -91,15 +73,6 @@ class ModulePlugin implements Plugin<Project> {
                 setupModuleInfo(project, moduleInfo, true)
 
                 setupEmbedding(project, moduleInfo)
-
-                //TODO: fix TODO in line 235
-                /*if (System.getProperty("idea.sync.active") == "true") {
-                    println "SYNC"
-                    def task = project.tasks.findByPath("embedTpl")
-                    if (task != null) {
-                        executeTask(task)
-                    }
-                }*/
             }
         }
     }
@@ -119,6 +92,7 @@ class ModulePlugin implements Plugin<Project> {
         project.configurations.embeddedFlatExport.setTransitive(false)
         project.configurations.embeddedImport.setTransitive(true)
 
+        //project.configurations.api.extendsFrom(project.configurations.embeddedExport, project.configurations.embeddedFlatExport)
         project.configurations.compileOnly.extendsFrom(project.configurations.provided)
         project.configurations.testImplementation.extendsFrom(project.configurations.provided)
         project.configurations.testFixturesImplementation.extendsFrom(project.configurations.provided)
@@ -137,74 +111,8 @@ class ModulePlugin implements Plugin<Project> {
             println "${moduleInfo.name} " + deps
         }*/
 
-        def embeddedClassesDir = new File(project.buildDir, 'classes/java/tpl')
-        def embeddedResourcesDir = new File(project.buildDir, 'generated/sources/annotationProcessor/resources/tpl')
-        File generatedSourcesDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/tpl')
-
-        project.tasks.register('embedClasses', Copy) {
-            from {
-                project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            from {
-                project.configurations.embeddedExport.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            from {
-                project.configurations.embeddedFlat.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            from {
-                project.configurations.embeddedFlatExport.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            include '**/*.class'
-            exclude('**/module-info.class')
-            into embeddedClassesDir
-            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        }
-
-        project.tasks.register('embedResources', Copy) {
-            from {
-                project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            from {
-                project.configurations.embeddedExport.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            from {
-                project.configurations.embeddedFlat.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            from {
-                project.configurations.embeddedFlatExport.collect { it.isDirectory() ? it : project.zipTree(it) }
-            }
-            exclude '**/*.class'
-            exclude('META-INF/MANIFEST.MF', 'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', "META-INF/services/*")
-            into embeddedResourcesDir
-            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            finalizedBy project.tasks.named('embedServices')
-        }
-
-        project.tasks.register('embedServices') {
-            inputs.files(project.configurations.embedded)
-            inputs.files(project.configurations.embeddedExport)
-            inputs.files(project.configurations.embeddedFlat)
-            inputs.files(project.configurations.embeddedFlatExport)
-            outputs.dir(new File(embeddedResourcesDir, 'META-INF/services'))
-            doLast {
-                Map<String, Set<String>> services = new LinkedHashMap<>();
-                def dir = new File(embeddedResourcesDir, 'META-INF/services')
-                Files.createDirectories(dir.toPath())
-                (project.configurations.embedded + project.configurations.embeddedExport + project.configurations.embeddedFlat + project.configurations.embeddedFlatExport)
-                        .filter { it.isFile() }
-                        .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
-                        .collectMany { it.getFiles() }
-                        .forEach { File it3 ->
-                            services.putIfAbsent(it3.name, new LinkedHashSet<String>())
-                            it3.eachLine { if (!it.isEmpty() && !it.startsWith("#")) services.get(it3.name).add(it) }
-                        }
-                services.entrySet().forEach {
-                    def file = new File(dir, it.key)
-                    file.createNewFile()
-                    it.value.forEach { line -> file.append(line + "\n") }
-                }
-            }
-        }
+        File embeddedClassesDir = new File(project.buildDir, 'classes/java/tpl')
+        File generatedSourcesDir = new File(project.buildDir, 'generated/sources/xtraplatform/java/tpl')
 
         ModuleInfoExtension moduleInfoTpl = new ModuleInfoExtension(moduleInfo);
         moduleInfoTpl.name = "${moduleInfo.name}.tpl"
@@ -220,20 +128,16 @@ class ModulePlugin implements Plugin<Project> {
             moduleInfoTpl.requires.add(runtime + ".tpl")
         }
 
-        project.sourceSets {
-            tpl {
-                java {
-                    srcDirs(generatedSourcesDir)
-                }
-                resources {
-                    srcDirs(embeddedResourcesDir)
-                }
-            }
-        }
-        project.configurations.tplCompileOnly.extendsFrom(project.configurations.compileOnly)
-        project.tasks.compileTplJava.inputs.dir(generatedSourcesDir)
+        project.configurations.create('tpl')
+        project.configurations.tpl.extendsFrom(
+                project.configurations.compileOnly,
+                project.configurations.embedded,
+                project.configurations.embeddedExport,
+                project.configurations.embeddedFlat,
+                project.configurations.embeddedFlatExport
+        )
 
-        ClassGenerator.generateClassTask(project, 'moduleInfoTpl', '', 'module-info', {
+        ClassGenerator.generateClassesTask(project, 'moduleInfoTpl', {
             outputs.cacheIf { true }
             inputs.property('moduleInfo.name', moduleInfoTpl.name)
             inputs.property('moduleInfo.exports', moduleInfoTpl.exports)
@@ -241,30 +145,74 @@ class ModulePlugin implements Plugin<Project> {
             inputs.property('moduleInfo.provides', moduleInfoTpl.provides)
             inputs.property('moduleInfo.uses', moduleInfoTpl.uses)
             outputs.file(new File(generatedSourcesDir, 'module-info.java'))
-            dependsOn project.tasks.named('embedClasses')
-            dependsOn project.tasks.named('embedResources')
-            dependsOn project.tasks.named('embedServices')
-            finalizedBy project.tasks.named('compileTplJava')
-        }, generateModuleInfo(project, moduleInfoTpl, false, true), generatedSourcesDir)
+        }, [(new File(generatedSourcesDir, 'module-info.java')): generateModuleInfo(project, moduleInfoTpl, false, true)])
 
-        project.tasks.register('embedTpl', Jar) {
-            onlyIf { embeddedClassesDir.exists() && embeddedClassesDir.directory && !(embeddedClassesDir.list() as List).empty }
+        project.tasks.register('compileJavaTpl') {
             dependsOn project.tasks.named('moduleInfoTpl')
-            dependsOn project.tasks.named('embedResources')
-            dependsOn project.tasks.named('embedServices')
-            dependsOn project.tasks.named('compileTplJava')
-            finalizedBy project.tasks.named('moduleInfo')
-            archiveAppendix.set("tpl")
-            from embeddedClassesDir
-            from embeddedResourcesDir
+            dependsOn project.configurations.tpl
 
-            destinationDirectory = new File(project.buildDir, 'tmp')
+            inputs.file new File(generatedSourcesDir, 'module-info.java')
+            inputs.files project.configurations.tpl
+
+            outputs.cacheIf { true }
+            outputs.dir embeddedClassesDir
+
+            doFirst {
+                project.copy {
+                    from project.configurations.embedded.collect { it.isDirectory() ? it : project.zipTree(it) }
+                    from project.configurations.embeddedExport.collect { it.isDirectory() ? it : project.zipTree(it) }
+                    from project.configurations.embeddedFlat.collect { it.isDirectory() ? it : project.zipTree(it) }
+                    from project.configurations.embeddedFlatExport.collect { it.isDirectory() ? it : project.zipTree(it) }
+                    into embeddedClassesDir
+                    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                    exclude('**/module-info.class')
+                }
+            }
+
+            doLast {
+                ant.javac(
+                        destdir: embeddedClassesDir,
+                        srcdir: generatedSourcesDir,
+                        includeantruntime:false,
+                        failonerror: true,
+                        source: project.java.sourceCompatibility.getMajorVersion(),
+                        modulepath : project.files(project.configurations.tpl).files.join(":"),
+                        //verbose: true,
+                )  {
+                    include(name: 'module-info.java')
+                    // compilerarg(value: '-Xlint')
+                    compilerarg(value: "--module-version=${project.version}")
+                }
+            }
         }
-        project.tasks.named('embedClasses') {
-            finalizedBy project.tasks.named('embedTpl')
+
+        project.tasks.register('jarTpl', ShadowJar) {
+            dependsOn(project.tasks.named('compileJavaTpl'))
+            archiveBaseName.set("${project.name}-tpl")
+            from embeddedClassesDir //project.sourceSets.tpl.output
+            configurations = [
+                    project.configurations.embedded,
+                    project.configurations.embeddedExport,
+                    project.configurations.embeddedFlat,
+                    project.configurations.embeddedFlatExport
+            ]
+            mergeServiceFiles()
+            exclude {
+                it.isDirectory() && it.file != null && ((File)it.file).parentFile.absolutePath.endsWith("classes/java/tpl")
+            }
+            exclude {
+                it.name == 'module-info.class' && it.path != "module-info.class"
+            }
+            exclude('META-INF/MANIFEST.MF', 'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
+            exclude '**/PLACEHOLDER.class'
         }
-        project.dependencies.add('api', project.tasks.named('embedTpl').map { it.outputs.files })
-        def tplArtifact = project.artifacts.add('archives', project.tasks.named('embedTpl').map { it.outputs.files.singleFile })
+
+        project.rootProject.tasks.named("initTpl").configure {
+            dependsOn project.tasks.named('jarTpl')
+        }
+
+        project.dependencies.add('api', project.tasks.named('jarTpl').map { it.outputs.files })
+        def tplArtifact = project.artifacts.add('archives', project.tasks.named('jarTpl').map { it.outputs.files.singleFile })
 
         project.publishing.publications {
             tpl(MavenPublication) {
@@ -287,11 +235,6 @@ class ModulePlugin implements Plugin<Project> {
                 dependencyNode.appendNode('artifactId', "${project.name}-tpl")
                 dependencyNode.appendNode('version', project.version)
             }
-        }
-
-        project.tasks.named('processTplResources') {
-            dependsOn project.tasks.named('embedResources')
-            dependsOn project.tasks.named('embedServices')
         }
     }
 
@@ -336,11 +279,13 @@ class ModulePlugin implements Plugin<Project> {
             }
         }
 
-        File generatedSrcDir = new File(project.buildDir, 'generated/sources/annotationProcessor/java/mod')
+        File generatedSrcDir = new File(project.buildDir, 'generated/sources/xtraplatform/java/mod')
         project.sourceSets.main.java { srcDir generatedSrcDir }
-        //project.tasks.compileJava.inputs.dir(generatedSrcDir)
+        //TODO: needed for DocPlugin
+        project.sourceSets.main.java { srcDir new File(project.buildDir, 'generated/sources/annotationProcessor/java/main') }
+        //project.tasks.compileJava.inputs.dir(new File(project.buildDir, 'generated/sources/annotationProcessor/java/main'))
 
-        ClassGenerator.generateClassTask(project, 'moduleInfo', '', 'module-info', {
+        ClassGenerator.generateClassesTask(project, 'moduleInfo', {
             outputs.cacheIf { true }
             inputs.property('moduleInfo.name', moduleInfo.name)
             inputs.property('moduleInfo.exports', moduleInfo.exports)
@@ -348,7 +293,7 @@ class ModulePlugin implements Plugin<Project> {
             inputs.property('moduleInfo.provides', moduleInfo.provides)
             inputs.property('moduleInfo.uses', moduleInfo.uses)
             outputs.file(new File(generatedSrcDir, 'module-info.java'))
-        }, generateModuleInfo(project, moduleInfo, requiresOnly, false, isApp), generatedSrcDir)
+        }, [(new File(generatedSrcDir, 'module-info.java')): generateModuleInfo(project, moduleInfo, requiresOnly, false, isApp)])
 
         //TODO: is not recognized by dagger-auto
         /*if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
@@ -439,12 +384,12 @@ ${additions}
         }
     }
 
-    //TODO: configurable versions
     static void setupAnnotationProcessors(Project project) {
         if (project.name != LayerPlugin.XTRAPLATFORM_RUNTIME) {
             //TODO: get version from xtraplatform (or the other way around)
             findCatalogBundle(project, 'annotations').each {
                 project.dependencies.add('annotationProcessor', it)
+                project.logger.quiet("Adding dependency to annotationProcessor: {}", it)
             }
 
             project.tasks.named('compileJava') {
@@ -667,6 +612,10 @@ ${additions}
                 .getByType(VersionCatalogsExtension.class)
                 .find("xtraplatform")
 
+        project.logger.quiet("Catalogs: {}", project.rootProject
+                .extensions
+                .getByType(VersionCatalogsExtension.class).collect {it.name + it.versionAliases})
+
         if (catalog.isEmpty()) {
             throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
         }
@@ -678,6 +627,25 @@ ${additions}
         }
 
         return bundle.get().get()
+    }
+
+    static MinimalExternalModuleDependency findCatalogLibrary(Project project, String name) {
+        def catalog = project.rootProject
+                .extensions
+                .getByType(VersionCatalogsExtension.class)
+                .find("xtraplatform")
+
+        if (catalog.isEmpty()) {
+            throw new UnknownDomainObjectException("Version catalog 'xtraplatform' not found")
+        }
+
+        def library = catalog.get().findLibrary(name)
+
+        if (library.isEmpty() || !library.get().isPresent()) {
+            throw new UnknownDomainObjectException("Library '${name}' not found in catalog 'xtraplatform'")
+        }
+
+        return library.get().get()
     }
 
     static VersionConstraint findCatalogVersion(Project project, String name) {

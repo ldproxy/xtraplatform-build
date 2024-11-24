@@ -7,6 +7,7 @@ osdetector = "1.7.3"
 cyclonedx = "1.10.0"
 git-hooks = "2.0.14"
 spotless = "6.25.0"
+shadow = "8.3.5"
 
 
 [libraries]
@@ -18,6 +19,7 @@ osdetector = { module = "com.google.gradle:osdetector-gradle-plugin", version.re
 cyclonedx = { module = "org.cyclonedx:cyclonedx-gradle-plugin", version.ref = "cyclonedx" }
 git-hooks = { module = "org.danilopianini:gradle-pre-commit-git-hooks", version.ref = "git-hooks" }
 spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
+shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version.ref = "shadow" }
 
 
 [bundles]
@@ -29,5 +31,6 @@ all = [
   "osdetector",
   "cyclonedx",
   "git-hooks",
-  "spotless"
+  "spotless",
+  "shadow"
 ]

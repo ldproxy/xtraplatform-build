@@ -5,13 +5,14 @@ groovy = "4.0.24"
 byte-buddy = "1.15.10"
 objenesis = "1.4"
 dagger = "2.49"
-dagger-auto = "0.9.1"
+dagger-auto = "0.9.2-SNAPSHOT"
 immutables = "2.10.1"
 pmd = "6.55.0"
 
 [libraries]
 spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
 spock-reports = { module = "com.athaydes:spock-reports", version.ref = "spock-reports" }
+dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 dagger-auto-compiler = { module = "io.github.azahnen:dagger-auto-compiler", version.ref = "dagger-auto" }
 immutables = { module = "org.immutables:value", version.ref = "immutables" }
@@ -31,4 +32,4 @@ groovy-json = { module = "org.apache.groovy:groovy-json", version.ref = "groovy"
 transitive = ["spock-core", "groovy", "groovy-templates", "groovy-xml", "groovy-json", "byte-buddy", "objenesis"]
 nontransitive = ["spock-reports"]
 fixtures = ["spock-core"]
-annotations = ["dagger-compiler", "dagger-auto-compiler", "immutables"]
+annotations = ["dagger", "dagger-compiler", "dagger-auto-compiler", "immutables"]

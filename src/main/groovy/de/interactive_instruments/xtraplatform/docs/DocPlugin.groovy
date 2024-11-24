@@ -1,6 +1,7 @@
 package de.interactive_instruments.xtraplatform.docs
 
 import com.google.gson.Gson
+import de.interactive_instruments.xtraplatform.ApplicationPlugin
 import de.interactive_instruments.xtraplatform.Maintenance
 import de.interactive_instruments.xtraplatform.Maturity
 import org.gradle.api.Plugin
@@ -12,6 +13,10 @@ class DocPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        if (project.logger.isInfoEnabled()) {
+            project.logger.info("Applying DocPlugin {} to {}", ApplicationPlugin.getVersion(project), project.name)
+        }
+
         def docsTask = project.task("layerDocs", type: LayerDocsTask) {
             group = 'Documentation'
             description = 'Generates layer docs'

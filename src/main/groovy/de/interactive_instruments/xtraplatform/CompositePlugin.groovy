@@ -17,6 +17,10 @@ class CompositePlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        if (project.logger.isInfoEnabled()) {
+            project.logger.info("Applying CompositePlugin {} to {}", ApplicationPlugin.getVersion(project), project.name)
+        }
+
         project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
 
         project.with {
