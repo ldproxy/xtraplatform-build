@@ -14,9 +14,13 @@ spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
 spock-reports = { module = "com.athaydes:spock-reports", version.ref = "spock-reports" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
+dagger-auto = { module = "io.github.azahnen:dagger-auto", version.ref = "dagger-auto" }
 dagger-auto-compiler = { module = "io.github.azahnen:dagger-auto-compiler", version.ref = "dagger-auto" }
-immutables = { module = "org.immutables:value", version.ref = "immutables" }
+immutables-value = { module = "org.immutables:value", version.ref = "immutables" }
+#TODO: classifier cannot be specified in catalog
+immutables-encode = { module = "org.immutables:encode", version.ref = "immutables" }
 pmd = { module = "net.sourceforge.pmd:pmd", version.ref = "pmd" }
+
 
 # needed by spock
 groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
@@ -32,4 +36,5 @@ groovy-json = { module = "org.apache.groovy:groovy-json", version.ref = "groovy"
 transitive = ["spock-core", "groovy", "groovy-templates", "groovy-xml", "groovy-json", "byte-buddy", "objenesis"]
 nontransitive = ["spock-reports"]
 fixtures = ["spock-core"]
-annotations = ["dagger", "dagger-compiler", "dagger-auto-compiler", "immutables"]
+annotation-processors = ["dagger", "dagger-compiler", "dagger-auto", "dagger-auto-compiler", "immutables-value"]
+annotations = ["dagger", "dagger-auto", "immutables-value"]

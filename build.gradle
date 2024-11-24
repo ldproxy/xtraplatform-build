@@ -86,7 +86,7 @@ catalog {
             def libAliases = libz.getLibraryAliases().sort {a, b -> b.length() <=> a.length()}
             def libRefs = libz.findBundle(it).get().get().collect {dep ->
                 def name = dep.name.replaceAll("-", ".")
-                libAliases.find {alias -> name == alias } ?: libAliases.find {alias -> name.startsWith(alias) } ?: libAliases.find {alias -> dep.group.endsWith(alias) }
+                libAliases.find {alias -> name == alias } ?: libAliases.find {alias -> name.startsWith(alias) } ?: libAliases.find {alias -> dep.group.endsWith(alias) } ?: libAliases.find {alias -> alias.endsWith(name) }
             }
             bundle(it, libRefs)
         }
