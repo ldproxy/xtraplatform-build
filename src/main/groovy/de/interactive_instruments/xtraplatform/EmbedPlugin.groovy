@@ -271,25 +271,7 @@ class EmbedPlugin implements Plugin<Project> {
             publications {
                 'default'(MavenPublication) {
                     artifact project.tasks.jar
-
-                    pom.withXml { XmlProvider xml ->
-                        def node = xml.asNode()
-                        if (node.get('dependencies') != null && node.get('dependencies').size() > 0) {
-                            node.get('dependencies')?.replaceNode {}
-                        }
-                    }
-                }
-                sources(MavenPublication) {
                     artifact project.tasks.sourcesJar
-
-                    pom.withXml { XmlProvider xml ->
-                        def node = xml.asNode()
-                        if (node.get('dependencies') != null && node.get('dependencies').size() > 0) {
-                            node.get('dependencies')?.replaceNode {}
-                        }
-                    }
-                }
-                javadoc(MavenPublication) {
                     artifact project.tasks.javadocJar
 
                     pom.withXml { XmlProvider xml ->
