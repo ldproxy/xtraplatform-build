@@ -85,9 +85,10 @@ class LayerPlugin implements Plugin<Project> {
         project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
 
         project.tasks.register('initTpl') {
-            doLast {
+            dependsOn project.subprojects*.tasks*.matching({it.name == 'initTpl'})
+            /*doLast {
                 println "INIT ${project.name} ${project.version}"
-            }
+            }*/
         }
 
         project.with {
@@ -103,7 +104,7 @@ class LayerPlugin implements Plugin<Project> {
                 }
                 //withModuleXml(project.sourceSets.main) { println it }
                 taskTriggers {
-                    afterSync tasks.getByName("initTpl")
+                    afterSync tasks.named("initTpl")
                 }
             }
         }
@@ -143,6 +144,10 @@ class LayerPlugin implements Plugin<Project> {
 
     static void applyFormatting(Project project) {
         project.subprojects { Project subproject ->
+            if (subproject.name.endsWith("-tpl")) {
+                return
+            }
+
             subproject.plugins.apply('com.diffplug.spotless')
             subproject.with {
                 spotless {
@@ -242,6 +247,14 @@ class LayerPlugin implements Plugin<Project> {
         }
 
         project.subprojects { Project subproject ->
+            if (subproject.name.endsWith("-tpl")) {
+                subproject.afterEvaluate {
+                    subproject.group = project.group
+                    subproject.version = project.version
+                }
+
+                return
+            }
 
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('java-test-fixtures')

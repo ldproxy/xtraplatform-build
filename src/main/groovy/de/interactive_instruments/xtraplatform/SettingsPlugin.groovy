@@ -34,6 +34,35 @@ class SettingsPlugin implements Plugin<Settings> {
             }
         }
 
+        settings.gradle.settingsEvaluated {
+            settings.with {
+                def prefix = rootProject.name.contains('-')
+                        ? rootProject.name.substring(0, rootProject.name.indexOf('-') + 1)
+                        : "${rootProject.name}-"
+
+                LOGGER.info("Loading projects with prefix '${prefix}' for ${rootProject.name}")
+
+                rootDir.listFiles().each { file ->
+                    if (file.isDirectory() && file.name.startsWith(prefix)) {
+                        include file.name, "${file.name}:tpl"
+
+                        def tplDir = new File(rootDir, "${file.name}/build/tpl")
+                        try {
+                            tplDir.mkdirs()
+                        } catch (Exception e) {
+                            LOGGER.error("Failed to create directory for ${file.name}", e)
+                        }
+
+                        def tpl = project(":${file.name}:tpl")
+                        tpl.projectDir = tplDir
+                        tpl.name = "${file.name}-tpl"
+
+                        LOGGER.info("  - ${file.name}")
+                    }
+                }
+            }
+        }
+
         settings.with {
             pluginManagement {
                 repositories {

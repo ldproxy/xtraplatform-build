@@ -24,20 +24,27 @@ class DocPlugin implements Plugin<Project> {
         }
 
         project.sourceSets.main.resources.srcDir(new File(project.buildDir, "generated/sources/annotationProcessor/resources/docs"))
-        //project.sourceSets.main.output.dir(new File(project.buildDir, "generated/sources/annotationProcessor/resources/main"))
 
         project.tasks.named("processResources").configure {
             dependsOn docsTask
         }
 
-        project.subprojects { subProject ->
-            def modTask = subProject.task("moduleDocs", type: Javadoc) {
+        project.subprojects { Project subProject ->
+            if (subProject.name.endsWith("-tpl")) {
+                return
+            }
+
+            def modTask = subProject.tasks.register("moduleDocs", Javadoc) {
                 onlyIf { System.getProperty("taskIsRun") != "true" }
                 dependsOn subProject.tasks.named('compileJava')
                 group = 'Documentation'
                 description = 'Generates module docs'
-                source = subProject.sourceSets.main.allJava.filter { it.name != 'module-info.java' }
-                classpath = subProject.sourceSets.main.compileClasspath //+ subProject.files(new File(subProject.buildDir, 'classes/java/main'))
+
+                classpath = subProject.sourceSets.main.compileClasspath
+                source subProject.sourceSets.main.allJava
+                source subProject.tasks.compileJava.options.generatedSourceOutputDirectory
+                exclude { it.name == 'module-info.java' }
+
                 modularity.inferModulePath = false
                 destinationDir = new File(subProject.buildDir, 'tmp/module-docs')
                 options.with {
