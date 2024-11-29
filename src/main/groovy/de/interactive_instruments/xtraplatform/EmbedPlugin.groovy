@@ -17,6 +17,7 @@ import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
+import org.gradle.api.provider.Provider
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.compile.JavaCompile
@@ -104,7 +105,11 @@ class EmbedPlugin implements Plugin<Project> {
                 }
             }
 
+            register('provided') {
+                it.transitive = true
+            }
             register('compileOnly') {
+                it.extendsFrom provided
                 it.canBeDeclared = true
                 it.canBeConsumed = false
                 it.canBeResolved = false
@@ -134,8 +139,45 @@ class EmbedPlugin implements Plugin<Project> {
             project.dependencies.add('tplSources', "${it.group}:${it.name}:${it.version}:sources")
         }
 
+        // apply layer boms
+        /*def includedBuilds = CompositePlugin.getIncludedBuildNames(project.parent)
+        def boms = []
+
+        project.parent.parent.configurations.layers.dependencies.collect().each {
+            def isIncludedBuild = includedBuilds.contains(it.name)
+            if (!isIncludedBuild) {
+                def bom = [group: it.group, name: "${it.name}", version: it.version]
+                boms.add(bom)
+                println "BOM ${bom}"
+
+                project.dependencies.add('provided', project.dependencies.enforcedPlatform(bom))
+            }
+        }*/
+
+        Map<String, Provider<MinimalExternalModuleDependency>> catalogLibs = project.rootProject.extensions
+                .getByType(VersionCatalogsExtension)
+                .collectEntries() {catalog -> catalog.getLibraryAliases()
+                        .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
+
         project.parent.configurations.provided.dependencies.each {
-            project.dependencies.add('compileOnly', it)
+            if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
+                /*def cat = ((DefaultExternalModuleDependency) it).attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
+                boolean enforce = false
+                if (cat != null && cat.name == Category.ENFORCED_PLATFORM) {
+                    enforce = true
+                }
+                //if (boms.find {bom -> bom.group == it.group && bom.name == it.name && bom.version == it.version} == null) {
+                println "PROVIDED ${it} ${enforce}"
+                if (enforce) {
+                    project.dependencies.add('provided', project.dependencies.enforcedPlatform([group: it.group, name: it.name, version: it.version]))
+                } else {
+                    project.dependencies.add('provided', [group: it.group, name: it.name])
+                }*/
+                //}
+                project.dependencies.add('provided', catalogLibs.get(it.name))
+            } else {
+                project.dependencies.add('provided', it)
+            }
         }
 
         File embeddedClassesDir = new File(project.parent.buildDir, 'tpl/classes/java/main')

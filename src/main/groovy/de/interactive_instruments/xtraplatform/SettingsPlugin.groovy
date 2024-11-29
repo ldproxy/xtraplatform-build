@@ -22,6 +22,8 @@ class SettingsPlugin implements Plugin<Settings> {
         def version = getVersion(settings)
         LOGGER.info("Applying SettingsPlugin ${version}")
 
+        settings.extensions.add("xtraplatform", XtraplatformExtension)
+
         settings.gradle.beforeProject { project ->
             if (project.rootProject != project) {
                 return
@@ -59,6 +61,19 @@ class SettingsPlugin implements Plugin<Settings> {
 
                         LOGGER.info("  - ${file.name}")
                     }
+                }
+
+                extensions.xtraplatform.allLayers.each { layer ->
+                    dependencyResolutionManagement.versionCatalogs.create("${layer.name.replaceAll('-', '')}") {
+                        from(layer)
+                    }
+                }
+
+                gradle.beforeProject { project ->
+                    if (project.rootProject != project) {
+                        return
+                    }
+                    project.extensions.add("xtraplatformLayers", extensions.xtraplatform)
                 }
             }
         }

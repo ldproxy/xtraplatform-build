@@ -3,6 +3,7 @@ package de.interactive_instruments.xtraplatform
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileCopyDetails
 import org.gradle.api.publish.maven.MavenPublication
@@ -36,6 +37,7 @@ class LayerPlugin implements Plugin<Project> {
 
         project.plugins.apply("java") // needed for platform constraints
         project.plugins.apply("maven-publish")
+        project.plugins.apply('version-catalog')
         project.plugins.apply('com.google.osdetector')
         project.plugins.apply('org.cyclonedx.bom')
 
@@ -195,6 +197,15 @@ class LayerPlugin implements Plugin<Project> {
     }
 
     void addFeatureModules(Project project, includedBuilds) {
+        project.subprojects.each {
+            project.dependencies.add('modules', it)
+        }
+
+        //println project.rootProject.extensions.xtraplatformLayers.allLayers
+        project.rootProject.extensions.xtraplatformLayers.allLayers.each {
+            project.dependencies.add('layers', it)
+        }
+
         project.afterEvaluate {
             //println "INC " + includedBuilds
             project.configurations.layers.resolvedConfiguration.firstLevelModuleDependencies.collect().each {
@@ -202,10 +213,10 @@ class LayerPlugin implements Plugin<Project> {
 
                 if (!isIncludedBuild) {
                     //println "add bom " + it.moduleName + " to " + project.name
-                    def bom = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
+                    /*def bom = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
 
                     project.dependencies.add('layerModules', project.dependencies.enforcedPlatform(bom))
-
+                    */
                     //println "add modules " + it.moduleName + "-modules to " + project.name
                     def modules = [group: it.moduleGroup, name: "${it.moduleName}-modules", version: it.moduleVersion]
 
@@ -367,9 +378,9 @@ class LayerPlugin implements Plugin<Project> {
                         }
                     }
                 }
-                subproject.tasks.withType(GenerateModuleMetadata).configureEach {
+                /*subproject.tasks.withType(GenerateModuleMetadata).configureEach {
                     suppressedValidationErrors.add('enforced-platform')
-                }
+                }*/
 
                 subproject.dependencies.add('compileOnly', [group: 'de.interactive_instruments', name: 'xtraplatform-build', version: ApplicationPlugin.getVersion(project)], {
                     transitive = false
@@ -394,6 +405,19 @@ class LayerPlugin implements Plugin<Project> {
 
     void addPublication(Project project) {
         project.afterEvaluate {
+            project.catalog {
+                versionCatalog {
+                    version(project.name, project.version)
+
+                    project.subprojects.each { subproject ->
+                        if (subproject.name.endsWith("-tpl")) {
+                            return
+                        }
+                        library(subproject.name, subproject.group, subproject.name).versionRef(project.name)
+                    }
+                }
+            }
+
             project.extensions.publishing.with {
                 repositories {
                     maven {
@@ -409,7 +433,8 @@ class LayerPlugin implements Plugin<Project> {
                 }
                 publications {
                     'default'(MavenPublication) {
-                        pom.withXml {
+                        from project.components.versionCatalog
+                        /*pom.withXml {
                             def dependencyManagementNode = asNode().appendNode('dependencyManagement').appendNode('dependencies')
 
                             project.configurations.modules.dependencies.each {
@@ -419,8 +444,12 @@ class LayerPlugin implements Plugin<Project> {
                                 dependencyNode.appendNode('version', it.version)
                                 //dependencyNode.appendNode('scope', 'compile')
                             }
-                        }
+                        }*/
                     }
+                    /*catalog(MavenPublication) {
+                        artifactId = "${project.name}-catalog"
+                        from project.components.versionCatalog
+                    }*/
                     modules(MavenPublication) {
                         artifactId "${project.name}-modules"
                         pom.withXml {
@@ -449,9 +478,9 @@ class LayerPlugin implements Plugin<Project> {
                     }
                 }
             }
-            project.tasks.withType(GenerateModuleMetadata).configureEach {
+            /*project.tasks.withType(GenerateModuleMetadata).configureEach {
                 suppressedValidationErrors.add('enforced-platform')
-            }
+            }*/
         }
     }
 }

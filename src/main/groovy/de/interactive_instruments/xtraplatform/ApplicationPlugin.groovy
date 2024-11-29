@@ -45,9 +45,9 @@ class ApplicationPlugin implements Plugin<Project> {
             def baseFound = false
             project.configurations.layers.dependencies.each {
                 if (it.name == LayerPlugin.XTRAPLATFORM_CORE) {
-                    if (!includedBuilds.contains(it.name)) {
+                    /*if (!includedBuilds.contains(it.name)) {
                         project.dependencies.add('app', project.dependencies.enforcedPlatform(it))
-                    }
+                    }*/
 
                     project.dependencies.add('app', "de.interactive_instruments:${LayerPlugin.XTRAPLATFORM_RUNTIME}")
                     project.dependencies.add('app', "de.interactive_instruments:${LayerPlugin.XTRAPLATFORM_BASE}")
