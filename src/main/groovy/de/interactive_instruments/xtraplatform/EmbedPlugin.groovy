@@ -126,6 +126,15 @@ class EmbedPlugin implements Plugin<Project> {
                 it.attributes {
                     it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category.class, Category.LIBRARY))
                     it.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.class, Bundling.EXTERNAL))
+                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage.class, Usage.JAVA_API))
+                    it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements.class, LibraryElements.JAR))
+                    it.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.class, TargetJvmEnvironment.STANDARD_JVM))
+                }
+            }
+            consumable('archives'){
+                it.attributes {
+                    it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category.class, Category.LIBRARY))
+                    it.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.class, Bundling.EXTERNAL))
                     it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage.class, Usage.JAVA_RUNTIME))
                     it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements.class, LibraryElements.JAR))
                     it.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.class, TargetJvmEnvironment.STANDARD_JVM))
@@ -306,6 +315,7 @@ class EmbedPlugin implements Plugin<Project> {
 
         project.artifacts {
             "default" project.tasks.jar
+            "archives" project.tasks.jar
             sourcesElements project.tasks.sourcesJar
         }
 
