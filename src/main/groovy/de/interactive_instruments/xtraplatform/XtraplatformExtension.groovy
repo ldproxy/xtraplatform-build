@@ -2,10 +2,15 @@ package de.interactive_instruments.xtraplatform
 
 class XtraplatformExtension {
 
+    private  boolean useMavenLocal = false
     private List<Object> layers = []
     private List<Object> nativeLayers = []
 
     XtraplatformExtension() {
+    }
+
+    void useMavenLocal() {
+        this.useMavenLocal = true
     }
 
     void layer(Object layer) {
@@ -13,6 +18,10 @@ class XtraplatformExtension {
     }
     void layerNative(Object layer) {
         this.nativeLayers.add(layer)
+    }
+
+    boolean isUseMavenLocal() {
+        return this.useMavenLocal
     }
 
     List<Object> getLayers() {

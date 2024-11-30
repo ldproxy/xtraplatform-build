@@ -69,6 +69,12 @@ class SettingsPlugin implements Plugin<Settings> {
                     }
                 }
 
+                if (extensions.xtraplatform.isUseMavenLocal()) {
+                    def ml = dependencyResolutionManagement.repositories.mavenLocal()
+                    dependencyResolutionManagement.repositories.remove(ml)
+                    dependencyResolutionManagement.repositories.add(0, ml)
+                }
+
                 gradle.beforeProject { project ->
                     if (project.rootProject != project) {
                         return
