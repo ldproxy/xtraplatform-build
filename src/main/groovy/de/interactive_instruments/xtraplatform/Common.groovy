@@ -14,10 +14,10 @@ class Common {
                     def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
                     def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
 
-                    url project.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                    url project.rootProject.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                     credentials {
-                        username project.findProperty('deployUser') ?: ''
-                        password project.findProperty('deployPassword') ?: ''
+                        username project.rootProject.findProperty('deployUser') ?: ''
+                        password project.rootProject.findProperty('deployPassword') ?: ''
                     }
                 }
             }
