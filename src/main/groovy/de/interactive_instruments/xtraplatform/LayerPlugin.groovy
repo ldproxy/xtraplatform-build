@@ -419,7 +419,7 @@ class LayerPlugin implements Plugin<Project> {
                 }
             }
 
-            Common.addPublishingRepos(project.extensions.publishing)
+            Common.addPublishingRepos(project)
 
             project.extensions.publishing.with {
                 publications {

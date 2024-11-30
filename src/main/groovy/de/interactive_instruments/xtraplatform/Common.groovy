@@ -5,7 +5,9 @@ import org.gradle.api.publish.PublishingExtension
 
 class Common {
 
-    static void addPublishingRepos(PublishingExtension publishing) {
+    static void addPublishingRepos(Project project) {
+        PublishingExtension publishing = project.extensions.publishing
+
         publishing.with {
             repositories {
                 maven {

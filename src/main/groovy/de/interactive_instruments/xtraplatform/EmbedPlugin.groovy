@@ -318,8 +318,8 @@ class EmbedPlugin implements Plugin<Project> {
             "archives" project.tasks.jar
             sourcesElements project.tasks.sourcesJar
         }
-        
-        Common.addPublishingRepos(project.extensions.publishing)
+
+        Common.addPublishingRepos(project)
 
         project.publishing {
             publications {
