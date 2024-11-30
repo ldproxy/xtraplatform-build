@@ -6,6 +6,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileCopyDetails
+import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
@@ -264,21 +265,6 @@ class LayerPlugin implements Plugin<Project> {
                     subproject.version = project.version
                 }
 
-                subproject.extensions.publishing.with {
-                    repositories {
-                        maven {
-                            def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
-                            def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
-
-                            url project.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-                            credentials {
-                                username project.findProperty('deployUser') ?: ''
-                                password project.findProperty('deployPassword') ?: ''
-                            }
-                        }
-                    }
-                }
-
                 return
             }
 
@@ -433,19 +419,9 @@ class LayerPlugin implements Plugin<Project> {
                 }
             }
 
-            project.extensions.publishing.with {
-                repositories {
-                    maven {
-                        def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
-                        def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+            Common.addPublishingRepos(project.extensions.publishing)
 
-                        url project.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-                        credentials {
-                            username project.findProperty('deployUser') ?: ''
-                            password project.findProperty('deployPassword') ?: ''
-                        }
-                    }
-                }
+            project.extensions.publishing.with {
                 publications {
                     'default'(MavenPublication) {
                         from project.components.versionCatalog
