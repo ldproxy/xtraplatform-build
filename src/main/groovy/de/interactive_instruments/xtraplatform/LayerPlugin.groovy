@@ -264,6 +264,21 @@ class LayerPlugin implements Plugin<Project> {
                     subproject.version = project.version
                 }
 
+                subproject.extensions.publishing.with {
+                    repositories {
+                        maven {
+                            def releasesRepoUrl = "https://dl.interactive-instruments.de/repository/maven-releases/"
+                            def snapshotsRepoUrl = "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+
+                            url project.version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                            credentials {
+                                username project.findProperty('deployUser') ?: ''
+                                password project.findProperty('deployPassword') ?: ''
+                            }
+                        }
+                    }
+                }
+
                 return
             }
 

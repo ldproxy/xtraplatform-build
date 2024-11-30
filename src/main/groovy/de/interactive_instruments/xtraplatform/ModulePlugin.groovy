@@ -64,7 +64,7 @@ class ModulePlugin implements Plugin<Project> {
                 .collectEntries() {catalog -> catalog.getLibraryAliases()
                         .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
 
-        println "CATALOG " + catalogLibs
+        //println "CATALOG " + catalogLibs
         List<Provider<MinimalExternalModuleDependency>> fromCatalog = []
 
         project.configurations.provided.dependencies.each {
