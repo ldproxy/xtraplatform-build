@@ -107,6 +107,9 @@ class EmbedPlugin implements Plugin<Project> {
 
             register('provided') {
                 it.transitive = true
+                it.canBeDeclared = true
+                it.canBeConsumed = false
+                it.canBeResolved = false
             }
             register('compileOnly') {
                 it.extendsFrom provided
@@ -122,7 +125,7 @@ class EmbedPlugin implements Plugin<Project> {
                 }
             }
 
-            consumable('default'){
+            consumable('apiElements') {
                 it.attributes {
                     it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category.class, Category.LIBRARY))
                     it.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.class, Bundling.EXTERNAL))
@@ -131,7 +134,7 @@ class EmbedPlugin implements Plugin<Project> {
                     it.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, project.objects.named(TargetJvmEnvironment.class, TargetJvmEnvironment.STANDARD_JVM))
                 }
             }
-            consumable('archives'){
+            consumable('runtimeElements') {
                 it.attributes {
                     it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category.class, Category.LIBRARY))
                     it.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling.class, Bundling.EXTERNAL))
@@ -144,8 +147,10 @@ class EmbedPlugin implements Plugin<Project> {
 
         deps.each {
             project.dependencies.add('tpl', it)
-            project.dependencies.add('tplJavadoc', "${it.group}:${it.name}:${it.version}:javadoc")
-            project.dependencies.add('tplSources', "${it.group}:${it.name}:${it.version}:sources")
+            if (it instanceof DefaultExternalModuleDependency) {
+                project.dependencies.add('tplJavadoc', "${it.group}:${it.name}:${it.version}:javadoc")
+                project.dependencies.add('tplSources', "${it.group}:${it.name}:${it.version}:sources")
+            }
         }
 
         // apply layer boms
@@ -163,13 +168,13 @@ class EmbedPlugin implements Plugin<Project> {
             }
         }*/
 
-        Map<String, Provider<MinimalExternalModuleDependency>> catalogLibs = project.rootProject.extensions
+        /*Map<String, Provider<MinimalExternalModuleDependency>> catalogLibs = project.rootProject.extensions
                 .getByType(VersionCatalogsExtension)
                 .collectEntries() {catalog -> catalog.getLibraryAliases()
                         .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
-
-        project.parent.configurations.provided.dependencies.each {
-            if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
+*/
+        project.parent.configurations.provided2.dependencies.each {
+            //if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
                 /*def cat = ((DefaultExternalModuleDependency) it).attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
                 boolean enforce = false
                 if (cat != null && cat.name == Category.ENFORCED_PLATFORM) {
@@ -183,10 +188,10 @@ class EmbedPlugin implements Plugin<Project> {
                     project.dependencies.add('provided', [group: it.group, name: it.name])
                 }*/
                 //}
-                project.dependencies.add('provided', catalogLibs.get(it.name))
-            } else {
+                //project.dependencies.add('provided', catalogLibs.get(it.name))
+            //} else {
                 project.dependencies.add('provided', it)
-            }
+            //}
         }
 
         File embeddedClassesDir = new File(project.parent.buildDir, 'tpl/classes/java/main')
@@ -314,8 +319,8 @@ class EmbedPlugin implements Plugin<Project> {
         }, [(new File(generatedSourcesDir, 'module-info.java')): ModulePlugin.generateModuleInfo(project.parent, moduleInfoTpl, false, true)])
 
         project.artifacts {
-            "default" project.tasks.jar
-            "archives" project.tasks.jar
+            apiElements project.tasks.jar
+            runtimeElements project.tasks.jar
             sourcesElements project.tasks.sourcesJar
         }
 

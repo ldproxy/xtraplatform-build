@@ -82,12 +82,18 @@ class ModulePlugin implements Plugin<Project> {
                     project.dependencies.add('provided', [group: it.group, name: it.name])
                 }*/
                 //}
-                fromCatalog.add(catalogLibs.get(it.name))
+                //fromCatalog.add(catalogLibs.get(it.name))
+                Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
+                //println "PROVIDED ${lib.get()}"
+                project.dependencies.add('provided2', lib)
+            } else {
+                project.dependencies.add('provided2', it);
             }
         }
-        fromCatalog.each {
+        /*fromCatalog.each {
+            println "PROVIDED ${it.get()}"
             project.dependencies.add('provided', it)
-        }
+        }*/
 
         //setupConfigurations(project)
 
@@ -113,6 +119,7 @@ class ModulePlugin implements Plugin<Project> {
 
     static void setupConfigurations(Project project) {
         project.configurations.create('provided')
+        project.configurations.create('provided2')
         project.configurations.create('embedded')
         project.configurations.create('embeddedExport')
         project.configurations.create('embeddedFlat')
@@ -120,6 +127,7 @@ class ModulePlugin implements Plugin<Project> {
         project.configurations.create('embeddedImport')
 
         project.configurations.provided.setTransitive(true)
+        project.configurations.provided2.setTransitive(true)
         project.configurations.embedded.setTransitive(true)
         project.configurations.embeddedExport.setTransitive(true)
         project.configurations.embeddedFlat.setTransitive(false)
@@ -127,9 +135,9 @@ class ModulePlugin implements Plugin<Project> {
         project.configurations.embeddedImport.setTransitive(true)
 
         //project.configurations.api.extendsFrom(project.configurations.embeddedExport, project.configurations.embeddedFlatExport)
-        project.configurations.compileOnly.extendsFrom(project.configurations.provided)
-        project.configurations.testImplementation.extendsFrom(project.configurations.provided)
-        project.configurations.testFixturesImplementation.extendsFrom(project.configurations.provided)
+        project.configurations.compileOnly.extendsFrom(project.configurations.provided2)
+        project.configurations.testImplementation.extendsFrom(project.configurations.provided2)
+        project.configurations.testFixturesImplementation.extendsFrom(project.configurations.provided2)
     }
 
     static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly, boolean isApp = false) {
@@ -151,7 +159,7 @@ class ModulePlugin implements Plugin<Project> {
                     }
                 }
             }
-            project.configurations.provided.dependencies.each {
+            project.configurations.provided2.dependencies.each {
                 // exclude boms
                 /*if (it instanceof DefaultExternalModuleDependency) {
                     def cat = ((DefaultExternalModuleDependency) it).attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
