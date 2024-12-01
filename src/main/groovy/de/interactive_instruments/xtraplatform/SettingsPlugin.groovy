@@ -63,7 +63,11 @@ class SettingsPlugin implements Plugin<Settings> {
                     }
                 }
 
-                extensions.xtraplatform.allLayers.each { layer ->
+                def isDocker = it.getProviders().gradleProperty('runInDocker').getOrElse("") == 'true'
+                def os = XtraplatformExtension.detectOs().replace('osx', isDocker ? 'linux' : 'osx')
+                def platform = it.getProviders().gradleProperty('platform').getOrElse(os)
+
+                extensions.xtraplatform.getAllLayers(platform).each { layer ->
                     dependencyResolutionManagement.versionCatalogs.create("${layer.name.replaceAll('-', '')}") {
                         from(layer)
                     }

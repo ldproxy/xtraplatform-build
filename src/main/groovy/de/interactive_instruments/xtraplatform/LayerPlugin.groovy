@@ -203,7 +203,8 @@ class LayerPlugin implements Plugin<Project> {
         }
 
         //println project.rootProject.extensions.xtraplatformLayers.allLayers
-        project.rootProject.extensions.xtraplatformLayers.allLayers.each {
+        project.rootProject.extensions.xtraplatformLayers.getAllLayers().each {
+            //println "LAYER " + it
             project.dependencies.add('layers', it)
         }
 

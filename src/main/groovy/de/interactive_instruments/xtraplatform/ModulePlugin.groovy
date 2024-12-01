@@ -47,53 +47,21 @@ class ModulePlugin implements Plugin<Project> {
 
         def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
 
-        // apply layer boms
-        //project.parent.configurations.layers.incoming.beforeResolve {
-        /*project.parent.configurations.layers.dependencies.collect().each {
-            def isIncludedBuild = includedBuilds.contains(it.name)
-            if (!isIncludedBuild) {
-                def bom = [group: it.group, name: "${it.name}", version: it.version]
-
-                project.dependencies.add('provided', project.dependencies.enforcedPlatform(bom))
-            }
-        }*/
-        //}
-
         Map<String, Provider<MinimalExternalModuleDependency>> catalogLibs = project.rootProject.extensions
                 .getByType(VersionCatalogsExtension)
                 .collectEntries() {catalog -> catalog.getLibraryAliases()
                         .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
 
-        //println "CATALOG " + catalogLibs
-        List<Provider<MinimalExternalModuleDependency>> fromCatalog = []
+       List<Provider<MinimalExternalModuleDependency>> fromCatalog = []
 
         project.configurations.provided.dependencies.each {
             if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
-                /*def cat = ((DefaultExternalModuleDependency) it).attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
-                boolean enforce = false
-                if (cat != null && cat.name == Category.ENFORCED_PLATFORM) {
-                    enforce = true
-                }
-                //if (boms.find {bom -> bom.group == it.group && bom.name == it.name && bom.version == it.version} == null) {
-                println "PROVIDED ${it} ${enforce}"
-                if (enforce) {
-                    project.dependencies.add('provided', project.dependencies.enforcedPlatform([group: it.group, name: it.name, version: it.version]))
-                } else {
-                    project.dependencies.add('provided', [group: it.group, name: it.name])
-                }*/
-                //}
-                //fromCatalog.add(catalogLibs.get(it.name))
                 Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
-                //println "PROVIDED ${lib.get()}"
                 project.dependencies.add('provided2', lib)
             } else {
                 project.dependencies.add('provided2', it);
             }
         }
-        /*fromCatalog.each {
-            println "PROVIDED ${it.get()}"
-            project.dependencies.add('provided', it)
-        }*/
 
         //setupConfigurations(project)
 
@@ -160,14 +128,6 @@ class ModulePlugin implements Plugin<Project> {
                 }
             }
             project.configurations.provided2.dependencies.each {
-                // exclude boms
-                /*if (it instanceof DefaultExternalModuleDependency) {
-                    def cat = ((DefaultExternalModuleDependency) it).attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
-                    if (cat != null && cat.name == Category.ENFORCED_PLATFORM) {
-                        return
-                    }
-                }*/
-
                 moduleInfo.requires.add(getModuleName(it.group, it.name))
             }
         } else {

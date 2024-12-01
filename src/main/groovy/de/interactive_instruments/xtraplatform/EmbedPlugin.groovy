@@ -153,45 +153,8 @@ class EmbedPlugin implements Plugin<Project> {
             }
         }
 
-        // apply layer boms
-        /*def includedBuilds = CompositePlugin.getIncludedBuildNames(project.parent)
-        def boms = []
-
-        project.parent.parent.configurations.layers.dependencies.collect().each {
-            def isIncludedBuild = includedBuilds.contains(it.name)
-            if (!isIncludedBuild) {
-                def bom = [group: it.group, name: "${it.name}", version: it.version]
-                boms.add(bom)
-                println "BOM ${bom}"
-
-                project.dependencies.add('provided', project.dependencies.enforcedPlatform(bom))
-            }
-        }*/
-
-        /*Map<String, Provider<MinimalExternalModuleDependency>> catalogLibs = project.rootProject.extensions
-                .getByType(VersionCatalogsExtension)
-                .collectEntries() {catalog -> catalog.getLibraryAliases()
-                        .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
-*/
         project.parent.configurations.provided2.dependencies.each {
-            //if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
-                /*def cat = ((DefaultExternalModuleDependency) it).attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)
-                boolean enforce = false
-                if (cat != null && cat.name == Category.ENFORCED_PLATFORM) {
-                    enforce = true
-                }
-                //if (boms.find {bom -> bom.group == it.group && bom.name == it.name && bom.version == it.version} == null) {
-                println "PROVIDED ${it} ${enforce}"
-                if (enforce) {
-                    project.dependencies.add('provided', project.dependencies.enforcedPlatform([group: it.group, name: it.name, version: it.version]))
-                } else {
-                    project.dependencies.add('provided', [group: it.group, name: it.name])
-                }*/
-                //}
-                //project.dependencies.add('provided', catalogLibs.get(it.name))
-            //} else {
-                project.dependencies.add('provided', it)
-            //}
+            project.dependencies.add('provided', it)
         }
 
         File embeddedClassesDir = new File(project.parent.buildDir, 'tpl/classes/java/main')
