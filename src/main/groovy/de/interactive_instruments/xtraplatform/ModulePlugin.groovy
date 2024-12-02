@@ -52,17 +52,6 @@ class ModulePlugin implements Plugin<Project> {
                 .collectEntries() {catalog -> catalog.getLibraryAliases()
                         .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
 
-       List<Provider<MinimalExternalModuleDependency>> fromCatalog = []
-
-        project.configurations.provided.dependencies.each {
-            if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
-                Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
-                project.dependencies.add('provided2', lib)
-            } else {
-                project.dependencies.add('provided2', it);
-            }
-        }
-
         //setupConfigurations(project)
 
         setupAnnotationProcessors(project)
@@ -72,6 +61,29 @@ class ModulePlugin implements Plugin<Project> {
         setupCodeQuality(project, includedBuilds.contains(project.parent.name))
 
         project.afterEvaluate {
+            project.configurations.provided.dependencies.each {
+                if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
+                    Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
+
+                    project.dependencies.add('provided2', lib)
+                    //project.dependencies.add('testProvided', lib)
+                } else {
+                    project.dependencies.add('provided2', it);
+                    //project.dependencies.add('testProvided', it)
+                }
+            }
+            project.configurations.testProvided.dependencies.each {
+                if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
+                    Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
+
+                    project.dependencies.add('testFixturesImplementation', lib)
+                    project.dependencies.add('testImplementation', lib)
+                } else {
+                    project.dependencies.add('testFixturesImplementation', it);
+                    project.dependencies.add('testImplementation', it)
+                }
+            }
+
             if (moduleInfo.enabled) {
                 moduleInfo.name = getModuleName(project.group as String, project.name)
 
@@ -88,6 +100,7 @@ class ModulePlugin implements Plugin<Project> {
     static void setupConfigurations(Project project) {
         project.configurations.create('provided')
         project.configurations.create('provided2')
+        project.configurations.create('testProvided')
         project.configurations.create('embedded')
         project.configurations.create('embeddedExport')
         project.configurations.create('embeddedFlat')
@@ -96,6 +109,7 @@ class ModulePlugin implements Plugin<Project> {
 
         project.configurations.provided.setTransitive(true)
         project.configurations.provided2.setTransitive(true)
+        project.configurations.testProvided.setTransitive(true)
         project.configurations.embedded.setTransitive(true)
         project.configurations.embeddedExport.setTransitive(true)
         project.configurations.embeddedFlat.setTransitive(false)
@@ -127,7 +141,7 @@ class ModulePlugin implements Plugin<Project> {
                     }
                 }
             }
-            project.configurations.provided2.dependencies.each {
+            project.configurations.provided.dependencies.each {
                 moduleInfo.requires.add(getModuleName(it.group, it.name))
             }
         } else {
