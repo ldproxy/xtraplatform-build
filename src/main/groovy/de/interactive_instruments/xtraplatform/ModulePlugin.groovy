@@ -75,6 +75,9 @@ class ModulePlugin implements Plugin<Project> {
             project.configurations.testProvided.dependencies.each {
                 if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
                     Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
+                    if (((DefaultExternalModuleDependency)it).requestedCapabilities.any { it.name.endsWith('test-fixtures') }) {
+                        lib = project.dependencies.testFixtures(lib)
+                    }
 
                     project.dependencies.add('testFixturesImplementation', lib)
                     project.dependencies.add('testImplementation', lib)
