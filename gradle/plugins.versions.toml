@@ -34,5 +34,6 @@ all = [
   "cyclonedx",
   "git-hooks",
   "spotless",
-  "shadow"
+  "shadow",
+  "jlink"
 ]
