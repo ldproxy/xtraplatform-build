@@ -46,7 +46,8 @@ class ApplicationPlugin implements Plugin<Project> {
                 if (project.logger.isInfoEnabled()) {
                     project.logger.info("Enabling jlink for application {}", project.name)
                 }
-                project.plugins.apply("com.ryandens.jlink-application")
+                //project.plugins.apply("com.ryandens.jlink-application")
+                project.plugins.apply("org.beryx.jlink")
             }
 
             def baseFound = false
