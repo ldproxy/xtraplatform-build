@@ -28,7 +28,7 @@ class ApplicationPlugin implements Plugin<Project> {
         project.plugins.apply(LayerPlugin.class)
         project.plugins.apply("application")
 
-        def appExtension = project.extensions.create('app', ApplicationExtension, project)
+        def appExtension = project.extensions.create('xtraplatformApp', ApplicationExtension, project)
         ModuleInfoExtension moduleInfo = project.extensions.create('moduleInfo', ModuleInfoExtension)
 
         //suppress java 9+ illegal access warnings for felix, jackson afterburner, geotools/hsqldb, mustache
@@ -42,6 +42,13 @@ class ApplicationPlugin implements Plugin<Project> {
         def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
 
         project.afterEvaluate {
+            if (appExtension.jlink) {
+                if (project.logger.isInfoEnabled()) {
+                    project.logger.info("Enabling jlink for application {}", project.name)
+                }
+                project.plugins.apply("com.ryandens.jlink-application")
+            }
+
             def baseFound = false
             project.configurations.layers.dependencies.each {
                 if (it.name == LayerPlugin.XTRAPLATFORM_CORE) {

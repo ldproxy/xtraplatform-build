@@ -8,6 +8,7 @@ class ApplicationExtension {
     String name;
     String version;
     List<String> additionalBaseConfigs;
+    boolean jlink = false;
 
     ApplicationExtension(Project project) {
         this.project = project;
