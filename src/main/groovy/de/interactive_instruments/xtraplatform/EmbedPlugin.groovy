@@ -20,6 +20,7 @@ import org.gradle.api.plugins.quality.Pmd
 import org.gradle.api.provider.Provider
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 
@@ -286,6 +287,12 @@ class EmbedPlugin implements Plugin<Project> {
             runtimeElements project.tasks.jar
             sourcesElements project.tasks.sourcesJar
         }
+
+        project.tasks.register('clean', Delete) {
+            delete project.buildDir
+        }
+
+        project.tasks.register('check') {}
 
         Common.addPublishingRepos(project)
 

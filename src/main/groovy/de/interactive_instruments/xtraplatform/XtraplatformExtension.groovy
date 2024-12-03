@@ -5,6 +5,8 @@ class XtraplatformExtension {
     private  boolean useMavenLocal = false
     private List<Object> layers = []
     private List<Object> nativeLayers = []
+    private List<Object> includedLayers = []
+    private List<String> excludedModules = []
 
     XtraplatformExtension() {
     }
@@ -13,15 +15,28 @@ class XtraplatformExtension {
         this.useMavenLocal = true
     }
 
+    void exclude(String module) {
+        this.excludedModules.add(module)
+    }
+
     void layer(Object layer) {
         this.layers.add(layer)
     }
+
     void layerNative(Object layer) {
         this.nativeLayers.add(layer)
     }
 
+    void layerInclude(Object layer) {
+        this.includedLayers.add(layer)
+    }
+
     boolean isUseMavenLocal() {
         return this.useMavenLocal
+    }
+
+    List<String> getExcludedModules() {
+        return this.excludedModules
     }
 
     List<Object> getLayers() {
@@ -32,11 +47,15 @@ class XtraplatformExtension {
         return this.nativeLayers.collect { parseLayer(it, platform) }
     }
 
-    List<Object> getAllLayers() {
-        return this.getLayers() + this.getNativeLayers()
+    List<Object> getIncludedLayers() {
+        return this.includedLayers.collect { parseLayer(it) }
     }
 
-    List<Object> getAllLayers(String platform) {
+    List<Object> getAllLayers() {
+        return this.getLayers() + this.getNativeLayers() + this.getIncludedLayers().collect { [group: it.group, name: it.name, version: it.version] }
+    }
+
+    List<Object> getExtLayers(String platform) {
         return this.getLayers() + this.getNativeLayers(platform)
     }
 
@@ -50,6 +69,9 @@ class XtraplatformExtension {
            parsed.version = parsed.version.endsWith('-SNAPSHOT')
                    ? parsed.version.replace('-SNAPSHOT', "-${platform}-SNAPSHOT")
                    : parsed.version + "-${platform}"
+        }
+        if (!parsed.version) {
+            parsed.version = '+'
         }
         return parsed
     }

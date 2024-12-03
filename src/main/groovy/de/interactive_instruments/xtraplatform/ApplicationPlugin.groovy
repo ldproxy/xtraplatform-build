@@ -100,9 +100,11 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }*/
 
+        ModulePlugin.setupAnnotationProcessors(project)
+
         //TODO: get version from xtraplatform (or the other way around)
-        project.dependencies.add('compileOnly', ModulePlugin.findCatalogLibrary(project, "dagger"), { transitive = false })
-        project.dependencies.add('annotationProcessor', ModulePlugin.findCatalogLibrary(project, "dagger-compiler"))
+        //project.dependencies.add('compileOnly', ModulePlugin.findCatalogLibrary(project, "dagger"), { transitive = false })
+        //project.dependencies.add('annotationProcessor', ModulePlugin.findCatalogLibrary(project, "dagger-compiler"))
 
         project.tasks.named('compileJava') {
             options.javaModuleVersion = project.provider { project.version }
@@ -420,11 +422,11 @@ ENV XTRAPLATFORM_ENV CONTAINER
 
         for (Maturity minMaturity : Maturity.values()) {
             for (Maintenance minMaintenance : Maintenance.values()) {
-                def moduleNames = []
+                Set<String> moduleNames = []
                 modules.eachWithIndex { module, index ->
                     def mods = module
                             .collectMany({ ResolvedDependency it -> it.moduleArtifacts })
-                            .findAll({ ResolvedArtifact it -> !(it.name in excludeNames) })
+                            .findAll({ ResolvedArtifact it -> !(it.name in excludeNames) && !it.name.endsWith("-tpl") })
                             .collect({ ResolvedArtifact it ->
                                 Manifest manifest = readManifest(project, it.file)
 

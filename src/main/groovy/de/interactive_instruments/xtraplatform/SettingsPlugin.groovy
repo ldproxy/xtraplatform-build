@@ -3,7 +3,9 @@ package de.interactive_instruments.xtraplatform
 import org.gradle.api.Plugin
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.initialization.ProjectDescriptor
 import org.gradle.api.initialization.Settings
+import org.gradle.api.initialization.dsl.VersionCatalogBuilder
 import org.gradle.api.initialization.resolve.RepositoriesMode
 import org.gradle.api.logging.Logging
 
@@ -16,13 +18,13 @@ class SettingsPlugin implements Plugin<Settings> {
 
     @Override
     void apply(Settings settings) {
-
         settings.plugins.apply('org.danilopianini.gradle-pre-commit-git-hooks')
 
         def version = getVersion(settings)
         LOGGER.info("Applying SettingsPlugin ${version}")
 
         settings.extensions.add("xtraplatform", XtraplatformExtension)
+        XtraplatformExtension xtraplatformExt = settings.extensions.getByType(XtraplatformExtension)
 
         settings.gradle.beforeProject { project ->
             if (project.rootProject != project) {
@@ -38,42 +40,51 @@ class SettingsPlugin implements Plugin<Settings> {
 
         settings.gradle.settingsEvaluated {
             settings.with {
-                def prefix = rootProject.name.contains('-')
-                        ? rootProject.name.substring(0, rootProject.name.indexOf('-') + 1)
-                        : "${rootProject.name}-"
-
-                LOGGER.info("Loading projects with prefix '${prefix}' for ${rootProject.name}")
-
-                rootDir.listFiles().each { file ->
-                    if (file.isDirectory() && file.name.startsWith(prefix)) {
-                        include file.name, "${file.name}:tpl"
-
-                        def tplDir = new File(rootDir, "${file.name}/build/tpl")
-                        try {
-                            tplDir.mkdirs()
-                        } catch (Exception e) {
-                            LOGGER.error("Failed to create directory for ${file.name}", e)
-                        }
-
-                        def tpl = project(":${file.name}:tpl")
-                        tpl.projectDir = tplDir
-                        tpl.name = "${file.name}-tpl"
-
-                        LOGGER.info("  - ${file.name}")
+                subprojects(rootProject, rootDir, true) { String name ->
+                    if (xtraplatformExt.getExcludedModules().contains(name)) {
+                        include name
+                        return
                     }
+
+                    include name, "${name}:tpl"
+
+                    def tplDir = new File(rootDir, "${name}/build/tpl")
+                    try {
+                        tplDir.mkdirs()
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to create directory for ${name}", e)
+                    }
+
+                    def tpl = project(":${name}:tpl")
+                    tpl.projectDir = tplDir
+                    tpl.name = "${name}-tpl"
+
+                    return
                 }
 
                 def isDocker = it.getProviders().gradleProperty('runInDocker').getOrElse("") == 'true'
                 def os = XtraplatformExtension.detectOs().replace('osx', isDocker ? 'linux' : 'osx')
                 def platform = it.getProviders().gradleProperty('platform').getOrElse(os)
 
-                extensions.xtraplatform.getAllLayers(platform).each { layer ->
+                xtraplatformExt.getIncludedLayers().each { layer ->
+                    settings.includeBuild("${layer.path}${layer.name}")
+
+                    dependencyResolutionManagement.versionCatalogs.create("${layer.name.replaceAll('-', '')}") { VersionCatalogBuilder vc ->
+                        vc.version(layer.name, '+')
+
+                        subprojects(rootProject, rootDir, false) { String name ->
+                            vc.library(name, 'de.interactive_instruments', name).versionRef(layer.name)
+                        }
+                    }
+                }
+
+                xtraplatformExt.getExtLayers(platform).each { layer ->
                     dependencyResolutionManagement.versionCatalogs.create("${layer.name.replaceAll('-', '')}") {
                         from(layer)
                     }
                 }
 
-                if (extensions.xtraplatform.isUseMavenLocal()) {
+                if (xtraplatformExt.isUseMavenLocal()) {
                     def ml = dependencyResolutionManagement.repositories.mavenLocal()
                     dependencyResolutionManagement.repositories.remove(ml)
                     dependencyResolutionManagement.repositories.add(0, ml)
@@ -83,7 +94,7 @@ class SettingsPlugin implements Plugin<Settings> {
                     if (project.rootProject != project) {
                         return
                     }
-                    project.extensions.add("xtraplatformLayers", extensions.xtraplatform)
+                    project.extensions.add("xtraplatformLayers", xtraplatformExt)
                 }
             }
         }
@@ -151,6 +162,26 @@ class SettingsPlugin implements Plugin<Settings> {
                     ctx.tasks('check', [].toArray(), true)
                 }
                 createHooks(false)
+            }
+        }
+    }
+
+    static void subprojects(ProjectDescriptor rootProject, File rootDir, boolean doLog, Closure<Void> with) {
+        def prefix = rootProject.name.contains('-')
+                ? rootProject.name.substring(0, rootProject.name.indexOf('-') + 1)
+                : "${rootProject.name}-"
+
+        if (doLog) {
+            LOGGER.info("Loading projects with prefix '${prefix}' for ${rootProject.name}")
+        }
+
+        rootDir.listFiles().each { file ->
+            if (file.isDirectory() && file.name.startsWith(prefix)) {
+                with(file.name)
+
+                if (doLog) {
+                    LOGGER.info("  - ${file.name}")
+                }
             }
         }
     }

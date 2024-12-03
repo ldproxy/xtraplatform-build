@@ -199,6 +199,10 @@ class LayerPlugin implements Plugin<Project> {
 
     void addFeatureModules(Project project, includedBuilds) {
         project.subprojects.each {
+            if (project.rootProject.extensions.xtraplatformLayers.getExcludedModules().contains(it.name)) {
+                println "EXCLUDE " + it.name
+                return
+            }
             project.dependencies.add('modules', it)
         }
 
