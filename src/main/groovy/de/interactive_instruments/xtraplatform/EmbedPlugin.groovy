@@ -41,11 +41,13 @@ class EmbedPlugin implements Plugin<Project> {
     }
 
     static void setupEmbedding(Project project, ModuleInfoExtension moduleInfo) {
-        List<Dependency> deps = []
-        deps.addAll(project.parent.configurations.embedded.dependencies)
-        deps.addAll(project.parent.configurations.embeddedExport.dependencies)
-        deps.addAll(project.parent.configurations.embeddedFlat.dependencies)
-        deps.addAll(project.parent.configurations.embeddedFlatExport.dependencies)
+        List<Dependency> depsFlat = []
+        List<Dependency> depsTransitive = []
+        depsTransitive.addAll(project.parent.configurations.embedded.dependencies)
+        depsTransitive.addAll(project.parent.configurations.embeddedExport.dependencies)
+        depsFlat.addAll(project.parent.configurations.embeddedFlat.dependencies)
+        depsFlat.addAll(project.parent.configurations.embeddedFlatExport.dependencies)
+        List<Dependency> depsAll = depsFlat + depsTransitive
 
         /*if (deps.isEmpty()) {
             return
@@ -146,8 +148,13 @@ class EmbedPlugin implements Plugin<Project> {
             }
         }
 
-        deps.each {
+        depsTransitive.each {
             project.dependencies.add('tpl', it)
+        }
+        depsFlat.each {
+            project.dependencies.add('tpl', it, { transitive = false })
+        }
+        depsAll.each {
             if (it instanceof DefaultExternalModuleDependency) {
                 project.dependencies.add('tplJavadoc', "${it.group}:${it.name}:${it.version}:javadoc")
                 project.dependencies.add('tplSources', "${it.group}:${it.name}:${it.version}:sources")
