@@ -67,7 +67,7 @@ class SettingsPlugin implements Plugin<Settings> {
                 def platform = it.getProviders().gradleProperty('platform').getOrElse(os)
 
                 xtraplatformExt.getIncludedLayers().each { layer ->
-                    settings.includeBuild("${layer.path}${layer.name}")
+                    settings.includeBuild("${layer.path}${layer.dir ?: layer.name}")
 
                     dependencyResolutionManagement.versionCatalogs.create("${layer.name.replaceAll('-', '')}") { VersionCatalogBuilder vc ->
                         vc.version(layer.name, '+')

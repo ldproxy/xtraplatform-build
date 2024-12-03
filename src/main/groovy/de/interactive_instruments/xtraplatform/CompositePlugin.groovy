@@ -21,6 +21,7 @@ class CompositePlugin implements Plugin<Project> {
             project.logger.info("Applying CompositePlugin {} to {}", ApplicationPlugin.getVersion(project), project.name)
         }
 
+        project.plugins.apply("base")
         project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
 
         project.with {
@@ -47,23 +48,23 @@ class CompositePlugin implements Plugin<Project> {
                 throw new IllegalStateException("Could not determine main build, please set 'composite.main' in build.gradle.")
             } else {
                 println "\nMain build: ${project.composite.main}"
-                project.tasks.register('build', {
+                project.tasks.named('build', {
                     dependsOn project.gradle.includedBuild(project.composite.main).task(':build')
                 })
-                project.tasks.register('assemble', {
+                project.tasks.named('assemble', {
                     dependsOn project.gradle.includedBuild(project.composite.main).task(':assemble')
                 })
                 project.tasks.register('run', {
                     dependsOn project.gradle.includedBuild(project.composite.main).task(':run')
                 })
 
-                project.tasks.register('check', {
+                project.tasks.named('check', {
                     dependsOn includedBuilds2.collect {it.task(':check') }
                 })
                 project.tasks.register('test', {
                     dependsOn includedBuilds2.collect {it.task(':test') }
                 })
-                project.tasks.register('clean', {
+                project.tasks.named('clean', {
                     dependsOn includedBuilds2.collect {it.task(':clean') }
                 })
             }
