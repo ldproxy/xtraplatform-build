@@ -47,13 +47,6 @@ class ModulePlugin implements Plugin<Project> {
 
         def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
 
-        Map<String, Provider<MinimalExternalModuleDependency>> catalogLibs = project.rootProject.extensions
-                .getByType(VersionCatalogsExtension)
-                .collectEntries() {catalog -> catalog.getLibraryAliases()
-                        .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
-
-        //setupConfigurations(project)
-
         setupAnnotationProcessors(project)
 
         setupUnitTests(project)
@@ -61,32 +54,6 @@ class ModulePlugin implements Plugin<Project> {
         setupCodeQuality(project, includedBuilds.contains(project.parent.name))
 
         project.afterEvaluate {
-            project.configurations.provided.dependencies.each {
-                if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
-                    Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
-
-                    project.dependencies.add('provided2', lib)
-                    //project.dependencies.add('testProvided', lib)
-                } else {
-                    project.dependencies.add('provided2', it);
-                    //project.dependencies.add('testProvided', it)
-                }
-            }
-            project.configurations.testProvided.dependencies.each {
-                if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
-                    Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
-                    if (((DefaultExternalModuleDependency)it).requestedCapabilities.any { it.name.endsWith('test-fixtures') }) {
-                        lib = project.dependencies.testFixtures(lib)
-                    }
-
-                    project.dependencies.add('testFixturesImplementation', lib)
-                    project.dependencies.add('testImplementation', lib)
-                } else {
-                    project.dependencies.add('testFixturesImplementation', it);
-                    project.dependencies.add('testImplementation', it)
-                }
-            }
-
             if (moduleInfo.enabled) {
                 moduleInfo.name = getModuleName(project.group as String, project.name)
 
@@ -123,6 +90,39 @@ class ModulePlugin implements Plugin<Project> {
         project.configurations.compileOnly.extendsFrom(project.configurations.provided2)
         project.configurations.testImplementation.extendsFrom(project.configurations.provided2)
         project.configurations.testFixturesImplementation.extendsFrom(project.configurations.provided2)
+
+        Map<String, Provider<MinimalExternalModuleDependency>> catalogLibs = project.rootProject.extensions
+                .getByType(VersionCatalogsExtension)
+                .collectEntries() {catalog -> catalog.getLibraryAliases()
+                        .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
+
+        project.afterEvaluate {
+            project.configurations.provided.dependencies.each {
+                if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
+                    Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
+
+                    project.dependencies.add('provided2', lib)
+                    //project.dependencies.add('testProvided', lib)
+                } else {
+                    project.dependencies.add('provided2', it);
+                    //project.dependencies.add('testProvided', it)
+                }
+            }
+            project.configurations.testProvided.dependencies.each {
+                if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
+                    Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
+                    if (((DefaultExternalModuleDependency)it).requestedCapabilities.any { it.name.endsWith('test-fixtures') }) {
+                        lib = project.dependencies.testFixtures(lib)
+                    }
+
+                    project.dependencies.add('testFixturesImplementation', lib)
+                    project.dependencies.add('testImplementation', lib)
+                } else {
+                    project.dependencies.add('testFixturesImplementation', it);
+                    project.dependencies.add('testImplementation', it)
+                }
+            }
+        }
     }
 
     static void setupModuleInfo(Project project, ModuleInfoExtension moduleInfo, boolean requiresOnly, boolean isApp = false) {

@@ -200,7 +200,6 @@ class LayerPlugin implements Plugin<Project> {
     void addFeatureModules(Project project, includedBuilds) {
         project.subprojects.each {
             if (project.rootProject.extensions.xtraplatformLayers.getExcludedModules().contains(it.name)) {
-                println "EXCLUDE " + it.name
                 return
             }
             project.dependencies.add('modules', it)
@@ -298,8 +297,8 @@ class LayerPlugin implements Plugin<Project> {
             }
 
             subproject.java {
-                // stay java 11 compatible
-                sourceCompatibility = JavaVersion.VERSION_11
+                // stay java 17 compatible
+                sourceCompatibility = JavaVersion.VERSION_17
             }
 
             subproject.afterEvaluate {
