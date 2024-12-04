@@ -62,7 +62,7 @@ class ApplicationPlugin implements Plugin<Project> {
                     baseFound = true
                 }
             }
-            if (!baseFound) {
+            if (!baseFound && project.gradle.parent == null) {
                 throw new IllegalStateException("You have to add '${LayerPlugin.XTRAPLATFORM_CORE}' to configuration 'layers'")
             }
 

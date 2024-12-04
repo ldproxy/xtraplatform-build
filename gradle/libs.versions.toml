@@ -38,7 +38,7 @@ groovy-json = { module = "org.apache.groovy:groovy-json", version.ref = "groovy"
 [bundles]
 transitive = ["spock-core", "groovy", "groovy-templates", "groovy-xml", "groovy-json", "byte-buddy", "objenesis"]
 nontransitive = ["spock-reports"]
-fixtures = ["spock-core"]
+fixtures = ["spock-core", "groovy"]
 annotation-processors = ["dagger", "dagger-compiler", "dagger-auto", "dagger-auto-compiler", "immutables-value"]
 #TODO: should also contain immutables-value with classifier 'annotations', but classifiers cannot be specified in catalog
 # therefore it is specified manually in xtraplatform-runtime

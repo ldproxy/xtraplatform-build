@@ -3,10 +3,12 @@ package de.interactive_instruments.xtraplatform
 class XtraplatformExtension {
 
     private  boolean useMavenLocal = false
-    private List<Object> layers = []
-    private List<Object> nativeLayers = []
-    private List<Object> includedLayers = []
-    private List<String> excludedModules = []
+    private  Closure<Boolean> doInclude = { true }
+    private List<Object> internalLayers = []
+    private List<Object> internalNativeLayers = []
+    private List<Object> internalIncludedLayers = []
+    private List<Object> internalIncludedNativeLayers = []
+    private List<String> internalExcludedModules = []
 
     XtraplatformExtension() {
     }
@@ -15,20 +17,36 @@ class XtraplatformExtension {
         this.useMavenLocal = true
     }
 
+    void includeOnlyIf(Closure<Boolean> condition) {
+        this.doInclude = condition
+    }
+
     void exclude(String module) {
-        this.excludedModules.add(module)
+        this.internalExcludedModules.add(module)
     }
 
     void layer(Object layer) {
-        this.layers.add(layer)
+        this.internalLayers.add(layer)
     }
 
     void layerNative(Object layer) {
-        this.nativeLayers.add(layer)
+        this.internalNativeLayers.add(layer)
     }
 
     void layerInclude(Object layer) {
-        this.includedLayers.add(layer)
+        if (this.doInclude.call(layer)) {
+            this.internalIncludedLayers.add(layer)
+        } else {
+            this.internalLayers.add(layer)
+        }
+    }
+
+    void layerIncludeNative(Object layer) {
+        if (this.doInclude.call(layer)) {
+            this.internalIncludedNativeLayers.add(layer)
+        } else {
+            this.internalNativeLayers.add(layer)
+        }
     }
 
     boolean isUseMavenLocal() {
@@ -36,27 +54,45 @@ class XtraplatformExtension {
     }
 
     List<String> getExcludedModules() {
-        return this.excludedModules
+        return this.internalExcludedModules
     }
 
     List<Object> getLayers() {
-        return this.layers.collect { parseLayer(it) }
+        return this.internalLayers.collect { parseLayer(it) }
     }
 
     List<Object> getNativeLayers(String platform) {
-        return this.nativeLayers.collect { parseLayer(it, platform) }
+        return this.internalNativeLayers.collect { parseLayer(it, platform) }
     }
 
     List<Object> getIncludedLayers() {
-        return this.includedLayers.collect { parseLayer(it) }
+        return this.internalIncludedLayers.collect { parseLayer(it) }
+    }
+
+    List<Object> getIncludedNativeLayers(String platform) {
+        return this.internalIncludedNativeLayers.collect { parseLayer(it, platform) }
     }
 
     List<Object> getAllLayers() {
-        return this.getLayers() + this.getNativeLayers() + this.getIncludedLayers().collect { [group: it.group, name: it.name, version: it.version] }
+        List<Object> allLayers = []
+        allLayers.addAll(this.getLayers())
+        allLayers.addAll(this.getNativeLayers())
+        allLayers.addAll(this.getIncludedLayers())
+        allLayers.addAll(this.getIncludedNativeLayers())
+
+        return allLayers.collect(cleanLayer)
     }
 
     List<Object> getExtLayers(String platform) {
-        return this.getLayers() + this.getNativeLayers(platform)
+        List<Object> extLayers = []
+        extLayers.addAll(this.getLayers())
+        extLayers.addAll(this.getNativeLayers(platform))
+
+        return extLayers.collect(cleanLayer)
+    }
+
+    List<Object> getIncLayers(String platform) {
+        return this.getIncludedLayers() + this.getIncludedNativeLayers(platform)
     }
 
     static Object parseLayer(Object layer, String platform = null) {
@@ -74,6 +110,10 @@ class XtraplatformExtension {
             parsed.version = '+'
         }
         return parsed
+    }
+
+    static Closure<Object> cleanLayer = { layer ->
+        return [group: layer.group, name: layer.name, version: layer.version]
     }
 
     static String detectOs() {

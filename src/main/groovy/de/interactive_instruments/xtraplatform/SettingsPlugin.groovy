@@ -66,7 +66,9 @@ class SettingsPlugin implements Plugin<Settings> {
                 def os = XtraplatformExtension.detectOs().replace('osx', isDocker ? 'linux' : 'osx')
                 def platform = it.getProviders().gradleProperty('platform').getOrElse(os)
 
-                xtraplatformExt.getIncludedLayers().each { layer ->
+                xtraplatformExt.getIncLayers(platform).each { layer ->
+                    LOGGER.info("Included layer ${layer.group}:${layer.name}")
+
                     settings.includeBuild("${layer.path}${layer.dir ?: layer.name}")
 
                     dependencyResolutionManagement.versionCatalogs.create("${layer.name.replaceAll('-', '')}") { VersionCatalogBuilder vc ->
@@ -79,6 +81,8 @@ class SettingsPlugin implements Plugin<Settings> {
                 }
 
                 xtraplatformExt.getExtLayers(platform).each { layer ->
+                    LOGGER.info("External layer ${layer.group}:${layer.name}")
+
                     dependencyResolutionManagement.versionCatalogs.create("${layer.name.replaceAll('-', '')}") {
                         from(layer)
                     }
