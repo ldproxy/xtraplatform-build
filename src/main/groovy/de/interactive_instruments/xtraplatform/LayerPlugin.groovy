@@ -10,6 +10,7 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.gradle.ext.ActionDelegationConfig
 import org.jetbrains.gradle.ext.JUnit
 import org.slf4j.LoggerFactory
@@ -22,6 +23,9 @@ import java.util.regex.Pattern
 class LayerPlugin implements Plugin<Project> {
 
     static def LOGGER = LoggerFactory.getLogger(LayerPlugin.class)
+
+    static def JAVA_VERSION = JavaVersion.VERSION_17
+    static def JAVA_VERSION_MAJOR = Integer.parseInt(JAVA_VERSION.majorVersion)
 
 
     public static String XTRAPLATFORM = "xtraplatform"
@@ -296,9 +300,8 @@ class LayerPlugin implements Plugin<Project> {
                 }
             }
 
-            subproject.java {
-                // stay java 17 compatible
-                sourceCompatibility = JavaVersion.VERSION_17
+            subproject.tasks.withType(JavaCompile).configureEach {
+                options.release = JAVA_VERSION_MAJOR
             }
 
             subproject.afterEvaluate {

@@ -1,6 +1,7 @@
 package de.interactive_instruments.xtraplatform
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.github.jengelman.gradle.plugins.shadow.transformers.ManifestResourceTransformer
 import groovy.io.FileType
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -197,7 +198,7 @@ class EmbedPlugin implements Plugin<Project> {
                         srcdir: generatedSourcesDir,
                         includeantruntime:false,
                         failonerror: true,
-                        source: project.parent.java.sourceCompatibility.getMajorVersion(),
+                        release: LayerPlugin.JAVA_VERSION_MAJOR,
                         modulepath : jars.join(":"),
                         //verbose: true,
                 )  {
@@ -215,7 +216,14 @@ class EmbedPlugin implements Plugin<Project> {
             configurations = [
                     project.configurations.tplClasspath,
             ]
+
             mergeServiceFiles()
+            transform(ManifestResourceTransformer) {
+                manifestEntries = [
+                        'Multi-Release': 'true',
+                ]
+            }
+
             exclude {
                 it.isDirectory() && it.file != null && ((File)it.file).parentFile.absolutePath.endsWith("classes/java/main")
             }
