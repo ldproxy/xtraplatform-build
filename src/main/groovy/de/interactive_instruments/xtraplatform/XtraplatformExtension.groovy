@@ -51,7 +51,7 @@ class XtraplatformExtension {
         }
     }
 
-    Map<String,String> getCatalogVersion(File catalog) {
+    Map<String,String> getCatalogVersions(File catalog) {
         return new TomlSlurper().parse(catalog).versions
     }
 

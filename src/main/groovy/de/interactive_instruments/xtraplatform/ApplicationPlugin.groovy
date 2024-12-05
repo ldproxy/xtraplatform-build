@@ -42,12 +42,16 @@ class ApplicationPlugin implements Plugin<Project> {
         def includedBuilds = CompositePlugin.getIncludedBuildNames(project)
 
         project.afterEvaluate {
-            if (appExtension.jlink) {
+            if (appExtension.jlink || project.hasProperty('jlink')) {
                 if (project.logger.isInfoEnabled()) {
                     project.logger.info("Enabling jlink for application {}", project.name)
                 }
-                //project.plugins.apply("com.ryandens.jlink-application")
+
                 project.plugins.apply("org.beryx.jlink")
+
+                if (project.hasProperty('jlinkCfg')) {
+                    project.apply(from: project.file(project.getProperty('jlinkCfg')))
+                }
             }
 
             def baseFound = false
