@@ -50,8 +50,9 @@ class LayerPlugin implements Plugin<Project> {
         def isMainBranch = isBranch && (project.getProperty('branch') == 'master' || project.getProperty('branch') == 'main')
         def isRelease = project.findProperty('release') == 'true'
         def isDocker = project.findProperty('runInDocker') == 'true'
+        def isExtSuffix = project.hasProperty('versionSuffix')
         project.ext {
-            versionSuffix = (isBranch && !isMainBranch && !isRelease ? ('-' + project.getProperty('branch')) : '') + (!isRelease ? '-SNAPSHOT' : '')
+            versionSuffix = (isExtSuffix ? project.getProperty('versionSuffix') : '') + (isBranch && !isMainBranch && !isRelease ? ('-' + project.getProperty('branch')) : '') + (!isRelease ? '-SNAPSHOT' : '')
             platform = project.findProperty('platform') ?: project.osdetector.classifier.replace('x86_64', 'amd64').replace('aarch_64', 'arm64').replace('osx', isDocker ? 'linux' : 'osx')
         }
 

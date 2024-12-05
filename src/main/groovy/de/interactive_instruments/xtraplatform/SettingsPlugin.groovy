@@ -88,7 +88,7 @@ class SettingsPlugin implements Plugin<Settings> {
                     }
                 }
 
-                if (xtraplatformExt.isUseMavenLocal()) {
+                if (xtraplatformExt.isUseMavenLocal() || settings.hasProperty('useMavenLocal')) {
                     def ml = dependencyResolutionManagement.repositories.mavenLocal()
                     dependencyResolutionManagement.repositories.remove(ml)
                     dependencyResolutionManagement.repositories.add(0, ml)
