@@ -1,5 +1,7 @@
 package de.interactive_instruments.xtraplatform
 
+import groovy.toml.TomlSlurper
+
 class XtraplatformExtension {
 
     private  boolean useMavenLocal = false
@@ -47,6 +49,10 @@ class XtraplatformExtension {
         } else {
             this.internalNativeLayers.add(layer)
         }
+    }
+
+    Map<String,String> getCatalogVersion(File catalog) {
+        return new TomlSlurper().parse(catalog).versions
     }
 
     boolean isUseMavenLocal() {
