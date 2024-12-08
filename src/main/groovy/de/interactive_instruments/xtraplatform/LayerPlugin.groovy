@@ -11,8 +11,11 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.plugins.ide.idea.model.IdeaProject
 import org.jetbrains.gradle.ext.ActionDelegationConfig
+import org.jetbrains.gradle.ext.Gradle
 import org.jetbrains.gradle.ext.JUnit
+import org.jetbrains.gradle.ext.Remote
 import org.slf4j.LoggerFactory
 
 import java.util.regex.Pattern
@@ -26,7 +29,6 @@ class LayerPlugin implements Plugin<Project> {
 
     static def JAVA_VERSION = JavaVersion.VERSION_17
     static def JAVA_VERSION_MAJOR = Integer.parseInt(JAVA_VERSION.majorVersion)
-
 
     public static String XTRAPLATFORM = "xtraplatform"
     public static String XTRAPLATFORM_BUILD = "xtraplatform-build"
@@ -104,6 +106,10 @@ class LayerPlugin implements Plugin<Project> {
                 runConfigurations {
                     defaults(JUnit) {
                         vmParameters = '-ea -Dlogback.configurationFile=logback-test.xml'
+                    }
+                    "debug-external"(Remote) {
+                        host = 'localhost'
+                        port = 5005
                     }
                 }
                 delegateActions {
@@ -301,6 +307,9 @@ class LayerPlugin implements Plugin<Project> {
                 }
             }
 
+            subproject.java {
+                sourceCompatibility = JAVA_VERSION
+            }
             subproject.tasks.withType(JavaCompile).configureEach {
                 options.release = JAVA_VERSION_MAJOR
             }

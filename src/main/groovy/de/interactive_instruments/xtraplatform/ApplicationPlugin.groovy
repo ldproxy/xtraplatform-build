@@ -10,6 +10,7 @@ import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Exec
 import org.gradle.internal.os.OperatingSystem
+import org.jetbrains.gradle.ext.Gradle
 
 import java.util.jar.Manifest
 import java.util.regex.Pattern
@@ -131,6 +132,16 @@ class ApplicationPlugin implements Plugin<Project> {
         addDocker(project)
 
         addSbom(project)
+
+        project.with {
+            idea.project.settings {
+                runConfigurations {
+                    "run"(Gradle) {
+                        taskNames = ["run"]
+                    }
+                }
+            }
+        }
     }
 
     static String getVersion(Project project) {

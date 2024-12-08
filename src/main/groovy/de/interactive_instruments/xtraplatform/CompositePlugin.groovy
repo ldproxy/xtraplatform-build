@@ -5,7 +5,9 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.initialization.IncludedBuild
 import org.jetbrains.gradle.ext.ActionDelegationConfig
+import org.jetbrains.gradle.ext.Gradle
 import org.jetbrains.gradle.ext.JUnit
+import org.jetbrains.gradle.ext.Remote
 import org.slf4j.LoggerFactory
 
 /**
@@ -24,24 +26,43 @@ class CompositePlugin implements Plugin<Project> {
         project.plugins.apply("base")
         project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
 
+        def includedBuilds = getIncludedBuilds(project)
+        def includedBuilds2 = includedBuilds.findAll {it.name != LayerPlugin.XTRAPLATFORM_BUILD}
+        def main = includedBuilds.find { project.rootProject.name.startsWith(it.name) }
+        project.extensions.create('composite', CompositeExtension, main == null ? '' : main.name)
+
+        project.tasks.register('initTpl', {
+            dependsOn includedBuilds2.collect {it.task(':initTpl') }
+        })
+
         project.with {
+            idea.project {
+                languageLevel = LayerPlugin.JAVA_VERSION
+            }
             idea.project.settings {
                 runConfigurations {
                     defaults(JUnit) {
                         vmParameters = '-ea -Dlogback.configurationFile=logback-test.xml'
+                    }
+                    "run"(Gradle) { Gradle it2 ->
+                        it2.taskNames = ["run"]
+                        it2.project = project
+                    }
+                    "debug-external"(Remote) {
+                        host = 'localhost'
+                        port = 5005
                     }
                 }
                 delegateActions {
                     delegateBuildRunToGradle = true
                     testRunner = ActionDelegationConfig.TestRunner.PLATFORM
                 }
+                //withModuleXml(project.sourceSets.main) { println it }
+                taskTriggers {
+                    afterSync tasks.named("initTpl")
+                }
             }
         }
-
-        def includedBuilds = getIncludedBuilds(project)
-        def includedBuilds2 = includedBuilds.findAll {it.name != LayerPlugin.XTRAPLATFORM_BUILD}
-        def main = includedBuilds.find { project.rootProject.name.startsWith(it.name) }
-        project.extensions.create('composite', CompositeExtension, main == null ? '' : main.name)
 
         project.afterEvaluate {
             if (project.composite.main == '') {
