@@ -26,6 +26,11 @@ class SettingsPlugin implements Plugin<Settings> {
         settings.extensions.add("xtraplatform", XtraplatformExtension)
         XtraplatformExtension xtraplatformExt = settings.extensions.getByType(XtraplatformExtension)
 
+        boolean noCache = settings.getProviders().gradleProperty('noCache').isPresent()
+        boolean isCI = System.getenv().containsKey("CI")
+
+        settings.buildCache.local.enabled = !noCache && !isCI
+
         settings.gradle.beforeProject { project ->
             if (project.rootProject != project) {
                 return

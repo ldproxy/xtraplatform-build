@@ -141,7 +141,7 @@ class LayerPlugin implements Plugin<Project> {
         project.tasks.check.finalizedBy project.tasks.named("buildDashboard")
 
         project.cyclonedxBom {
-            destination = project.file("build/generated/sources/annotationProcessor/resources/main/")
+            destination = project.file("build/generated/sources/xtraplatform/resources/main/")
             includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
             projectType = "library"
             outputName = "sbom"
@@ -151,6 +151,7 @@ class LayerPlugin implements Plugin<Project> {
 
         project.tasks.named("processResources").configure {
             dependsOn project.tasks.named("cyclonedxBom")
+            from project.tasks.named("cyclonedxBom")
         }
 
         applyFormatting(project)
@@ -396,9 +397,6 @@ class LayerPlugin implements Plugin<Project> {
                         }
                     }
                 }
-                /*subproject.tasks.withType(GenerateModuleMetadata).configureEach {
-                    suppressedValidationErrors.add('enforced-platform')
-                }*/
 
                 subproject.dependencies.add('compileOnly', [group: 'de.interactive_instruments', name: 'xtraplatform-build', version: ApplicationPlugin.getVersion(project)], {
                     transitive = false
@@ -416,8 +414,6 @@ class LayerPlugin implements Plugin<Project> {
                 dependsOn subproject.tasks.named('compileJava')
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
             }
-
-//            subproject.tasks.register("dependencyUpdates", CustomDependencyUpdatesTask)
         }
     }
 
@@ -442,34 +438,11 @@ class LayerPlugin implements Plugin<Project> {
                 publications {
                     'default'(MavenPublication) {
                         from project.components.versionCatalog
-                        /*pom.withXml {
-                            def dependencyManagementNode = asNode().appendNode('dependencyManagement').appendNode('dependencies')
-
-                            project.configurations.modules.dependencies.each {
-                                def dependencyNode = dependencyManagementNode.appendNode('dependency')
-                                dependencyNode.appendNode('groupId', it.group)
-                                dependencyNode.appendNode('artifactId', it.name)
-                                dependencyNode.appendNode('version', it.version)
-                                //dependencyNode.appendNode('scope', 'compile')
-                            }
-                        }*/
                     }
-                    /*catalog(MavenPublication) {
-                        artifactId = "${project.name}-catalog"
-                        from project.components.versionCatalog
-                    }*/
                     modules(MavenPublication) {
                         artifactId "${project.name}-modules"
                         pom.withXml {
                             def dependenciesNode = asNode().appendNode('dependencies')
-
-                            /*project.configurations.layers.dependencies.each {
-                                def dependencyNode = dependenciesNode.appendNode('dependency')
-                                dependencyNode.appendNode('groupId', it.group)
-                                dependencyNode.appendNode('artifactId', it.name)
-                                dependencyNode.appendNode('version', it.version)
-                                dependencyNode.appendNode('scope', 'runtime')
-                            }*/
 
                             project.configurations.modules.dependencies.each {
                                 def dependencyNode = dependenciesNode.appendNode('dependency')
@@ -486,9 +459,6 @@ class LayerPlugin implements Plugin<Project> {
                     }
                 }
             }
-            /*project.tasks.withType(GenerateModuleMetadata).configureEach {
-                suppressedValidationErrors.add('enforced-platform')
-            }*/
         }
     }
 }

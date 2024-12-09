@@ -97,27 +97,8 @@ class ApplicationPlugin implements Plugin<Project> {
             })
         }
 
-        /*project.configurations.featureDevOnly.incoming.beforeResolve {
-            project.configurations.featureDevOnly.dependencies.collect().each {
-                if (!it.name.endsWith("-bundles")) {
-                    if (includedBuilds.contains(it.name)) {
-
-                    } else {
-                        def bom = [group: it.group, name: "${it.name}", version: it.version]
-                        def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
-                        //subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
-
-                        //project.dependencies.add('featureDevOnly', bundles)
-                    }
-                }
-            }
-        }*/
-
         ModulePlugin.setupAnnotationProcessors(project)
 
-        //TODO: get version from xtraplatform (or the other way around)
-        //project.dependencies.add('compileOnly', ModulePlugin.findCatalogLibrary(project, "dagger"), { transitive = false })
-        //project.dependencies.add('annotationProcessor', ModulePlugin.findCatalogLibrary(project, "dagger-compiler"))
 
         project.tasks.named('compileJava') {
             options.javaModuleVersion = project.provider { project.version }
