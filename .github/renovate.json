@@ -31,7 +31,7 @@
       "labels": ["build-dependencies"]
     },
     {
-      "matchPackageNames": ["com.google.dagger:dagger-compiler"],
+      "matchPackageNames": [/com.google.dagger/],
       "allowedVersions": "< 2.50"
     }
   ]
