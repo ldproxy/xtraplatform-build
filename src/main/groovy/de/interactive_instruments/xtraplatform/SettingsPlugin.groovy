@@ -30,7 +30,12 @@ class SettingsPlugin implements Plugin<Settings> {
         boolean forceCache = settings.getProviders().gradleProperty('forceCache').isPresent()
         boolean isCI = System.getenv().containsKey("CI")
 
+        println "CI: ${isCI}"
+        println "noCache: ${noCache}"
+        println "forceCache: ${forceCache}"
+
         settings.buildCache.local.enabled = !noCache && (!isCI || forceCache)
+        println "Build cache enabled: ${settings.buildCache.local.enabled}"
 
         settings.gradle.beforeProject { project ->
             if (project.rootProject != project) {
