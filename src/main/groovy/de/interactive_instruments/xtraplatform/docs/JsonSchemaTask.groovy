@@ -95,11 +95,19 @@ class JsonSchemaTask extends DefaultTask {
                 }
 
                 if (!sts.isEmpty()) {
-                    discriminators.put(impl.type.qualifiedName, sts)
+                    if (discriminators.containsKey(impl.type.qualifiedName)) {
+                        discriminators.get(impl.type.qualifiedName).addAll(sts)
+                        return null
+                    } else {
+                        discriminators.put(impl.type.qualifiedName, sts)
+                    }
                 }
-                println "- " + impl.type.qualifiedName + ": " + sts
 
                 return impl
+            }.findAll { it != null }
+
+            discriminators.each { key, value ->
+                println "- " + key + ": " + value
             }
 
             def schema = generator.generate(dataClasses, discriminators)
