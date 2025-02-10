@@ -161,7 +161,7 @@ class ApplicationPlugin implements Plugin<Project> {
             onlyIf { project.ext.useNativeRun }
             workingDir = project.tasks.installDist.destinationDir
             debug = project.findProperty('debug') ?: false
-            args project.findProperty('data') ?: dataDir.absolutePath
+            args "--data-dir=${project.findProperty('data') ?: dataDir.absolutePath}"
             standardInput = System.in
             environment 'XTRAPLATFORM_ENV', 'DEVELOPMENT'
             doFirst {
@@ -243,7 +243,7 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     void addDocker(Project project) {
-        def baseImage = 'eclipse-temurin:17-jre'
+        def baseImage = 'eclipse-temurin:21-jre'
         File dockerFile = new File(project.buildDir, 'tmp/Dockerfile')
         File dockerContext = new File(project.buildDir, 'docker')
 
@@ -256,10 +256,11 @@ MAINTAINER interactive instruments GmbH
 ARG TARGETOS
 ARG TARGETARCH
 ADD ${project.name}-\$TARGETOS-\$TARGETARCH.tar /
-ENTRYPOINT ["/${project.name}/bin/${project.name}"]
+ENTRYPOINT ["/bin/bash", "-c", "/${project.name}/bin/${project.name} --data-dir=/${project.name}/data --start-time=\$(date +%s%3N)"]
 EXPOSE 7080
 WORKDIR /${project.name}
-VOLUME /${project.name}/data
+VOLUME /data
+RUN rm -r /${project.name}/data && ln -s /data /${project.name}/data
 ENV XTRAPLATFORM_ENV CONTAINER
 """
             }
@@ -285,9 +286,9 @@ ENV XTRAPLATFORM_ENV CONTAINER
             dependsOn project.tasks.dockerBuild
             //network=host is only supported in linux
             if (OperatingSystem.current().isLinux()) {
-                commandLine 'docker', 'run', '--rm', '-i', '--network=host', '-v', "${project.findProperty('data') ?: "$project.buildDir/data"}:/ldproxy/data", '-e', 'XTRAPLATFORM_ENV=DEVELOPMENT', '-e', "JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=${project.findProperty('debug') ? 'y' : 'n'},address=*:5005", 'iide/ldproxy:local-dev'
+                commandLine 'docker', 'run', '--rm', '-i', '--network=host', '-v', "${project.findProperty('data') ?: "$project.buildDir/data"}:/data", '-e', 'XTRAPLATFORM_ENV=DEVELOPMENT', '-e', "JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=${project.findProperty('debug') ? 'y' : 'n'},address=*:5005", 'iide/ldproxy:local-dev'
             } else {
-                commandLine 'docker', 'run', '--rm', '-i', '-p', '7080:7080', '-p', '7081:7081', '-p', '5005:5005', '-v', "${project.findProperty('data') ?: "$project.buildDir/data"}:/ldproxy/data", '-e', 'XTRAPLATFORM_ENV=DEVELOPMENT', '-e', "JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=${project.findProperty('debug') ? 'y' : 'n'},address=*:5005", 'iide/ldproxy:local-dev'
+                commandLine 'docker', 'run', '--rm', '-i', '-p', '7080:7080', '-p', '7081:7081', '-p', '5005:5005', '-v', "${project.findProperty('data') ?: "$project.buildDir/data"}:/data", '-e', 'XTRAPLATFORM_ENV=DEVELOPMENT', '-e', "JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=${project.findProperty('debug') ? 'y' : 'n'},address=*:5005", 'iide/ldproxy:local-dev'
             }
         }
 
