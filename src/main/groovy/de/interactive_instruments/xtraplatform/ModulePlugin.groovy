@@ -1,38 +1,23 @@
 package de.interactive_instruments.xtraplatform
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import com.github.spotbugs.snom.SpotBugsTask
-import de.interactive_instruments.xtraplatform.pmd.PmdInvokerSarif
-import de.interactive_instruments.xtraplatform.pmd.SarifForGithub
+
 import groovy.io.FileType
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.UnknownDomainObjectException
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependencyBundle
 import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.artifacts.VersionConstraint
-import org.gradle.api.attributes.Category
-import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.plugins.quality.Pmd
 import org.gradle.api.provider.Provider
-import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
-import org.gradle.jvm.tasks.Jar
 
 import java.math.RoundingMode
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.stream.Collectors
-import java.util.stream.Stream
 import java.util.stream.StreamSupport
 
 class ModulePlugin implements Plugin<Project> {
@@ -93,8 +78,10 @@ class ModulePlugin implements Plugin<Project> {
 
         Map<String, Provider<MinimalExternalModuleDependency>> catalogLibs = project.rootProject.extensions
                 .getByType(VersionCatalogsExtension)
-                .collectEntries() {catalog -> catalog.getLibraryAliases()
-                        .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] } }
+                .collectEntries() { catalog ->
+                    catalog.getLibraryAliases()
+                            .collectEntries { [(it.replaceAll('\\.', '-')): catalog.findLibrary(it).get()] }
+                }
 
         project.afterEvaluate {
             project.configurations.provided.dependencies.each {
@@ -111,7 +98,7 @@ class ModulePlugin implements Plugin<Project> {
             project.configurations.testProvided.dependencies.each {
                 if (it instanceof DefaultExternalModuleDependency && catalogLibs.containsKey(it.name)) {
                     Provider<MinimalExternalModuleDependency> lib = catalogLibs.get(it.name)
-                    if (((DefaultExternalModuleDependency)it).requestedCapabilities.any { it.name.endsWith('test-fixtures') }) {
+                    if (((DefaultExternalModuleDependency) it).requestedCapabilities.any { it.name.endsWith('test-fixtures') }) {
                         lib = project.dependencies.testFixtures(lib)
                     }
 
@@ -202,8 +189,11 @@ class ModulePlugin implements Plugin<Project> {
                 // determine packages for export
                 pkgs += Dependencies.getPackages(deps)
 
-                (project.configurations.embeddedExport + project.configurations.embeddedFlatExport)
-                        .filter { it.isFile() }
+                def cfgs = exportAll
+                        ? (project.configurations.embeddedExport + project.configurations.embeddedFlatExport + project.configurations.embedded + project.configurations.embeddedFlat)
+                        : (project.configurations.embeddedExport + project.configurations.embeddedFlatExport)
+
+                cfgs.filter { it.isFile() }
                         .collect { project.zipTree(it).matching { it2 -> it2.include("META-INF/services/*") } }
                         .collectMany { it.getFiles() }
                         .forEach { File it3 ->
