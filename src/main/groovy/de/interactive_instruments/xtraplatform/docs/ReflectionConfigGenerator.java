@@ -73,7 +73,7 @@ public class ReflectionConfigGenerator {
               properties.add(property);
             });
 
-    if (properties.isEmpty()) {
+    if (properties.isEmpty() || type.getType().qualifiedName.endsWith(".Builder")) {
       properties.add(Map.of("name", "<init>", "parameterTypes", List.of()));
     }
 
