@@ -29,17 +29,22 @@ public class ReflectionConfigGenerator {
 
   List<Map<String, Object>> generate(List<DocRef> types, List<String> extraTypes) {
     System.out.println("TYPES: " + types);
+    System.out.println("EXTRATYPES: " + extraTypes);
 
     List<Map<String, Object>> schema = new ArrayList<>();
     nestedDefs.clear();
     inProgressDefs.clear();
     keys.clear();
 
-    extraTypes.forEach(this::resolveType);
+    extraTypes.forEach(type -> resolveType(type,true));
+
+    System.out.println("EXTRA: " + nestedDefs.keySet());
 
     if (types.size() >= 1) {
       schema.addAll(generateDefs(types));
     }
+
+    System.out.println("ALL: " + nestedDefs.keySet());
 
     schema.addAll(nestedDefs.values());
 
@@ -132,6 +137,10 @@ public class ReflectionConfigGenerator {
   }
 
   private void resolveType(String type) {
+    resolveType(type, false);
+  }
+
+  private void resolveType(String type, boolean log) {
     if (!nestedDefs.containsKey(type)) {
       if (!type.contains(".")) {
         nestedDefs.put(type, Map.of("name", type, "queryAllDeclaredMethods", true));
@@ -148,11 +157,21 @@ public class ReflectionConfigGenerator {
                 true,
                 "methods",
                 List.of(Map.of("name", "<init>", "parameterTypes", List.of()))));
+        if (log) {
+            System.out.println("RESOLVEDOTHER: " + type);
+        }
       } else {
         DocRef typeRef = docs.findTypeRef(type);
         nestedDefs.put(type, Map.of());
         nestedDefs.put(type, generateObject(typeRef));
+        if (log) {
+          System.out.println("RESOLVED: " + type + " -> " + !nestedDefs.get(type).isEmpty());
+        }
       }
+    } else {
+        if (log) {
+            System.out.println("ALREADY RESOLVED: " + type);
+        }
     }
   }
 
