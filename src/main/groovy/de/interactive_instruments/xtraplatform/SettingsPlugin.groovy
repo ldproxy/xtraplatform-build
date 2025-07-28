@@ -141,9 +141,9 @@ class SettingsPlugin implements Plugin<Settings> {
                         url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
                     }
                     // dagger-auto snapshots
-                    maven {
-                        url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                    }
+                    //maven {
+                    //    url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                    //}
                     // Declare the Node.js download repository needed by plugin com.github.node-gradle.node
                     ivy {
                         name = "Node.js"
