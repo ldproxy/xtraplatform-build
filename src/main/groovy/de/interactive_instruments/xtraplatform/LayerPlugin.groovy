@@ -144,6 +144,9 @@ class LayerPlugin implements Plugin<Project> {
             projectType = "library"
             jsonOutput = project.file("build/generated/sources/xtraplatform/resources/main/sbom.json")
             includeBomSerialNumber = false
+            includeLicenseText = true
+            includeMetadataResolution = true
+            includeBuildSystem = true
         }
 
         project.tasks.named("processResources").configure {
@@ -406,6 +409,9 @@ class LayerPlugin implements Plugin<Project> {
                     includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
                     projectType = "library"
                     includeBomSerialNumber = false
+                    includeLicenseText = true
+                    includeMetadataResolution = true
+                    includeBuildSystem = true
                 }
             }
 
