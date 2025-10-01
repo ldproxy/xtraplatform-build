@@ -141,12 +141,8 @@ class LayerPlugin implements Plugin<Project> {
         project.tasks.check.finalizedBy project.tasks.named("buildDashboard")
 
         project.cyclonedxBom {
-            //destination = project.file("build/generated/sources/xtraplatform/resources/main/")
-            //includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
             projectType = "library"
-            //outputName = "sbom"
-            //outputFormat = "json"
-            jsonOutput = file("build/generated/sources/xtraplatform/resources/main/sbom.json")
+            jsonOutput = project.file("build/generated/sources/xtraplatform/resources/main/sbom.json")
             includeBomSerialNumber = false
         }
 
