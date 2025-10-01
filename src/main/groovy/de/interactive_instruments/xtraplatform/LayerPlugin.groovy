@@ -145,7 +145,6 @@ class LayerPlugin implements Plugin<Project> {
             jsonOutput = project.file("build/generated/sources/xtraplatform/resources/main/sbom.json")
             includeBomSerialNumber = false
             includeLicenseText = true
-            includeMetadataResolution = true
             includeBuildSystem = true
         }
 
