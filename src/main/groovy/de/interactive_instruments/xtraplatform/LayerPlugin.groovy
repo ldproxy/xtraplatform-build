@@ -142,7 +142,7 @@ class LayerPlugin implements Plugin<Project> {
 
         project.cyclonedxBom {
             //destination = project.file("build/generated/sources/xtraplatform/resources/main/")
-            includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
+            //includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
             projectType = "library"
             //outputName = "sbom"
             //outputFormat = "json"
@@ -405,6 +405,12 @@ class LayerPlugin implements Plugin<Project> {
                         requireCapability("de.interactive_instruments:xtraplatform-build-annotations")
                     }
                 })
+
+                subproject.tasks.cyclonedxDirectBom {
+                    includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
+                    projectType = "library"
+                    includeBomSerialNumber = false
+                }
             }
 
             subproject.java {
