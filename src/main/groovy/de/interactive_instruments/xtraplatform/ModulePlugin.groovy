@@ -399,11 +399,11 @@ ${additions}
         project.tasks.withType(Pmd).configureEach { pmd ->
             pmd.dependsOn project.parent.tasks.named("pmdInit")
             pmd.reports.xml.required = false
-            pmd.actions.clear()
+            /*pmd.actions.clear()
             pmd.doFirst {
                 validate(rulesMinimumPriority.get());
                 //PmdInvokerSarif.invoke(pmd);
-            }
+            }*/
             /*pmd.doLast {
                 def json = new File(pmd.reports.html.outputLocation.asFile.get().absolutePath.replace(".html", ".json"))
                 def rootPath = project.rootDir.absolutePath
