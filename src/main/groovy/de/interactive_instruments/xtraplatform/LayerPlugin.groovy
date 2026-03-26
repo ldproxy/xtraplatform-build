@@ -153,6 +153,10 @@ class LayerPlugin implements Plugin<Project> {
             from project.tasks.named("cyclonedxBom")
         }
 
+        project.tasks.named("test").configure {
+            failOnNoDiscoveredTests = false
+        }
+
         applyFormatting(project)
     }
 
