@@ -291,6 +291,8 @@ ${additions}
         def testConfig = {
             useJUnitPlatform()
 
+            failOnNoDiscoveredTests = false
+
             testLogging.showStandardStreams = true
             reports {
                 html.required = false
