@@ -284,6 +284,10 @@ ${additions}
             }
         }
 
+        project.testing.suites.named("test") {
+            useJUnitJupiter()
+        }
+
         def testConfig = {
             useJUnitPlatform()
 
