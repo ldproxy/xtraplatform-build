@@ -1,9 +1,9 @@
 [versions]
 spock = "2.3-groovy-4.0"
 spock-reports = "2.5.1-groovy-4.0"
-groovy = "4.0.24"
+groovy = "5.0.5"
 byte-buddy = "1.15.10"
-objenesis = "1.4"
+objenesis = "3.5"
 dagger = "2.49"
 dagger-auto = "1.0.0"
 immutables = "2.10.1"
