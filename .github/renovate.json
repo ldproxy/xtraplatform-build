@@ -33,6 +33,10 @@
     {
       "matchPackageNames": ["/com.google.dagger/"],
       "allowedVersions": "< 2.50"
+    },
+    {
+      "matchPackageNames": ["/org.immutables/"],
+      "allowedVersions": "< 2.12.0"
     }
   ]
 }
