@@ -6,7 +6,7 @@ byte-buddy = "1.15.10"
 objenesis = "1.4"
 dagger = "2.49"
 dagger-auto = "1.0.0"
-immutables = "2.10.1"
+immutables = "2.12.1"
 pmd = "6.55.0"
 shadow = "8.3.5"
 
