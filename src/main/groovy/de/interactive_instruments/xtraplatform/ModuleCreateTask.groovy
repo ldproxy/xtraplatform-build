@@ -4,7 +4,9 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
+import org.gradle.work.DisableCachingByDefault
 
+@DisableCachingByDefault(because = "Creates new module, should not be cached")
 class ModuleCreateTask extends DefaultTask {
 
     private String name
