@@ -270,7 +270,7 @@ public class StepResolver {
         || type.endsWith("[]")) {
       return "array";
     }
-    if (hasSimpleType(type, "string")) {
+    if (hasSimpleType(type, "string") || type.startsWith("io.dropwizard.util.DataSize")) {
       return "string";
     }
     if (hasSimpleType(type, "boolean")) {

@@ -141,17 +141,20 @@ class LayerPlugin implements Plugin<Project> {
         project.tasks.check.finalizedBy project.tasks.named("buildDashboard")
 
         project.cyclonedxBom {
-            destination = project.file("build/generated/sources/xtraplatform/resources/main/")
-            includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
             projectType = "library"
-            outputName = "sbom"
-            outputFormat = "json"
+            jsonOutput = project.file("build/generated/sources/xtraplatform/resources/main/sbom.json")
             includeBomSerialNumber = false
+            includeLicenseText = true
+            includeBuildSystem = true
         }
 
         project.tasks.named("processResources").configure {
             dependsOn project.tasks.named("cyclonedxBom")
             from project.tasks.named("cyclonedxBom")
+        }
+
+        project.tasks.named("test").configure {
+            failOnNoDiscoveredTests = false
         }
 
         applyFormatting(project)
@@ -404,6 +407,15 @@ class LayerPlugin implements Plugin<Project> {
                         requireCapability("de.interactive_instruments:xtraplatform-build-annotations")
                     }
                 })
+
+                subproject.tasks.cyclonedxDirectBom {
+                    includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
+                    projectType = "library"
+                    includeBomSerialNumber = false
+                    includeLicenseText = true
+                    includeMetadataResolution = true
+                    includeBuildSystem = true
+                }
             }
 
             subproject.java {

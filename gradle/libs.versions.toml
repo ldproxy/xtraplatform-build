@@ -1,17 +1,13 @@
 [versions]
 spock = "2.3-groovy-4.0"
 spock-reports = "2.5.1-groovy-4.0"
-groovy = "4.0.24"
+groovy = "4.0.31"
 byte-buddy = "1.15.10"
 objenesis = "1.4"
 dagger = "2.49"
 dagger-auto = "1.0.0"
 immutables = "2.10.1"
 pmd = "6.55.0"
-shadow = "8.3.5"
-
-[plugins]
-shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 
 [libraries]
 spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
