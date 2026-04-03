@@ -85,9 +85,6 @@ public class XtraPlatformDoclet implements Doclet {
         .map(ed -> new SimpleEntry<>(ed.qualifiedName, (TypeDocs)ed))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    //TODO: convenience methods
-    //new BundleDocsGenerator(classList, readManifest(root.options())).generate(targetDir);
-
     try {
       writeJson(targetPath.resolve(MOD_DOCS_FILE_NAME).toFile(), moduleDocs);
     } catch (IOException e) {
