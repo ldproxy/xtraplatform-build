@@ -407,15 +407,15 @@ class LayerPlugin implements Plugin<Project> {
                         requireCapability("de.interactive_instruments:xtraplatform-build-annotations")
                     }
                 })
+            }
 
-                subproject.tasks.cyclonedxDirectBom {
-                    includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
-                    projectType = "library"
-                    includeBomSerialNumber = false
-                    includeLicenseText = true
-                    includeMetadataResolution = true
-                    includeBuildSystem = true
-                }
+            subproject.tasks.cyclonedxDirectBom {
+                includeConfigs = ["embedded", "embeddedExport", "embeddedFlat", "embeddedFlatExport"]
+                projectType = "library"
+                includeBomSerialNumber = false
+                includeLicenseText = true
+                includeMetadataResolution = true
+                includeBuildSystem = true
             }
 
             subproject.java {
