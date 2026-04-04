@@ -1,8 +1,8 @@
 [versions]
-spock = "2.3-groovy-4.0"
+spock = "2.4-groovy-4.0"
 spock-reports = "2.5.1-groovy-4.0"
 groovy = "4.0.31"
-byte-buddy = "1.15.10"
+byte-buddy = "1.18.8"
 objenesis = "1.4"
 dagger = "2.49"
 dagger-auto = "1.0.0"

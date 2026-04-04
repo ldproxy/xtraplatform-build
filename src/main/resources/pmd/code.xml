@@ -1,121 +1,128 @@
 <?xml version="1.0"?>
 
 <ruleset name="xtraplatform general"
-  xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
 
-  <description>
-    xtraplatform general code rules
-  </description>
-
-  <exclude-pattern>.*/build/generated/.*</exclude-pattern>
-
-  <rule ref="category/java/bestpractices.xml">
-    <exclude name="ConstantsInInterface"/>
-    <exclude name="GuardLogStatement"/>
-  </rule>
-
-  <rule ref="category/java/bestpractices.xml/GuardLogStatement">
-    <properties>
-      <property name="logLevels" value="trace,debug,info,warn" />
-      <property name="guardsMethods" value="isTraceEnabled,isDebugEnabled,isInfoEnabled,isWarnEnabled" />
-    </properties>
-  </rule>
-
-  <rule ref="category/java/codestyle.xml">
-    <exclude name="LocalVariableCouldBeFinal"/><!-- TODO: enable-->
-    <exclude name="MethodArgumentCouldBeFinal"/><!-- TODO: enable-->
-    <exclude name="AtLeastOneConstructor"/>
-    <exclude name="BooleanGetMethodName"/>
-    <exclude name="ClassNamingConventions"/>
-    <exclude name="CommentDefaultAccessModifier"/>
-    <exclude name="EmptyMethodInAbstractClassShouldBeAbstract"/>
-    <exclude name="LongVariable"/>
-    <exclude name="OnlyOneReturn"/>
-    <exclude name="ShortClassName"/>
-    <exclude name="ShortMethodName"/>
-    <exclude name="ShortVariable"/>
-    <exclude name="UnnecessaryLocalBeforeReturn"/>
-  </rule>
-
-  <rule ref="category/java/codestyle.xml/ClassNamingConventions">
-    <properties>
-      <property name="utilityClassPattern" value="[A-Z][a-zA-Z0-9]*"/>
-    </properties>
-  </rule>
-
-  <rule ref="category/java/design.xml">
-    <exclude name="AbstractClassWithoutAnyMethod"/>
-    <exclude name="AvoidCatchingGenericException"/>
-    <exclude name="ExcessiveImports"/>
-    <exclude name="ExcessiveParameterList"/>
-    <exclude name="LawOfDemeter"/>
-    <exclude name="LoosePackageCoupling"/>
-  </rule>
-
-  <rule ref="category/java/design.xml/ExcessiveParameterList">
-    <properties>
-      <property name="minimum" value="15" />
-    </properties>
-  </rule>
-
-  <rule ref="category/java/errorprone.xml">
-    <exclude name="AvoidCatchingThrowable"/>
-    <exclude name="AvoidDuplicateLiterals"/>
-    <exclude name="AvoidFieldNameMatchingMethodName"/>
-    <exclude name="AvoidFieldNameMatchingTypeName"/>
-    <exclude name="AvoidLiteralsInIfCondition"/>
-    <exclude name="NonSerializableClass"/>
-    <exclude name="EmptyCatchBlock"/>
-  </rule>
-
-  <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
-    <properties>
-      <property name="skipAnnotations" value="true" />
-    </properties>
-  </rule>
-
-  <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
-    <properties>
-      <property name="allowCommentedBlocks" value="true" />
-    </properties>
-  </rule>
-
-  <rule ref="category/java/multithreading.xml">
-    <exclude name="DoNotUseThreads"/>
-    <exclude name="UseConcurrentHashMap"/><!--TODO: might enforce Concurrent or Linked or Immutable-->
-  </rule>
-
-  <rule ref="category/java/performance.xml">
-  </rule>
-
-  <rule ref="category/java/security.xml">
-  </rule>
-
-  <rule ref="category/java/documentation.xml/CommentContent">
-    <properties>
-        <property name="forbiddenRegex" value="TODO|Todo|todo" />
-    </properties>
-  </rule>
-
-  <rule name="DeprecatedSince"
-    language="java"
-    message="Always provide a version for @Deprecated, e.g. @Deprecated(since=&quot;1.0.0&quot;)"
-    class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
     <description>
-
+        xtraplatform general code rules
     </description>
-    <priority>3</priority>
-    <properties>
-      <property name="xpath">
-        <value>
-          <![CDATA[
+
+    <exclude-pattern>.*/build/generated/.*</exclude-pattern>
+
+    <rule ref="category/java/bestpractices.xml">
+        <exclude name="ConstantsInInterface"/>
+        <exclude name="GuardLogStatement"/>
+    </rule>
+
+    <rule ref="category/java/bestpractices.xml/GuardLogStatement">
+        <properties>
+            <property name="logLevels" value="trace,debug,info,warn"/>
+            <property name="guardsMethods" value="isTraceEnabled,isDebugEnabled,isInfoEnabled,isWarnEnabled"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/codestyle.xml">
+        <exclude name="LocalVariableCouldBeFinal"/><!-- TODO: enable-->
+        <exclude name="MethodArgumentCouldBeFinal"/><!-- TODO: enable-->
+        <exclude name="AtLeastOneConstructor"/>
+        <exclude name="BooleanGetMethodName"/>
+        <exclude name="ClassNamingConventions"/>
+        <exclude name="CommentDefaultAccessModifier"/>
+        <exclude name="EmptyMethodInAbstractClassShouldBeAbstract"/>
+        <exclude name="LongVariable"/>
+        <exclude name="OnlyOneReturn"/>
+        <exclude name="ShortClassName"/>
+        <exclude name="ShortMethodName"/>
+        <exclude name="ShortVariable"/>
+        <exclude name="UnnecessaryLocalBeforeReturn"/>
+    </rule>
+
+    <rule ref="category/java/codestyle.xml/ClassNamingConventions">
+        <properties>
+            <property name="utilityClassPattern" value="[A-Z][a-zA-Z0-9]*"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/design.xml">
+        <exclude name="AbstractClassWithoutAnyMethod"/>
+        <exclude name="AvoidCatchingGenericException"/>
+        <exclude name="ExcessiveImports"/>
+        <exclude name="ExcessiveParameterList"/>
+        <exclude name="LawOfDemeter"/>
+        <exclude name="LoosePackageCoupling"/>
+        <exclude name="TooManyMethods"/>
+    </rule>
+
+    <rule ref="category/java/design.xml/ExcessiveParameterList">
+        <properties>
+            <property name="minimum" value="15"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/design.xml/TooManyMethods">
+        <properties>
+            <property name="maxmethods" value="25"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="AvoidCatchingThrowable"/>
+        <exclude name="AvoidDuplicateLiterals"/>
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
+        <exclude name="AvoidFieldNameMatchingTypeName"/>
+        <exclude name="AvoidLiteralsInIfCondition"/>
+        <exclude name="NonSerializableClass"/>
+        <exclude name="EmptyCatchBlock"/>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+        <properties>
+            <property name="skipAnnotations" value="true"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+        <properties>
+            <property name="allowCommentedBlocks" value="true"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/multithreading.xml">
+        <exclude name="DoNotUseThreads"/>
+        <exclude name="UseConcurrentHashMap"/><!--TODO: might enforce Concurrent or Linked or Immutable-->
+    </rule>
+
+    <rule ref="category/java/performance.xml">
+    </rule>
+
+    <rule ref="category/java/security.xml">
+    </rule>
+
+    <rule ref="category/java/documentation.xml/CommentContent">
+        <properties>
+            <property name="forbiddenRegex" value="TODO|Todo|todo"/>
+        </properties>
+    </rule>
+
+    <rule name="DeprecatedSince"
+          language="java"
+          message="Always provide a version for @Deprecated, e.g. @Deprecated(since=&quot;1.0.0&quot;)"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
+        <description>
+
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+                    <![CDATA[
 //(TypeDeclaration|ClassOrInterfaceBodyDeclaration)/Annotation/*[Name[pmd-java:typeIs('java.lang.Deprecated')] and (count(MemberValuePairs/MemberValuePair[@Image = "since"]) = 0 or string-length(MemberValuePairs/MemberValuePair[@Image = "since"]//Literal/@Image) <= 2)]
 ]]>
-        </value>
-      </property>
-    </properties>
-  </rule>
+                </value>
+            </property>
+        </properties>
+    </rule>
 
 </ruleset>
