@@ -15,7 +15,7 @@ steps:
         - .gradle/wrapper
 
   build:
-    image: eclipse-temurin:21
+    image: eclipse-temurin:25@sha256:bee2e23ab444ed60daf8123e36478bc4a286ba7835bec6f9daf9eba1d50a86a2
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew build -Pbranch=$CI_COMMIT_BRANCH
@@ -23,7 +23,7 @@ steps:
       event: push
 
   build-release:
-    image: eclipse-temurin:21
+    image: eclipse-temurin:25@sha256:bee2e23ab444ed60daf8123e36478bc4a286ba7835bec6f9daf9eba1d50a86a2
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew build -Prelease=true
@@ -31,7 +31,7 @@ steps:
       event: tag
 
   publish-snapshot:
-    image: eclipse-temurin:21
+    image: eclipse-temurin:25@sha256:bee2e23ab444ed60daf8123e36478bc4a286ba7835bec6f9daf9eba1d50a86a2
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew publish -Pbranch=$CI_COMMIT_BRANCH -PdeployUser=$DEPLOY_USER -PdeployPassword=$DEPLOY_PASSWORD
@@ -40,7 +40,7 @@ steps:
       event: push
 
   publish-release:
-    image: eclipse-temurin:21
+    image: eclipse-temurin:25@sha256:bee2e23ab444ed60daf8123e36478bc4a286ba7835bec6f9daf9eba1d50a86a2
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew publish -Prelease=true -PdeployUser=$DEPLOY_USER -PdeployPassword=$DEPLOY_PASSWORD
