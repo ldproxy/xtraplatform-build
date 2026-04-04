@@ -17,17 +17,16 @@
   <rule name="DoNotUseFileIo"
     language="java"
     message="Importing 'java.io.File*' or 'java.nio.file' is not allowed"
-    class="net.sourceforge.pmd.lang.rule.XPathRule">
+    class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
     <description>
 
     </description>
     <priority>3</priority>
     <properties>
-      <property name="version" value="2.0"/>
       <property name="xpath">
         <value>
           <![CDATA[
-//ImportDeclaration[Name[starts-with(@Image, 'java.io.File') or starts-with(@Image, 'java.nio.file')]]
+//ImportDeclaration[starts-with(@Image, 'java.io.File') or starts-with(@Image, 'java.nio.file')]
 ]]>
         </value>
       </property>
@@ -37,17 +36,16 @@
   <rule name="DoNotUseSql"
     language="java"
     message="Importing 'java.sql' is not allowed"
-    class="net.sourceforge.pmd.lang.rule.XPathRule">
+    class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
     <description>
 
     </description>
     <priority>3</priority>
     <properties>
-      <property name="version" value="2.0"/>
       <property name="xpath">
         <value>
           <![CDATA[
-//ImportDeclaration[Name[starts-with(@Image, 'java.sql')]]
+//ImportDeclaration[starts-with(@Image, 'java.sql')]
 ]]>
         </value>
       </property>
