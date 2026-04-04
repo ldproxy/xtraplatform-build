@@ -56,7 +56,7 @@
 
   <rule ref="category/java/design.xml/ExcessiveParameterList">
     <properties>
-      <property name="minimum" value="15.0" />
+      <property name="minimum" value="15" />
     </properties>
   </rule>
 
@@ -67,7 +67,6 @@
     <exclude name="AvoidFieldNameMatchingTypeName"/>
     <exclude name="AvoidLiteralsInIfCondition"/>
     <exclude name="NonSerializableClass"/>
-    <exclude name="DataflowAnomalyAnalysis"/>
     <exclude name="EmptyCatchBlock"/>
   </rule>
 
@@ -96,21 +95,19 @@
 
   <rule ref="category/java/documentation.xml/CommentContent">
     <properties>
-      <property name="caseSensitive" value="false" />
-      <property name="disallowedTerms" value="TODO" />
+        <property name="forbiddenRegex" value="TODO|Todo|todo" />
     </properties>
   </rule>
 
   <rule name="DeprecatedSince"
     language="java"
     message="Always provide a version for @Deprecated, e.g. @Deprecated(since=&quot;1.0.0&quot;)"
-    class="net.sourceforge.pmd.lang.rule.XPathRule">
+    class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
     <description>
 
     </description>
     <priority>3</priority>
     <properties>
-      <property name="version" value="2.0"/>
       <property name="xpath">
         <value>
           <![CDATA[
