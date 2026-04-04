@@ -104,13 +104,12 @@
   <rule name="DeprecatedSince"
     language="java"
     message="Always provide a version for @Deprecated, e.g. @Deprecated(since=&quot;1.0.0&quot;)"
-    class="net.sourceforge.pmd.lang.rule.XPathRule">
+    class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
     <description>
 
     </description>
     <priority>3</priority>
     <properties>
-      <property name="version" value="2.0"/>
       <property name="xpath">
         <value>
           <![CDATA[
