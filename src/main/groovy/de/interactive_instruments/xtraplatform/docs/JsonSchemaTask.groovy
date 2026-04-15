@@ -52,12 +52,7 @@ class JsonSchemaTask extends DefaultTask {
         JsonSchemaGenerator generator = new JsonSchemaGenerator(docs, gson)
 
         Map<String, List<DocRef>> refs = docs.findTypeByInterface("de.ii.xtraplatform.entities.domain.PersistentEntity")
-                .findAll {
-                    println it
-                    println it.getType()
-                    println it.getType().qualifiedName
-                    return it.getType().getAnnotation("de.ii.xtraplatform.entities.domain.Entity").map { it.getAttribute("type") }.isPresent()
-                }
+                .findAll { it.getType().getAnnotation("de.ii.xtraplatform.entities.domain.Entity").map { it.getAttribute("type") }.isPresent() }
                 .groupBy { it.getType().getAnnotation("de.ii.xtraplatform.entities.domain.Entity").get().getAttribute("type").get() }
 
         refs.each { ref ->
@@ -66,11 +61,11 @@ class JsonSchemaTask extends DefaultTask {
             Map<String, List<Map<String, String>>> discriminators = new LinkedHashMap<>()
 
             List<DocRef> dataClasses = ref.value.collect {
-                def entity = it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").get()
+                def entity = it.getType().getAnnotation("de.ii.xtraplatform.entities.domain.Entity").get()
                 String dataClass = entity.getAttribute("data").get()
                 DocRef impl = dataClass.contains(".Immutable")
                         ? docs.findTypeRef(dataClass)
-                        : docs.findTypeByInterface(dataClass).find { it.type.qualifiedName.contains(".Immutable") }
+                        : docs.findTypeByInterface(dataClass).find { it.getType().qualifiedName.contains(".Immutable") }
 
                 if (Objects.isNull(impl)) {
                     throw new IllegalStateException("No immutable implementation found for " + dataClass)
@@ -100,11 +95,11 @@ class JsonSchemaTask extends DefaultTask {
                 }
 
                 if (!sts.isEmpty()) {
-                    if (discriminators.containsKey(impl.type.qualifiedName)) {
-                        discriminators.get(impl.type.qualifiedName).addAll(sts)
+                    if (discriminators.containsKey(impl.getType().qualifiedName)) {
+                        discriminators.get(impl.getType().qualifiedName).addAll(sts)
                         return null
                     } else {
-                        discriminators.put(impl.type.qualifiedName, sts)
+                        discriminators.put(impl.getType().qualifiedName, sts)
                     }
                 }
 
