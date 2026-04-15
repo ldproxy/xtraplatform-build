@@ -14,7 +14,7 @@ ext {
 
 group = 'de.interactive_instruments'
 
-version = '6.1.16' + versionSuffix
+version = '6.1.17' + versionSuffix
 
 sourceSets {
     annotations {
