@@ -83,7 +83,7 @@ class ReflectionConfigTask extends DefaultTask {
                             return true
                         }
 
-                        def annotation = it.type.getAnnotation(entryPoint.annotation)
+                        def annotation = it.getType().getAnnotation(entryPoint.annotation)
                         if (entryPoint.attribute != null) {
                             annotation = annotation.flatMap { it.getAttribute(entryPoint.attribute) }
                         }
@@ -94,7 +94,7 @@ class ReflectionConfigTask extends DefaultTask {
                                 || entryPoint.attributeValues.contains(annotation.get()))
                     }.collect {
                         entryPoint.annotation != null &&entryPoint.classAttribute != null
-                                ? docs.findTypeRef(it.type.getAnnotation(entryPoint.annotation).get().getAttribute(entryPoint.classAttribute).get())
+                                ? docs.findTypeRef(it.getType().getAnnotation(entryPoint.annotation).get().getAttribute(entryPoint.classAttribute).get())
                                 : it
                     }
         }
