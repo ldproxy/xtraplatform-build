@@ -52,7 +52,13 @@ class JsonSchemaTask extends DefaultTask {
         JsonSchemaGenerator generator = new JsonSchemaGenerator(docs, gson)
 
         Map<String, List<DocRef>> refs = docs.findTypeByInterface("de.ii.xtraplatform.entities.domain.PersistentEntity")
-                .findAll { it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").map { it.getAttribute("type") }.isPresent() }
+                .findAll {
+                    println it
+                    println it.alias
+                    println it.type
+                    println it.type.qualifiedName
+                    return it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").map { it.getAttribute("type") }.isPresent()
+                }
                 .groupBy { it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").get().getAttribute("type").get() }
 
         refs.each { ref ->
