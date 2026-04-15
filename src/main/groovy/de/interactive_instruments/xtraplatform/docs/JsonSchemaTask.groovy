@@ -54,12 +54,11 @@ class JsonSchemaTask extends DefaultTask {
         Map<String, List<DocRef>> refs = docs.findTypeByInterface("de.ii.xtraplatform.entities.domain.PersistentEntity")
                 .findAll {
                     println it
-                    println it.alias
-                    println it.type
-                    println it.type.qualifiedName
-                    return it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").map { it.getAttribute("type") }.isPresent()
+                    println it.getType()
+                    println it.getType().qualifiedName
+                    return it.getType().getAnnotation("de.ii.xtraplatform.entities.domain.Entity").map { it.getAttribute("type") }.isPresent()
                 }
-                .groupBy { it.type.getAnnotation("de.ii.xtraplatform.entities.domain.Entity").get().getAttribute("type").get() }
+                .groupBy { it.getType().getAnnotation("de.ii.xtraplatform.entities.domain.Entity").get().getAttribute("type").get() }
 
         refs.each { ref ->
             println ref.key
