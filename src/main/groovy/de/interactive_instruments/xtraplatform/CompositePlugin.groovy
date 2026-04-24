@@ -36,9 +36,9 @@ class CompositePlugin implements Plugin<Project> {
         })
 
         project.with {
-            idea.project {
+            /*idea.project {
                 languageLevel = LayerPlugin.JAVA_VERSION
-            }
+            }*/
             idea.project.settings {
                 runConfigurations {
                     defaults(JUnit) {

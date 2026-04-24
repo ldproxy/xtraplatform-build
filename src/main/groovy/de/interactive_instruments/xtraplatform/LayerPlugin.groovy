@@ -1,20 +1,16 @@
 package de.interactive_instruments.xtraplatform
 
-import org.gradle.api.JavaVersion
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileCopyDetails
-import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.gradle.plugins.ide.idea.model.IdeaProject
 import org.jetbrains.gradle.ext.ActionDelegationConfig
-import org.jetbrains.gradle.ext.Gradle
 import org.jetbrains.gradle.ext.JUnit
 import org.jetbrains.gradle.ext.Remote
 import org.slf4j.LoggerFactory
@@ -28,8 +24,9 @@ class LayerPlugin implements Plugin<Project> {
 
     static def LOGGER = LoggerFactory.getLogger(LayerPlugin.class)
 
-    static def JAVA_VERSION = JavaVersion.VERSION_17
-    static def JAVA_VERSION_MAJOR = Integer.parseInt(JAVA_VERSION.majorVersion)
+    //static def JAVA_VERSION = JavaVersion.VERSION_17
+    static int JAVA_LANGUAGE_LEVEL = 17
+    static int JAVA_TOOLCHAIN_VERSION = 21
 
     public static String XTRAPLATFORM = "xtraplatform"
     public static String XTRAPLATFORM_BUILD = "xtraplatform-build"
@@ -96,13 +93,16 @@ class LayerPlugin implements Plugin<Project> {
         project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
 
         project.tasks.register('initTpl') {
-            dependsOn project.subprojects*.tasks*.matching({it.name == 'initTpl'})
+            dependsOn project.subprojects*.tasks*.matching({ it.name == 'initTpl' })
             /*doLast {
                 println "INIT ${project.name} ${project.version}"
             }*/
         }
 
         project.with {
+            /*idea.project {
+                languageLevel = JAVA_VERSION
+            }*/
             idea.project.settings {
                 runConfigurations {
                     defaults(JUnit) {
@@ -131,7 +131,7 @@ class LayerPlugin implements Plugin<Project> {
             doLast {
                 println "\nLayer ${project.name} ${project.version}"
                 project.subprojects.each {
-                    printf("+---- %-40s %-10s %-5s %s%n", it.name, it.maturity,  it.maintenance, it.deprecated ? " DEPRECATED" : "");
+                    printf("+---- %-40s %-10s %-5s %s%n", it.name, it.maturity, it.maintenance, it.deprecated ? " DEPRECATED" : "");
                 }
             }
         }
@@ -272,7 +272,7 @@ class LayerPlugin implements Plugin<Project> {
             }
             eachFile { FileCopyDetails fcd ->
                 int slashIndex = fcd.path.indexOf('/', 1)
-                fcd.path = fcd.path.substring(slashIndex+1)
+                fcd.path = fcd.path.substring(slashIndex + 1)
             }
             includeEmptyDirs = false
             into new File(project.buildDir, 'pmd')
@@ -313,13 +313,12 @@ class LayerPlugin implements Plugin<Project> {
             }
 
             subproject.java {
-                //sourceCompatibility = JAVA_VERSION
                 toolchain {
-                    languageVersion = JavaLanguageVersion.of(JAVA_VERSION_MAJOR)
+                    languageVersion = JavaLanguageVersion.of(JAVA_TOOLCHAIN_VERSION)
                 }
             }
             subproject.tasks.withType(JavaCompile).configureEach {
-                options.release = JAVA_VERSION_MAJOR
+                options.release = JAVA_LANGUAGE_LEVEL
             }
 
             subproject.afterEvaluate {

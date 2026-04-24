@@ -2,13 +2,10 @@ package de.interactive_instruments.xtraplatform
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.jengelman.gradle.plugins.shadow.transformers.ManifestResourceTransformer
-import groovy.io.FileType
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.XmlProvider
 import org.gradle.api.artifacts.*
-import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Bundling
@@ -17,18 +14,8 @@ import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
-import org.gradle.api.plugins.quality.Pmd
-import org.gradle.api.provider.Provider
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.api.tasks.testing.Test
-
-import java.math.RoundingMode
-import java.nio.file.Path
-import java.util.stream.Collectors
-import java.util.stream.StreamSupport
 
 class EmbedPlugin implements Plugin<Project> {
 
@@ -198,7 +185,7 @@ class EmbedPlugin implements Plugin<Project> {
                         srcdir: generatedSourcesDir,
                         includeantruntime:false,
                         failonerror: true,
-                        release: LayerPlugin.JAVA_VERSION_MAJOR,
+                        release: LayerPlugin.JAVA_LANGUAGE_LEVEL,
                         modulepath : jars.join(":"),
                         //verbose: true,
                 )  {
