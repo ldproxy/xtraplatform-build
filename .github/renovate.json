@@ -8,6 +8,10 @@
       "automerge": true
     },
     {
+      "matchUpdateTypes": ["digest"],
+      "automerge": true
+    },
+    {
       "groupName": "testing",
       "matchPackageNames": ["/spock/", "/groovy/", "/byte-buddy/", "/objenesis/"]
     },
