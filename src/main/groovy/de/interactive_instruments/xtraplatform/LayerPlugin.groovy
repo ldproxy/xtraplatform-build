@@ -11,6 +11,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.plugins.ide.idea.model.IdeaProject
 import org.jetbrains.gradle.ext.ActionDelegationConfig
 import org.jetbrains.gradle.ext.Gradle
@@ -312,7 +313,10 @@ class LayerPlugin implements Plugin<Project> {
             }
 
             subproject.java {
-                sourceCompatibility = JAVA_VERSION
+                //sourceCompatibility = JAVA_VERSION
+                toolchain {
+                    languageVersion = JavaLanguageVersion.of(JAVA_VERSION_MAJOR)
+                }
             }
             subproject.tasks.withType(JavaCompile).configureEach {
                 options.release = JAVA_VERSION_MAJOR
