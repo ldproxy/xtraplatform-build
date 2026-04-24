@@ -27,18 +27,15 @@ class CompositePlugin implements Plugin<Project> {
         project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
 
         def includedBuilds = getIncludedBuilds(project)
-        def includedBuilds2 = includedBuilds.findAll {it.name != LayerPlugin.XTRAPLATFORM_BUILD}
+        def includedBuilds2 = includedBuilds.findAll { it.name != LayerPlugin.XTRAPLATFORM_BUILD }
         def main = includedBuilds.find { project.rootProject.name.startsWith(it.name) }
         project.extensions.create('composite', CompositeExtension, main == null ? '' : main.name)
 
         project.tasks.register('initTpl', {
-            dependsOn includedBuilds2.collect {it.task(':initTpl') }
+            dependsOn includedBuilds2.collect { it.task(':initTpl') }
         })
 
         project.with {
-            /*idea.project {
-                languageLevel = LayerPlugin.JAVA_VERSION
-            }*/
             idea.project.settings {
                 runConfigurations {
                     defaults(JUnit) {
@@ -80,13 +77,13 @@ class CompositePlugin implements Plugin<Project> {
                 })
 
                 project.tasks.named('check', {
-                    dependsOn includedBuilds2.collect {it.task(':check') }
+                    dependsOn includedBuilds2.collect { it.task(':check') }
                 })
                 project.tasks.register('test', {
-                    dependsOn includedBuilds2.collect {it.task(':test') }
+                    dependsOn includedBuilds2.collect { it.task(':test') }
                 })
                 project.tasks.named('clean', {
-                    dependsOn includedBuilds2.collect {it.task(':clean') }
+                    dependsOn includedBuilds2.collect { it.task(':clean') }
                 })
             }
         }

@@ -24,7 +24,6 @@ class LayerPlugin implements Plugin<Project> {
 
     static def LOGGER = LoggerFactory.getLogger(LayerPlugin.class)
 
-    static def JAVA_SOURCE_COMPATIBILITY = JavaVersion.VERSION_17
     static int JAVA_LANGUAGE_LEVEL = 17
     static int JAVA_TOOLCHAIN_VERSION = 21
 
@@ -100,9 +99,6 @@ class LayerPlugin implements Plugin<Project> {
         }
 
         project.with {
-            /*idea.project {
-                languageLevel = JAVA_VERSION
-            }*/
             idea.project.settings {
                 runConfigurations {
                     defaults(JUnit) {
@@ -313,9 +309,6 @@ class LayerPlugin implements Plugin<Project> {
             }
 
             subproject.java {
-                //NOTE: deprecated, but still needed for PMD, see https://github.com/gradle/gradle/issues/37158
-                sourceCompatibility = JAVA_SOURCE_COMPATIBILITY
-                
                 toolchain {
                     languageVersion = JavaLanguageVersion.of(JAVA_TOOLCHAIN_VERSION)
                 }
