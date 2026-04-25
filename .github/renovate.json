@@ -41,6 +41,11 @@
     {
       "matchPackageNames": ["/org.immutables/"],
       "allowedVersions": "< 2.12.0"
+    },
+    {
+      "description": "See https://github.com/CycloneDX/cyclonedx-gradle-plugin/issues/821",
+      "matchPackageNames": ["/cyclonedx-gradle-plugin/"],
+      "allowedVersions": "< 3.2.3"
     }
   ]
 }
