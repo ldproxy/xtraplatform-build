@@ -136,7 +136,7 @@ class LayerPlugin implements Plugin<Project> {
 
         project.plugins.apply('build-dashboard')
 
-        project.rootProject.tasks.check.finalizedBy project.tasks.named("buildDashboard")
+        project.tasks.check.finalizedBy project.tasks.named("buildDashboard")
 
         project.cyclonedxBom {
             projectType = "library"
