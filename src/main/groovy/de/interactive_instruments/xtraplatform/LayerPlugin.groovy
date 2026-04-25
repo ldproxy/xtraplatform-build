@@ -277,17 +277,9 @@ class LayerPlugin implements Plugin<Project> {
 
         project.subprojects { Project subproject ->
             if (subproject.name.endsWith("-tpl")) {
-                subproject.ext.sbomIgnore = false
-
                 subproject.afterEvaluate {
                     subproject.group = project.group
                     subproject.version = project.version
-                    
-                    if (subproject.sbomIgnore) {
-                        subproject.tasks.named("cyclonedxDirectBom").configure {
-                            enabled = false
-                        }
-                    }
                 }
 
                 return
@@ -308,18 +300,12 @@ class LayerPlugin implements Plugin<Project> {
             subproject.ext.maintenance = Maintenance.LOW.name()
             subproject.ext.deprecated = false
             subproject.ext.docIgnore = false
-            subproject.ext.sbomIgnore = false
             subproject.ext.descriptionDe = null
             subproject.ext.replacementFor = null
 
             subproject.afterEvaluate {
                 if (moduleInfo.enabled) {
                     subproject.plugins.apply(ModulePlugin.class)
-                }
-                if (subproject.sbomIgnore) {
-                    subproject.tasks.named("cyclonedxDirectBom").configure {
-                        enabled = false
-                    }
                 }
             }
 
