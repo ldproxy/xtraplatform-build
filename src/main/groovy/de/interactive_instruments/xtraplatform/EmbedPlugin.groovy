@@ -205,9 +205,9 @@ class EmbedPlugin implements Plugin<Project> {
             ]
 
             mergeServiceFiles()
-            transform(ManifestResourceTransformer) {
+            /*transform(ManifestResourceTransformer) {
                 attributes 'Multi-Release': ['Multi-Release': 'true']
-            }
+            }*/
 
             exclude {
                 it.isDirectory() && it.file != null && ((File)it.file).parentFile.absolutePath.endsWith("classes/java/main")
