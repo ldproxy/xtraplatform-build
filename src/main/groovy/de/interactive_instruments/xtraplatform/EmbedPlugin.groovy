@@ -206,7 +206,7 @@ class EmbedPlugin implements Plugin<Project> {
 
             mergeServiceFiles()
             transform(ManifestResourceTransformer) {
-                attributes 'Multi-Release': 'true'
+                attributes 'Multi-Release': ['Multi-Release': 'true']
             }
 
             exclude {
