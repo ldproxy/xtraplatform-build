@@ -204,6 +204,9 @@ class EmbedPlugin implements Plugin<Project> {
                     project.configurations.tplClasspath,
             ]
 
+            filesMatching('META-INF/services/**') {
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            }
             mergeServiceFiles()
             /*transform(ManifestResourceTransformer) {
                 attributes 'Multi-Release': ['Multi-Release': 'true']
