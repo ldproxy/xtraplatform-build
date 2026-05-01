@@ -356,7 +356,7 @@ ENV XTRAPLATFORM_ENV CONTAINER
                     import java.util.LinkedHashMap;
                     import java.util.Map;
                     import java.util.List;
-                    import javax.inject.Singleton;
+                    import jakarta.inject.Singleton;
         
                     public class Launcher {
 
