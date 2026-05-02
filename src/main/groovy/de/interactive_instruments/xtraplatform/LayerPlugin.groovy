@@ -184,8 +184,9 @@ class LayerPlugin implements Plugin<Project> {
                         //target '**/ConfigurationReader.java'
                         targetExclude '**/build/generated/**/*'
 
-                        googleJavaFormat('1.35.0')
                         forbidWildcardImports()
+                        cleanthat().addMutator('SafeAndConsensual')
+                        googleJavaFormat('1.35.0')
 
                         // make sure every file has the following copyright header.
                         licenseHeader '''/*
