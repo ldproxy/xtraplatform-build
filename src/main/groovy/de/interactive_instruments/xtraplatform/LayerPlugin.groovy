@@ -190,6 +190,7 @@ class LayerPlugin implements Plugin<Project> {
                                 .addMutator('SafeButNotConsensual')
                                 .excludeMutator('AvoidInlineConditionals')
                                 .excludeMutator('RemoveExplicitCallToSuper')
+                                .excludeMutator('UnnecessaryModifier')
                         googleJavaFormat('1.35.0')
 
                         // make sure every file has the following copyright header.
