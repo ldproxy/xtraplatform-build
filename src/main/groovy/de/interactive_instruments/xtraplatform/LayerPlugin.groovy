@@ -185,7 +185,7 @@ class LayerPlugin implements Plugin<Project> {
                         targetExclude '**/build/generated/**/*'
 
                         forbidWildcardImports()
-                        cleanthat().addMutator('SafeAndConsensual')
+                        cleanthat().addMutator('SafeAndConsensual').addMutator('SafeButNotConsensual')
                         googleJavaFormat('1.35.0')
 
                         // make sure every file has the following copyright header.
