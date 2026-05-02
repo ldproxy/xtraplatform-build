@@ -37,6 +37,7 @@
         <exclude name="ShortMethodName"/>
         <exclude name="ShortVariable"/>
         <exclude name="UnnecessaryLocalBeforeReturn"/>
+        <exclude name="UnnecessaryConstructor"/>
     </rule>
 
     <rule ref="category/java/codestyle.xml/ClassNamingConventions">
