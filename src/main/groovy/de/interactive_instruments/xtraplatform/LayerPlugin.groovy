@@ -184,16 +184,8 @@ class LayerPlugin implements Plugin<Project> {
                         //target '**/ConfigurationReader.java'
                         targetExclude '**/build/generated/**/*'
 
-                        googleJavaFormat('1.18.1')
-
-                        bumpThisNumberIfACustomStepChanges(2)
-                        custom("errorOnWildcard", {
-                            def matcher = Pattern.compile("^(.*?)\\.\\*;\$", Pattern.MULTILINE).matcher(it)
-                            if (matcher.find()) {
-                                throw new WildcardError(matcher.group())
-                            }
-                            return it
-                        })
+                        googleJavaFormat('1.35.0')
+                        forbidWildcardImports()
 
                         // make sure every file has the following copyright header.
                         licenseHeader '''/*
