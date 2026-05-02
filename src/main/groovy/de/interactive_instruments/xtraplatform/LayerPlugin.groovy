@@ -26,7 +26,7 @@ class LayerPlugin implements Plugin<Project> {
 
     static def JAVA_SOURCE_COMPATIBILITY = JavaVersion.VERSION_17
     static int JAVA_LANGUAGE_LEVEL = 17
-    static int JAVA_TOOLCHAIN_VERSION = 21
+    static int JAVA_TOOLCHAIN_VERSION = 25
 
     public static String XTRAPLATFORM = "xtraplatform"
     public static String XTRAPLATFORM_BUILD = "xtraplatform-build"
