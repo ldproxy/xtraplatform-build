@@ -8,6 +8,7 @@
       "automerge": true
     },
     {
+      "description": "Automerge image digest updates",
       "matchUpdateTypes": ["digest"],
       "automerge": true
     },
@@ -35,7 +36,7 @@
       "labels": ["build-dependencies"]
     },
     {
-      "description": "???",
+      "description": "breaking changes?",
       "matchPackageNames": ["/org.immutables/"],
       "allowedVersions": "< 2.12.0"
     },
