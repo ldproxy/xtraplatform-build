@@ -1,6 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["ldproxy/renovate-config:xtraplatform", "ldproxy/renovate-config:maintenance(6.1)"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["ApplicationPlugin\\.groovy$"],
+      "matchStrings": ["baseImage\\s*=\\s*'(?<depName>[^:]+):(?<currentValue>[^']+)'"],
+      "datasourceTemplate": "docker"
+    }
+  ],
   "packageRules": [
      {
       "description": "Automerge non-major updates",
