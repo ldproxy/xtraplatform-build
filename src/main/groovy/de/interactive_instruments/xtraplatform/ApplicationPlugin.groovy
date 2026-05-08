@@ -243,7 +243,7 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     void addDocker(Project project) {
-        def baseImage = 'eclipse-temurin:25-jre'
+        def baseImage = 'eclipse-temurin:25-jdk'
         File dockerFile = new File(project.buildDir, 'tmp/Dockerfile')
         File dockerContext = new File(project.buildDir, 'docker')
 
