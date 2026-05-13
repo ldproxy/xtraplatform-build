@@ -32,9 +32,6 @@ class ApplicationPlugin implements Plugin<Project> {
         def appExtension = project.extensions.create('xtraplatformApp', ApplicationExtension, project)
         ModuleInfoExtension moduleInfo = project.extensions.create('moduleInfo', ModuleInfoExtension)
 
-        //suppress java 9+ illegal access warnings for felix, jackson afterburner, geotools/hsqldb, mustache
-        //project.application.applicationDefaultJvmArgs += ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED', '--add-opens', 'java.base/java.util=ALL-UNNAMED']
-
         project.configurations.create("featureDevOnly")
         project.configurations.featureDevOnly.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
         project.configurations.create("app")
