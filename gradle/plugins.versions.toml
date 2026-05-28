@@ -7,7 +7,7 @@ osdetector = "1.7.3"
 cyclonedx = "3.2.2"
 git-hooks = "2.1.17"
 spotless = "8.6.0"
-shadow = "9.4.1"
+shadow = "9.4.2"
 jlink = "4.0.1"
 groovy = "5.0.6"
 
