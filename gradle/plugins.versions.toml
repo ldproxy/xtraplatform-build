@@ -8,7 +8,7 @@ cyclonedx = "3.2.2"
 git-hooks = "2.1.17"
 spotless = "8.6.0"
 shadow = "9.4.2"
-jlink = "4.0.1"
+jlink = "4.0.2"
 groovy = "5.0.6"
 
 
