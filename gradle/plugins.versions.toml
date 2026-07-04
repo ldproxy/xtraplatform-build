@@ -6,10 +6,10 @@ guava = "33.6.0-jre"
 osdetector = "1.7.3"
 cyclonedx = "3.2.2"
 git-hooks = "2.1.20"
-spotless = "8.7.0"
+spotless = "8.8.0"
 shadow = "9.4.3"
 jlink = "4.0.2"
-groovy = "5.0.6"
+groovy = "5.0.7"
 
 
 [libraries]
