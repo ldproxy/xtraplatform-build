@@ -7,7 +7,7 @@ objenesis = "3.5"
 dagger = "2.59.2"
 dagger-auto = "2.0.0"
 immutables = "2.11.7"
-pmd = "7.25.0"
+pmd = "7.26.0"
 
 [libraries]
 spock-core = { module = "org.spockframework:spock-core", version.ref = "spock" }
