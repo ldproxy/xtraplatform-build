@@ -1,11 +1,11 @@
 [versions]
 idea = "1.4.1"
-spotbugs = "6.5.9"
+spotbugs = "6.5.10"
 gson = "2.14.0"
 guava = "33.6.0-jre"
 osdetector = "1.7.3"
 cyclonedx = "3.2.2"
-git-hooks = "2.1.21"
+git-hooks = "2.1.22"
 spotless = "8.9.0"
 shadow = "9.6.1"
 jlink = "4.1.1"
