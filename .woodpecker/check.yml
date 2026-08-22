@@ -13,7 +13,7 @@ steps:
       branch: [ renovate-* ]
 
   test-xtraplatform:
-    image: eclipse-temurin:21@sha256:e58e492628c1428ceb838afc1a1b8762673d5eaa09296f560c363daea0fdcf3b
+    image: eclipse-temurin:21@sha256:85f00967bcc624fc19fa9c2cf124ea426a5363898e267141726f31f358c2e14b
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - cd ../xtraplatform
