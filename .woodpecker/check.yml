@@ -1,7 +1,7 @@
 
 steps:
   clone-xtraplatform:
-    image: woodpeckerci/plugin-git:2.9.3@sha256:b2d65ece33918fd8763192effb11b226ff4631faa1f3568c941ae69462b1f1be
+    image: woodpeckerci/plugin-git:2.10.0@sha256:0f06b03ec33137b556c77538563f66c400339052d0c5199d4c3ad1a2a37e1964
     settings:
       remote: https://github.com/ldproxy/xtraplatform.git
       branch: master
