@@ -9,7 +9,7 @@ git-hooks = "2.1.27"
 spotless = "8.10.4"
 shadow = "9.6.1"
 jlink = "4.1.1"
-groovy = "5.1.3"
+groovy = "6.0.0"
 
 
 [libraries]
