@@ -1,11 +1,10 @@
 package de.interactive_instruments.xtraplatform
 
+import org.gradle.api.artifacts.FileCollectionDependency
 import org.gradle.api.artifacts.ResolvedDependency
 import org.slf4j.LoggerFactory
 
-import java.util.jar.JarEntry
 import java.util.jar.JarFile
-import java.util.zip.ZipEntry
 
 class Dependencies {
 
@@ -46,38 +45,39 @@ class Dependencies {
         return dependencies
     }
 
-    static Set<Map<String,String>> getPackages(dependencies) {
+    static Set<File> getFileDependencies(project, configuration) {
+        return project.configurations[configuration].allDependencies
+                .withType(FileCollectionDependency)
+                .collectMany { it.files.files } as Set
+    }
+
+    static Set<Map<String,String>> getPackages(dependencies, Set<File> files = []) {
         def packages = [] as Set
         def seen = [] as Set
+        def addPackage = { String name, Map<String,String> origin ->
+            if (!seen.contains(name)) {
+                packages.add([name: name] + origin)
+                seen.add(name)
+            }
+        }
 
         dependencies.each { dep ->
             dep.moduleArtifacts.each { art ->
-                //println " - artifact " + art.file.absolutePath
-
-                // Your jar file
-                JarFile jar = new JarFile(art.file);
-                // Getting the files into the jar
-                Enumeration<? extends JarEntry> enumeration = jar.entries();
-
-                // Iterates into the files in the jar file
-                while (enumeration.hasMoreElements()) {
-                    ZipEntry zipEntry = enumeration.nextElement();
-
-                    // Is this a class?
-                    if (zipEntry.getName().endsWith(".class") && zipEntry.getName().indexOf('/') > -1) {
-                        def name = zipEntry.getName().substring(0, zipEntry.getName().lastIndexOf('/')).replace('/', '.')
-                        if (!seen.contains(name)) {
-                            packages.add([name: name, version: dep.moduleVersion.replaceAll('(-[\\w]+)+$', ''), dep: dep.name])
-                            seen.add(name)
-                        }
-                    }
-                }
+                getPackageNames(art.file).each { addPackage(it, [version: dep.moduleVersion.replaceAll('(-[\\w]+)+$', ''), dep: dep.name]) }
             }
         }
-        /*packages.each { pkg ->
-            println "package " + pkg
-            }*/
+        // file dependencies have no module version, which is fine since only the package names end up in module-info
+        files.findAll { it.isFile() }.each { file ->
+            getPackageNames(file).each { addPackage(it, [dep: file.name]) }
+        }
 
         return packages
+    }
+
+    static Set<String> getPackageNames(File jarFile) {
+        new JarFile(jarFile).withCloseable { jar ->
+            jar.entries().findAll { it.name.endsWith(".class") && it.name.contains('/') }
+                    .collect { it.name.substring(0, it.name.lastIndexOf('/')).replace('/', '.') } as LinkedHashSet
+        }
     }
 }
