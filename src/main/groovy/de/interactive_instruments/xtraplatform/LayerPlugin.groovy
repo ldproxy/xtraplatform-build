@@ -140,15 +140,23 @@ class LayerPlugin implements Plugin<Project> {
 
         project.cyclonedxBom {
             projectType = "library"
-            jsonOutput = project.file("build/generated/sources/xtraplatform/resources/main/sbom.json")
+            jsonOutput = project.file("build/reports/cyclonedx/layer-java.json")
             includeBomSerialNumber = false
             includeLicenseText = true
             includeBuildSystem = true
         }
 
+        // add non-Java components declared by the modules
+        def layerSbom = project.tasks.register("layerSbom", LayerSbomTask) {
+            baseSbom = project.tasks.named("cyclonedxBom").flatMap { it.jsonOutput }
+            outputFile = project.file("build/generated/sources/xtraplatform/resources/main/sbom.json")
+            modules.addAll(project.provider {
+                project.subprojects.findAll { it.extensions.findByName('sbom') != null }.collect { it.sbom }
+            })
+        }
+
         project.tasks.named("processResources").configure {
-            dependsOn project.tasks.named("cyclonedxBom")
-            from project.tasks.named("cyclonedxBom")
+            from layerSbom
         }
 
         project.tasks.named("test").configure {
@@ -293,6 +301,8 @@ class LayerPlugin implements Plugin<Project> {
 
             ModulePlugin.setupConfigurations(subproject)
             ModuleInfoExtension moduleInfo = subproject.extensions.create('moduleInfo', ModuleInfoExtension)
+            SbomExtension sbom = subproject.extensions.create('sbom', SbomExtension)
+            sbom.modulePath.set(subproject.path)
             subproject.ext.notAModule = false
             subproject.ext.maturity = Maturity.PROPOSAL.name()
             subproject.ext.maintenance = Maintenance.LOW.name()
