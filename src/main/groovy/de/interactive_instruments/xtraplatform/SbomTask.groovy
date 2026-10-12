@@ -8,7 +8,8 @@ import org.gradle.api.tasks.*
 
 @CacheableTask
 class SbomTask extends DefaultTask {
-    private FileCollection sourceFiles = project.files(project.configurations.layerDocs.resolvedConfiguration.firstLevelModuleDependencies.collectMany { it.moduleArtifacts }.collect { it.file }) + project.files(project.tasks.jar);
+    // layerDocs is not transitive, resolved lazily (eager resolution fails in composite builds)
+    private FileCollection sourceFiles = project.files(project.configurations.layerDocs, project.tasks.jar);
     private File outputDir = new File(project.buildDir, "reports")
 
     @SkipWhenEmpty
@@ -57,10 +58,33 @@ class SbomTask extends DefaultTask {
 
             // remove layers
             allDependencies.removeAll { layerRefs.contains(it['ref']) }
+
+            // components shared by multiple layers, e.g. libraries or native libs
+            main['components'] = deduplicateComponents(allComponents)
+            main['dependencies'] = deduplicateDependencies(allDependencies)
         }
 
         getOutputDir().text = JsonOutput.toJson(main)
 
+    }
+
+    static List<Map<String, Object>> deduplicateComponents(List<Map<String, Object>> components) {
+        Map<Object, Map<String, Object>> unique = new LinkedHashMap<>()
+        components.each { unique.putIfAbsent(it['bom-ref'] ?: it['purl'] ?: it, it) }
+        return unique.values() as List
+    }
+
+    static List<Map<String, Object>> deduplicateDependencies(List<Map<String, Object>> dependencies) {
+        Map<Object, Map<String, Object>> unique = new LinkedHashMap<>()
+        dependencies.each {
+            def existing = unique.get(it['ref'])
+            if (existing == null) {
+                unique.put(it['ref'], [ref: it['ref'], dependsOn: ((it['dependsOn'] ?: []) as List).unique()])
+            } else {
+                existing['dependsOn'] = (((existing['dependsOn'] ?: []) as List) + ((it['dependsOn'] ?: []) as List)).unique()
+            }
+        }
+        return unique.values() as List
     }
 
     protected List<Map<String, Object>> loadLayerSboms() {
