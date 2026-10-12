@@ -174,6 +174,7 @@ class ModulePlugin implements Plugin<Project> {
         return {
             def excludes = []
             def deps = [] as Set
+            def files = [] as Set
             def pkgs = [] as Set
             Map<String, Set<String>> services = new LinkedHashMap<>();
 
@@ -181,13 +182,17 @@ class ModulePlugin implements Plugin<Project> {
                 // determine artifacts that should be included in the module, might be transitive or not
                 deps += Dependencies.getDependencies(project, 'embeddedExport', excludes, true)
                 deps += Dependencies.getDependencies(project, 'embeddedFlatExport', excludes, false)
+                files += Dependencies.getFileDependencies(project, 'embeddedExport')
+                files += Dependencies.getFileDependencies(project, 'embeddedFlatExport')
                 if (exportAll) {
                     deps += Dependencies.getDependencies(project, 'embedded', excludes, true)
                     deps += Dependencies.getDependencies(project, 'embeddedFlat', excludes, true)
+                    files += Dependencies.getFileDependencies(project, 'embedded')
+                    files += Dependencies.getFileDependencies(project, 'embeddedFlat')
                 }
 
                 // determine packages for export
-                pkgs += Dependencies.getPackages(deps)
+                pkgs += Dependencies.getPackages(deps, files)
 
                 def cfgs = exportAll
                         ? (project.configurations.embeddedExport + project.configurations.embeddedFlatExport + project.configurations.embedded + project.configurations.embeddedFlat)
