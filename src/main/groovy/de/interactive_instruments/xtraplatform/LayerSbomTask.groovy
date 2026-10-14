@@ -74,6 +74,11 @@ abstract class LayerSbomTask extends DefaultTask {
                 ((fragment['dependencies'] ?: []) as List<Map<String, Object>>).each {
                     addDependency(dependencies, it['ref'] as String, (it['dependsOn'] ?: []) as List)
                 }
+                if (root != null) {
+                    // e.g. the Go standard library from cyclonedx-gomod is not a dependency of the main module
+                    def unreachable = findUnreachable(fragment, root['bom-ref'] as String)
+                    addDependency(dependencies, root['bom-ref'] as String, unreachable)
+                }
             }
 
             addDependency(dependencies, moduleRef, roots)
@@ -94,6 +99,23 @@ abstract class LayerSbomTask extends DefaultTask {
         }
 
         return module['bom-ref']
+    }
+
+    static List<String> findUnreachable(Map<String, Object> fragment, String rootRef) {
+        Map<String, List> dependsOn = ((fragment['dependencies'] ?: []) as List<Map<String, Object>>)
+                .collectEntries { [(it['ref']): (it['dependsOn'] ?: []) as List] }
+        Set<String> reachable = [] as Set
+        List<String> queue = [rootRef]
+        while (!queue.isEmpty()) {
+            def ref = queue.remove(0)
+            if (reachable.add(ref)) {
+                queue.addAll(dependsOn[ref] ?: [])
+            }
+        }
+
+        return ((fragment['components'] ?: []) as List<Map<String, Object>>)
+                .collect { it['bom-ref'] as String }
+                .findAll { !reachable.contains(it) }
     }
 
     static String purl(Map<String, Object> declaration) {
