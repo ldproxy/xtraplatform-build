@@ -288,6 +288,11 @@ class LayerPlugin implements Plugin<Project> {
                     subproject.version = project.version
                 }
 
+                // the jar is built from tplClasspath, the javadoc and sources classpaths ignore excludes
+                subproject.tasks.matching { it.name == 'cyclonedxDirectBom' }.configureEach {
+                    includeConfigs = ['tplClasspath']
+                }
+
                 return
             }
 
