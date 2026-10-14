@@ -59,29 +59,58 @@ class SbomTask extends DefaultTask {
             // remove layers
             allDependencies.removeAll { layerRefs.contains(it['ref']) }
 
-            // components shared by multiple layers, e.g. libraries or native libs
-            main['components'] = deduplicateComponents(allComponents)
-            main['dependencies'] = deduplicateDependencies(allDependencies)
+            // components shared by multiple layers, e.g. libraries or native libs,
+            // modules referenced by layers and by the application,
+            // npm packages installed in multiple paths
+            Map<String, String> refs = deduplicationRefs(allComponents)
+            Set<String> kept = [] as Set
+            main['components'] = allComponents.findAll { refs[it['bom-ref'] as String] == it['bom-ref'] && kept.add(it['bom-ref'] as String) }
+            main['dependencies'] = deduplicateDependencies(allDependencies, refs)
         }
 
         getOutputDir().text = JsonOutput.toJson(main)
 
     }
 
-    static List<Map<String, Object>> deduplicateComponents(List<Map<String, Object>> components) {
-        Map<Object, Map<String, Object>> unique = new LinkedHashMap<>()
-        components.each { unique.putIfAbsent(it['bom-ref'] ?: it['purl'] ?: it, it) }
-        return unique.values() as List
+    // maps every bom-ref to the bom-ref of the first component with the same identity
+    static Map<String, String> deduplicationRefs(List<Map<String, Object>> components) {
+        Map<String, String> refByIdentity = [:]
+        Map<String, String> refs = [:]
+        components.each {
+            String ref = it['bom-ref']
+            refs.putIfAbsent(ref, refByIdentity.putIfAbsent(identity(it), ref) ?: ref)
+        }
+        return refs
     }
 
-    static List<Map<String, Object>> deduplicateDependencies(List<Map<String, Object>> dependencies) {
-        Map<Object, Map<String, Object>> unique = new LinkedHashMap<>()
+    // purl without qualifiers that do not change the artifact
+    static String identity(Map<String, Object> component) {
+        String purl = component['purl']
+        if (purl == null) {
+            return component['bom-ref']
+        }
+        int hash = purl.indexOf('#')
+        String subpath = hash >= 0 ? purl.substring(hash) : ''
+        String rest = hash >= 0 ? purl.substring(0, hash) : purl
+        int question = rest.indexOf('?')
+        String base = question >= 0 ? rest.substring(0, question) : rest
+        List<String> qualifiers = question >= 0
+                ? rest.substring(question + 1).split('&').findAll { it && !it.startsWith('project_path=') && it != 'type=jar' }.sort()
+                : []
+
+        return base + (qualifiers ? '?' + qualifiers.join('&') : '') + subpath
+    }
+
+    static List<Map<String, Object>> deduplicateDependencies(List<Map<String, Object>> dependencies, Map<String, String> refs) {
+        Map<String, Map<String, Object>> unique = new LinkedHashMap<>()
         dependencies.each {
-            def existing = unique.get(it['ref'])
+            String ref = refs.get(it['ref']) ?: it['ref']
+            List dependsOn = ((it['dependsOn'] ?: []) as List).collect { refs.get(it) ?: it }.findAll { it != ref }
+            def existing = unique.get(ref)
             if (existing == null) {
-                unique.put(it['ref'], [ref: it['ref'], dependsOn: ((it['dependsOn'] ?: []) as List).unique()])
+                unique.put(ref, [ref: ref, dependsOn: dependsOn.unique()])
             } else {
-                existing['dependsOn'] = (((existing['dependsOn'] ?: []) as List) + ((it['dependsOn'] ?: []) as List)).unique()
+                existing['dependsOn'] = (((existing['dependsOn'] ?: []) as List) + dependsOn).unique()
             }
         }
         return unique.values() as List
