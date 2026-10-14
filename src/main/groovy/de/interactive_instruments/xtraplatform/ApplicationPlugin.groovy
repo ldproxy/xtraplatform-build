@@ -197,6 +197,11 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     void addSbom(Project project) {
+        // all configurations, unlike a layer the application determines the versions of the consumed layers
+        project.tasks.named("cyclonedxDirectBom").configure {
+            includeConfigs = []
+        }
+
         project.afterEvaluate {
             project.cyclonedxBom {
                 projectType = "application"
