@@ -195,6 +195,14 @@ class SettingsPlugin implements Plugin<Settings> {
 
         rootDir.listFiles().each { file ->
             if (file.isDirectory() && file.name.startsWith(prefix)) {
+                if (!hasBuildScript(file)) {
+                    // leftover from another branch, git keeps the folder because of the ignored build dir
+                    if (doLog) {
+                        LOGGER.warn("Ignoring '${file.name}' in ${rootProject.name}, it has no build script")
+                    }
+                    return
+                }
+
                 with(file.name)
 
                 if (doLog) {
@@ -202,6 +210,10 @@ class SettingsPlugin implements Plugin<Settings> {
                 }
             }
         }
+    }
+
+    static boolean hasBuildScript(File projectDir) {
+        return new File(projectDir, 'build.gradle').exists() || new File(projectDir, 'build.gradle.kts').exists()
     }
 
     static String getVersion(Settings settings) {
