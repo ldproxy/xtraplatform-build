@@ -195,7 +195,8 @@ class LayerPlugin implements Plugin<Project> {
 
                     java {
                         //target '**/ConfigurationReader.java'
-                        targetExclude '**/build/generated/**/*'
+                        // a pattern would be matched against a tree of the whole project dir, which walks node_modules on every run
+                        targetExclude subproject.fileTree(subproject.layout.buildDirectory.dir('generated'))
 
                         forbidWildcardImports()
                         cleanthat()
