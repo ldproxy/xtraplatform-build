@@ -146,6 +146,11 @@ class LayerPlugin implements Plugin<Project> {
             includeBuildSystem = true
         }
 
+        // only the modules of the layer, the consumed layers are added by the application in the versions in use
+        project.tasks.named("cyclonedxDirectBom").configure {
+            includeConfigs = ["modules"]
+        }
+
         // add non-Java components declared by the modules
         def layerSbom = project.tasks.register("layerSbom", LayerSbomTask) {
             baseSbom = project.tasks.named("cyclonedxBom").flatMap { it.jsonOutput }
@@ -287,6 +292,11 @@ class LayerPlugin implements Plugin<Project> {
                 subproject.afterEvaluate {
                     subproject.group = project.group
                     subproject.version = project.version
+                }
+
+                // the jar is built from tplClasspath, the javadoc and sources classpaths ignore excludes
+                subproject.tasks.matching { it.name == 'cyclonedxDirectBom' }.configureEach {
+                    includeConfigs = ['tplClasspath']
                 }
 
                 return
