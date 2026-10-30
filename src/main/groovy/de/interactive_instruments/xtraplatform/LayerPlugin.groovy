@@ -287,6 +287,11 @@ class LayerPlugin implements Plugin<Project> {
             into new File(project.buildDir, 'pmd')
         }
 
+        // composite builds only invoke the root clean of included builds
+        project.tasks.named('clean') {
+            dependsOn project.subprojects.collect { it.tasks.matching { it.name == 'clean' } }
+        }
+
         project.subprojects { Project subproject ->
             if (subproject.name.endsWith("-tpl")) {
                 subproject.afterEvaluate {
