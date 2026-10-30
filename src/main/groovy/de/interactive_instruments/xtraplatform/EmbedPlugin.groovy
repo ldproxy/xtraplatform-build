@@ -279,7 +279,7 @@ class EmbedPlugin implements Plugin<Project> {
             outputs.cacheIf { true }
             inputs.property('moduleInfo.name', moduleInfoTpl.name)
             inputs.property('moduleInfo.exports', moduleInfoTpl.exports)
-            //inputs.property('moduleInfo.requires', moduleInfoTpl.requires)
+            inputs.property('moduleInfo.requires', moduleInfoTpl.requires)
             inputs.property('moduleInfo.provides', moduleInfoTpl.provides)
             inputs.property('moduleInfo.uses', moduleInfoTpl.uses)
             outputs.file(new File(generatedSourcesDir, 'module-info.java'))
