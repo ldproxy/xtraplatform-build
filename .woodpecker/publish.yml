@@ -38,6 +38,8 @@ steps:
     secrets: [ deploy_user, deploy_password]
     when:
       event: push
+      branch:
+        exclude: [ renovate-* ]
 
   publish-release:
     image: eclipse-temurin:21@sha256:ebfbb18d11ff163ee83b21258acf12248af48d22a0fdfdc68fa1a1516c05976a
