@@ -47,6 +47,13 @@
         </properties>
     </rule>
 
+    <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName">
+        <properties>
+            <property name="reportStaticMethods" value="false"/>
+            <property name="reportStaticFields" value="false"/>
+        </properties>
+    </rule>
+
     <rule ref="category/java/design.xml">
         <exclude name="AbstractClassWithoutAnyMethod"/>
         <exclude name="AvoidCatchingGenericException"/>
