@@ -203,7 +203,7 @@ class ModulePlugin implements Plugin<Project> {
                         .collectMany { it.getFiles() }
                         .forEach { File it3 ->
                             services.putIfAbsent(it3.name, new LinkedHashSet<String>())
-                            it3.eachLine { if (!it.isEmpty() && !it.startsWith("#") && !it.contains("\$")) services.get(it3.name).add(it) }
+                            it3.eachLine { if (!it.isEmpty() && !it.startsWith("#") && !it.contains("\$") && !isExcludedProvider(moduleInfo.provides, it3.name, it)) services.get(it3.name).add(it) }
                         }
             }
 
@@ -215,8 +215,9 @@ class ModulePlugin implements Plugin<Project> {
                     moduleInfo.uses += it.key
                 }
                 services.entrySet().forEach {
+                    // excluded providers are kept, since this closure may be evaluated more than once
                     if (!it.value.isEmpty())
-                        moduleInfo.provides.put(it.key, it.value as List<String>)
+                        moduleInfo.provides.put(it.key, (it.value + getExcludedProviders(moduleInfo.provides, it.key)) as List<String>)
                 }
             }
 
@@ -234,7 +235,8 @@ class ModulePlugin implements Plugin<Project> {
                     .collect(Collectors.joining("\n", "\n", ""))
             def provides = moduleInfo.provides.entrySet().stream()
                     .filter({ provide -> !isExcluded(provide.key, moduleInfo.provides.keySet()) })
-                    .map({ provide -> "\tprovides ${provide.key} with ${provide.value.join(', ')};" })
+                    .filter({ provide -> provide.value.any { !it.startsWith("!") } })
+                    .map({ provide -> "\tprovides ${provide.key} with ${provide.value.findAll { !it.startsWith("!") }.join(', ')};" })
                     .collect(Collectors.joining("\n", "\n", ""))
             def uses = moduleInfo.uses.stream()
                     .filter({ use -> !isExcluded(use, moduleInfo.uses) })
@@ -542,6 +544,20 @@ ${additions}
 
     static boolean isExcluded(String item, Collection<String> items) {
         return item.contains("-") || item.startsWith("!") || items.stream().anyMatch({ item2 -> item2 == "!${item}" || (item2.endsWith("*") && "!${item}".startsWith(item2.substring(0, item2.length() - 1))) })
+    }
+
+    static List<String> getExcludedProviders(Map<String, List<String>> provides, String service) {
+        return provides.getOrDefault(service, []).findAll { it.startsWith("!") }
+    }
+
+    static boolean isExcludedProvider(Map<String, List<String>> provides, String service, String provider) {
+        return getExcludedProviders(provides, service).contains("!${provider.trim()}".toString())
+    }
+
+    static Map<String, Set<String>> getExcludedProviders(Map<String, List<String>> provides) {
+        return provides.collectEntries { service, providers ->
+            [(service): getExcludedProviders(provides, service).collect { it.substring(1) } as Set<String>]
+        }.findAll { it.value } as Map<String, Set<String>>
     }
 
     public static String getModuleName(String group, String name) {

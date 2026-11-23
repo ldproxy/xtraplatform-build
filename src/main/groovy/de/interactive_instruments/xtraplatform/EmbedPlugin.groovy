@@ -207,7 +207,7 @@ class EmbedPlugin implements Plugin<Project> {
             filesMatching('META-INF/services/**') {
                 duplicatesStrategy = DuplicatesStrategy.INCLUDE
             }
-            mergeServiceFiles()
+            transform(new ExcludingServiceFileTransformer(ModulePlugin.getExcludedProviders(moduleInfo.provides)))
             /*transform(ManifestResourceTransformer) {
                 attributes 'Multi-Release': ['Multi-Release': 'true']
             }*/
