@@ -421,6 +421,11 @@ class LayerPlugin implements Plugin<Project> {
                     publications {
                         'default'(MavenPublication) {
                             from subproject.components.java
+                            versionMapping {
+                                allVariants {
+                                    fromResolutionOf('compileClasspath')
+                                }
+                            }
                             suppressPomMetadataWarningsFor('runtimeElements')
                             suppressPomMetadataWarningsFor('testFixturesApiElements')
                             suppressPomMetadataWarningsFor('testFixturesRuntimeElements')
