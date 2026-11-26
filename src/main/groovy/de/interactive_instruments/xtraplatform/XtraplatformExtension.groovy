@@ -108,9 +108,7 @@ class XtraplatformExtension {
             parsed = [group: split[0], name: split[1], version: split[2]]
         }
         if (platform && parsed.version) {
-           parsed.version = parsed.version.endsWith('-SNAPSHOT')
-                   ? parsed.version.replace('-SNAPSHOT', "-${platform}-SNAPSHOT")
-                   : parsed.version + "-${platform}"
+           parsed.version = parsed.version.replaceFirst(/^(\d+\.\d+\.\d+)/, "\$1-${platform}")
         }
         if (!parsed.version) {
             parsed.version = '+'
